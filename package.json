@@ -1,0 +1,9 @@
+{
+  "name": "mobile-arcade",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev:found3": "pnpm --filter @arcade/web-found3 dev",
+    "build:found3": "pnpm --filter @arcade/web-found3 build"
+  }
+}

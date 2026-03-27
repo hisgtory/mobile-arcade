@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+.vite/
+*.tsbuildinfo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# React Native
+found3/rn/ios/Pods/
+found3/rn/android/.gradle/
+found3/rn/android/app/build/
+*.jks
+*.keystore
+
+# Metro
+.metro-health-check*
