@@ -31,9 +31,9 @@ export function useGame({ difficulty = 'medium' }: UseGameOptions) {
     });
 
     game.events.on('round-end', (data: RoundResult) => {
-      // Send bridge message for RN
+      // Send bridge message for RN (stage: 0 for endless games)
       stageComplete({
-        stage: data.roundsPlayed,
+        stage: 0,
         score: data.playerScore,
         cleared: data.winner === 'X',
       });

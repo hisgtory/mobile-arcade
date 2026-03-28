@@ -1,4 +1,4 @@
-import { GRID_SIZE, type CellValue, type Player, type BoardState } from '../types';
+import { GRID_SIZE, type CellValue, type Player, type BoardState, type Difficulty } from '../types';
 
 const WIN_LINES: number[][] = [
   [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
@@ -43,7 +43,7 @@ function checkWin(cells: CellValue[], player: Player): number[] | null {
 
 // ─── AI (Minimax) ───────────────────────────────────────
 
-export function getAIMove(board: BoardState, difficulty: string): number {
+export function getAIMove(board: BoardState, difficulty: Difficulty): number {
   const empty = board.cells
     .map((c, i) => (c === null ? i : -1))
     .filter((i) => i >= 0);

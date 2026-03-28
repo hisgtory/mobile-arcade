@@ -52,7 +52,7 @@ export class PlayScene extends Phaser.Scene {
 
   // ─── Drawing ──────────────────────────────────────────
 
-  private drawBoard() {
+  private drawBoard(animateIndex?: number) {
     // Clear everything
     this.children.removeAll(true);
 
@@ -83,12 +83,12 @@ export class PlayScene extends Phaser.Scene {
     }
     g.strokePath();
 
-    // Draw marks
+    // Draw marks (animate the latest move)
     for (let i = 0; i < 9; i++) {
       const cell = this.board.cells[i];
       if (cell) {
         const { cx, cy } = this.cellCenter(i);
-        this.drawMark(cx, cy, cell, false);
+        this.drawMark(cx, cy, cell, i === animateIndex);
       }
     }
 
@@ -220,7 +220,6 @@ export class PlayScene extends Phaser.Scene {
         .setInteractive()
         .setAlpha(0.001);
       hitArea.on('pointerdown', () => {
-        this.roundsPlayed++;
         this.startNewRound();
       });
     }
@@ -236,19 +235,16 @@ export class PlayScene extends Phaser.Scene {
 
     this.board = next;
 
-    // Animate player mark
-    const { cx, cy } = this.cellCenter(index);
-    this.drawMark(cx, cy, 'X', true);
-
     if (this.board.winner) {
       if (this.board.winner === 'X') this.playerScore++;
+      this.drawBoard(index);
       this.onGameEnd();
       return;
     }
 
     // AI turn
     this.phase = 'ai_turn';
-    this.drawBoard();
+    this.drawBoard(index);
 
     this.time.delayedCall(400 + Math.random() * 300, () => {
       this.doAIMove();
@@ -267,19 +263,19 @@ export class PlayScene extends Phaser.Scene {
 
     if (this.board.winner) {
       if (this.board.winner === 'O') this.aiScore++;
-      this.drawBoard();
+      this.drawBoard(aiIndex);
       this.onGameEnd();
       return;
     }
 
     this.phase = 'player_turn';
-    this.drawBoard();
+    this.drawBoard(aiIndex);
     this.emitState();
   }
 
   private onGameEnd() {
     this.phase = 'game_over';
-    this.drawBoard();
+    this.roundsPlayed++;
     this.emitState();
 
     // Emit game result
@@ -288,7 +284,7 @@ export class PlayScene extends Phaser.Scene {
         winner: this.board.winner,
         playerScore: this.playerScore,
         aiScore: this.aiScore,
-        roundsPlayed: this.roundsPlayed + 1,
+        roundsPlayed: this.roundsPlayed,
       });
     });
   }
