@@ -4,7 +4,7 @@ import { WebView } from 'react-native-webview';
 import { BridgeHost } from '../utils/bridge';
 import type { StageCompleteData } from '../utils/bridge';
 
-const DEV_HOST = 'http://172.30.1.63:5173/games/found3/v1';
+const DEV_HOST = 'http://192.168.1.121:5173/games/found3/v1';
 
 interface GameWebViewProps {
   stageId: number;
