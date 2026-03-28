@@ -1,11 +1,11 @@
 import { useRef, useEffect, useState } from 'react';
-import { createGame, destroyGame } from '@arcade/lib-number10';
+import { createGame, destroyGame, TOTAL_CELLS } from '@arcade/lib-number10';
 import { stageComplete } from '../../utils/bridge';
 
 export function useGame() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(0);
-  const [remaining, setRemaining] = useState(170);
+  const [remaining, setRemaining] = useState(TOTAL_CELLS);
 
   useEffect(() => {
     if (!containerRef.current) return;

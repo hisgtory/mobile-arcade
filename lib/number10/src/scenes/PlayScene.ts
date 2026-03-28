@@ -38,6 +38,7 @@ export class PlayScene extends Phaser.Scene {
 
   private score = 0;
   private gameOver = false;
+  private checkingEnd = false;
 
   // Drag state
   private isDragging = false;
@@ -75,10 +76,13 @@ export class PlayScene extends Phaser.Scene {
     // Background
     this.add.rectangle(w / 2, h / 2, w, h, 0xf0f2f5);
 
-    // Init game state
-    this.cells = createGrid();
+    // Init game state — ensure board has at least one valid move
     this.score = 0;
     this.gameOver = false;
+    this.checkingEnd = false;
+    do {
+      this.cells = createGrid();
+    } while (!hasValidMove(this.cells));
 
     this.drawGrid();
     this.setupInput();
@@ -123,9 +127,9 @@ export class PlayScene extends Phaser.Scene {
 
   private setupInput() {
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      if (this.gameOver) return;
+      if (this.gameOver || this.checkingEnd) return;
       const { col, row } = this.pointerToCell(p.x, p.y);
-      if (col < 0 || row < 0) return;
+      if (col < 0 || row < 0 || col >= COLS || row >= ROWS) return;
       this.isDragging = true;
       this.dragStartCol = col;
       this.dragStartRow = row;
@@ -214,11 +218,14 @@ export class PlayScene extends Phaser.Scene {
     this.emitState();
 
     // Check end conditions after animation
+    this.checkingEnd = true;
     this.time.delayedCall(150, () => {
       if (remainingCount(this.cells) === 0) {
         this.endGame(true);
       } else if (!hasValidMove(this.cells)) {
         this.endGame(false);
+      } else {
+        this.checkingEnd = false;
       }
     });
   }

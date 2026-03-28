@@ -58,14 +58,34 @@ export function remainingCount(cells: Cell[]): number {
   return cells.filter((c) => c.value > 0).length;
 }
 
-/** Check if any valid rectangle selection sums to 10 */
+/** Check if any valid rectangle selection sums to 10 (prefix-sum optimized) */
 export function hasValidMove(cells: Cell[]): boolean {
+  // Build 2D grid for O(1) rectangle sum queries
+  const grid: number[][] = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+  for (const c of cells) {
+    if (c.value > 0) grid[c.row][c.col] = c.value;
+  }
+
+  // 2D prefix sum
+  const ps: number[][] = Array.from({ length: ROWS + 1 }, () => Array(COLS + 1).fill(0));
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      ps[r + 1][c + 1] = grid[r][c] + ps[r][c + 1] + ps[r + 1][c] - ps[r][c];
+    }
+  }
+
+  const rectSum = (r1: number, c1: number, r2: number, c2: number): number =>
+    ps[r2 + 1][c2 + 1] - ps[r1][c2 + 1] - ps[r2 + 1][c1] + ps[r1][c1];
+
+  // Check all rectangles with O(1) sum lookup
   for (let r1 = 0; r1 < ROWS; r1++) {
     for (let c1 = 0; c1 < COLS; c1++) {
+      if (grid[r1][c1] === 0) continue; // skip empty starts
       for (let r2 = r1; r2 < ROWS; r2++) {
         for (let c2 = c1; c2 < COLS; c2++) {
-          const selected = getCellsInRect(cells, c1, r1, c2, r2);
-          if (selected.length > 0 && checkSum(selected)) return true;
+          const s = rectSum(r1, c1, r2, c2);
+          if (s === 10) return true;
+          if (s > 10) break; // wider rects only add more, prune
         }
       }
     }
