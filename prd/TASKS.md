@@ -5,6 +5,7 @@
 ### Priority: DONE
 
 - [x] found3 게임 기획서 초안 작성 (`prd/found3.md`)
+- [x] WebView 브릿지 프로토콜 설계 (`prd/bridge-protocol.md`)
 
 ### Priority: READY TO START
 
