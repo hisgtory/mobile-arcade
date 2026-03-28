@@ -33,6 +33,11 @@ const AMMO_BONUS_POINTS = 50;
 const ENEMY_KILL_POINTS = 100;
 const BLOCK_DESTROY_POINTS = 10;
 const STARTUP_GRACE_MS = 1500;
+const ICE_DESTRUCTION_THRESHOLD = 2;
+const WOOD_DESTRUCTION_THRESHOLD = 4;
+const STONE_DESTRUCTION_THRESHOLD = 7;
+const ENEMY_PROJECTILE_THRESHOLD = 2;
+const ENEMY_IMPACT_THRESHOLD = 8;
 
 interface EnemyData {
   body: MatterJS.BodyType;
@@ -520,9 +525,9 @@ export class PlayScene extends Phaser.Scene {
       if (!enemy.alive) continue;
       if (enemy.body === bodyA || enemy.body === bodyB) {
         const other = enemy.body === bodyA ? bodyB : bodyA;
-        if (other.label === 'projectile' && relVel > 2) {
+        if (other.label === 'projectile' && relVel > ENEMY_PROJECTILE_THRESHOLD) {
           this.destroyEnemy(enemy);
-        } else if (!inGrace && relVel > 8) {
+        } else if (!inGrace && relVel > ENEMY_IMPACT_THRESHOLD) {
           this.destroyEnemy(enemy);
         }
       }
@@ -533,7 +538,10 @@ export class PlayScene extends Phaser.Scene {
       if (block.body === bodyA || block.body === bodyB) {
         const other = block.body === bodyA ? bodyB : bodyA;
         if (other.label === 'projectile') {
-          const threshold = block.type === 'ice' ? 2 : block.type === 'wood' ? 4 : 7;
+          const threshold =
+            block.type === 'ice' ? ICE_DESTRUCTION_THRESHOLD :
+            block.type === 'wood' ? WOOD_DESTRUCTION_THRESHOLD :
+            STONE_DESTRUCTION_THRESHOLD;
           if (relVel > threshold) {
             this.destroyBlock(block);
           }
@@ -620,7 +628,7 @@ export class PlayScene extends Phaser.Scene {
 
     if (this.phase === GamePhase.FLYING && this.projectile) {
       const pos = this.projectile.body.position;
-      if (pos.x < -50 || pos.x > this.areaW + 100 || pos.y > this.groundY + 100) {
+      if (this.isOutOfBounds(pos)) {
         this.startSettling();
         return;
       }
@@ -693,11 +701,18 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  private isOutOfBounds(pos: { x: number; y: number }): boolean {
+    return (
+      pos.y > this.groundY + OUT_OF_BOUNDS_MARGIN * this.dpr ||
+      pos.x < -OUT_OF_BOUNDS_MARGIN ||
+      pos.x > this.areaW + OUT_OF_BOUNDS_MARGIN
+    );
+  }
+
   private checkEnemiesOutOfBounds(): void {
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue;
-      const pos = enemy.body.position;
-      if (pos.y > this.groundY + OUT_OF_BOUNDS_MARGIN * this.dpr || pos.x < -OUT_OF_BOUNDS_MARGIN || pos.x > this.areaW + OUT_OF_BOUNDS_MARGIN) {
+      if (this.isOutOfBounds(enemy.body.position)) {
         this.destroyEnemy(enemy);
       }
     }
