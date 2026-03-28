@@ -46,6 +46,16 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
+    id: 'blockrush',
+    name: 'Block Rush',
+    description: 'Fill lines with block pieces!',
+    icon: '🟧',
+    category: 'puzzle',
+    color: '#2563EB',
+    webPath: '/games/blockrush/v1',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
