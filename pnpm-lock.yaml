@@ -156,6 +156,9 @@ importers:
       '@arcade/lib-crunch3':
         specifier: workspace:*
         version: link:../../lib/crunch3
+      '@arcade/lib-defendking':
+        specifier: workspace:*
+        version: link:../../lib/defendking
       '@arcade/lib-found3':
         specifier: workspace:*
         version: link:../../lib/found3

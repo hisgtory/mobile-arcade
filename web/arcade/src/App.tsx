@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── DefendKing ───
+import { ClearScreen as DefendKingClear } from './games/defendking/ClearScreen';
+import { HUD as DefendKingHUD } from './games/defendking/HUD';
+import { useGame as useDefendKingGame, type GameResult as DefendKingResult } from './games/defendking/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -301,6 +306,63 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── DefendKing Routes ────────────────────────────────
+
+function DefendKingTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Defend King</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Destroy all enemies to protect the king!</p>
+      <button
+        onClick={() => navigate('/games/defendking/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function DefendKingStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<DefendKingResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: DefendKingResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: DefendKingResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/defendking/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/defendking/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <DefendKingClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <DefendKingPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function DefendKingPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: DefendKingResult) => void; onGameOver: (r: DefendKingResult) => void }) {
+  const { containerRef, score, ammoLeft, enemiesLeft } = useDefendKingGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <DefendKingHUD stage={stage} score={score} ammoLeft={ammoLeft} enemiesLeft={enemiesLeft} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -326,6 +388,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* DefendKing */}
+      <Route path="/games/defendking/v1" element={<DefendKingTitleRoute />} />
+      <Route path="/games/defendking/v1/stage/:stageId" element={<DefendKingStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

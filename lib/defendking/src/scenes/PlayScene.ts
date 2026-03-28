@@ -25,13 +25,14 @@ const CAT_GROUND = 0x0010;
 const SETTLE_SPEED = 0.3;
 const SETTLE_FRAMES = 60;
 const MAX_DRAG_DIST = 120;
-const LAUNCH_POWER = 0.012;
+const LAUNCH_POWER = 0.055;
 const SLINGSHOT_INTERACTION_RADIUS = 60;
 const SETTLE_Y_THRESHOLD = 50;
 const OUT_OF_BOUNDS_MARGIN = 50;
 const AMMO_BONUS_POINTS = 50;
 const ENEMY_KILL_POINTS = 100;
 const BLOCK_DESTROY_POINTS = 10;
+const STARTUP_GRACE_MS = 1500;
 
 interface EnemyData {
   body: MatterJS.BodyType;
@@ -75,6 +76,7 @@ export class PlayScene extends Phaser.Scene {
   private heroGraphics!: Phaser.GameObjects.Container;
 
   private settleCounter: number = 0;
+  private createdAt: number = 0;
 
   constructor() {
     super({ key: 'PlayScene' });
@@ -99,6 +101,7 @@ export class PlayScene extends Phaser.Scene {
     this.projectile = null;
     this.settleCounter = 0;
     this.trajectoryDots = [];
+    this.createdAt = Date.now();
 
     this.slingshotX = this.areaW * 0.15;
     this.slingshotY = this.groundY - 40 * this.dpr;
@@ -426,20 +429,21 @@ export class PlayScene extends Phaser.Scene {
     projPreview.setDepth(11);
     this.trajectoryDots.push(projPreview);
 
-    const normalizedDist = dist / (MAX_DRAG_DIST * this.dpr);
-    const launchVx = dx * LAUNCH_POWER * normalizedDist;
-    const launchVy = dy * LAUNCH_POWER * normalizedDist;
-    const gravityScale = 0.001;
+    const power = dist * LAUNCH_POWER;
+    const launchAngle = Math.atan2(dy, dx);
+    const launchVx = Math.cos(launchAngle) * power;
+    const launchVy = Math.sin(launchAngle) * power;
+    const gravityPerStep = 0.05;
 
     let px = this.slingshotX;
     let py = this.slingshotY - 30 * s;
-    let vx = launchVx * 16.67;
-    let vy = launchVy * 16.67;
+    let tvx = launchVx;
+    let tvy = launchVy;
 
-    for (let i = 0; i < 15; i++) {
-      px += vx * 3;
-      py += vy * 3;
-      vy += gravityScale * 16.67 * 3;
+    for (let i = 0; i < 20; i++) {
+      px += tvx * 4;
+      py += tvy * 4;
+      tvy += gravityPerStep * 4;
 
       if (py > this.groundY) break;
 
@@ -510,6 +514,7 @@ export class PlayScene extends Phaser.Scene {
     const velBx = bodyB.velocity?.x ?? 0;
     const velBy = bodyB.velocity?.y ?? 0;
     const relVel = Math.sqrt((velAx - velBx) ** 2 + (velAy - velBy) ** 2);
+    const inGrace = Date.now() - this.createdAt < STARTUP_GRACE_MS;
 
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue;
@@ -517,7 +522,7 @@ export class PlayScene extends Phaser.Scene {
         const other = enemy.body === bodyA ? bodyB : bodyA;
         if (other.label === 'projectile' && relVel > 2) {
           this.destroyEnemy(enemy);
-        } else if (relVel > 5) {
+        } else if (!inGrace && relVel > 8) {
           this.destroyEnemy(enemy);
         }
       }
