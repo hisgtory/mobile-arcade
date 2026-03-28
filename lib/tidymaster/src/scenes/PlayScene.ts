@@ -3,11 +3,10 @@ import {
   DEFAULT_WIDTH,
   DEFAULT_HEIGHT,
   CATEGORIES,
+  getStageConfig,
   type GameConfig,
   type BoardState,
-  type StageConfig,
 } from '../types';
-import { getStageConfig } from '../types';
 import { createBoard, placeItem, isWon } from '../logic/board';
 
 export class PlayScene extends Phaser.Scene {
@@ -299,33 +298,47 @@ export class PlayScene extends Phaser.Scene {
 
   private celebrateWin() {
     this.phase = 'celebrating';
-    this.game.events.emit('game-won', { score: this.score, moves: this.moves });
 
     const screenW = DEFAULT_WIDTH * this.dpr;
     const screenH = DEFAULT_HEIGHT * this.dpr;
     const colors = [0xef4444, 0x3b82f6, 0x22c55e, 0xeab308, 0xa855f7, 0xf97316];
 
+    // Confetti burst
     for (let i = 0; i < 40; i++) {
-      const x = Math.random() * screenW;
-      const size = (3 + Math.random() * 5) * this.dpr;
+      const x = screenW / 2 + (Math.random() - 0.5) * 60 * this.dpr;
+      const size = (4 + Math.random() * 6) * this.dpr;
       const color = colors[Math.floor(Math.random() * colors.length)];
 
-      const confetti = this.add.graphics();
-      confetti.fillStyle(color, 1);
-      confetti.fillRect(-size / 2, -size / 2, size, size);
-      confetti.setPosition(x, -size);
+      const p = this.add.rectangle(
+        x,
+        screenH / 2,
+        size,
+        size * 1.5,
+        color,
+      );
+      p.setDepth(300);
+      p.setRotation(Math.random() * Math.PI);
 
       this.tweens.add({
-        targets: confetti,
-        y: screenH + size,
-        x: x + (Math.random() - 0.5) * 100 * this.dpr,
-        angle: Math.random() * 720 - 360,
-        duration: 1500 + Math.random() * 1500,
-        delay: Math.random() * 500,
-        ease: 'Cubic.easeIn',
-        onComplete: () => confetti.destroy(),
+        targets: p,
+        x: p.x + (Math.random() - 0.5) * screenW * 0.8,
+        y: p.y + (Math.random() - 0.5) * screenH * 0.6,
+        rotation: p.rotation + (Math.random() - 0.5) * 4,
+        alpha: 0,
+        duration: 1000 + Math.random() * 500,
+        ease: 'Cubic.easeOut',
+        onComplete: () => p.destroy(),
       });
     }
+
+    // Emit stage clear after confetti
+    this.time.delayedCall(1200, () => {
+      this.game.events.emit('stage-clear', {
+        score: this.score,
+        moves: this.moves,
+        stage: this.config.stage ?? 1,
+      });
+    });
   }
 
   private emitState() {
