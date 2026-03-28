@@ -42,6 +42,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/crunch3:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/found3:
     dependencies:
       phaser:
@@ -97,6 +107,40 @@ importers:
       typescript:
         specifier: ^5.5.0
         version: 5.9.3
+
+  web/crunch3:
+    dependencies:
+      '@arcade/lib-crunch3':
+        specifier: workspace:*
+        version: link:../../lib/crunch3
+      '@stitches/react':
+        specifier: ^1.2.8
+        version: 1.2.8(react@18.3.1)
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.0
+        version: 18.3.1(react@18.3.1)
+      react-router-dom:
+        specifier: ^6.23.0
+        version: 6.30.3(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: ^18.3.0
+        version: 18.3.28
+      '@types/react-dom':
+        specifier: ^18.3.0
+        version: 18.3.7(@types/react@18.3.28)
+      '@vitejs/plugin-react':
+        specifier: ^4.3.0
+        version: 4.7.0(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1))
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vite:
+        specifier: ^5.4.0
+        version: 5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1)
 
   web/found3:
     dependencies:
