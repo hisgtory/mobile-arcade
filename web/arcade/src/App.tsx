@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── SpotDiff ───
+import { ClearScreen as SpotDiffClear } from './games/spotdiff/ClearScreen';
+import { HUD as SpotDiffHUD } from './games/spotdiff/HUD';
+import { useGame as useSpotDiffGame, type GameResult as SpotDiffResult } from './games/spotdiff/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -301,6 +306,63 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── SpotDiff Routes ──────────────────────────────────
+
+function SpotDiffTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Spot Diff</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Find all the differences!</p>
+      <button
+        onClick={() => navigate('/games/spotdiff/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function SpotDiffStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<SpotDiffResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: SpotDiffResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: SpotDiffResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/spotdiff/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/spotdiff/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <SpotDiffClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <SpotDiffPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function SpotDiffPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: SpotDiffResult) => void; onGameOver: (r: SpotDiffResult) => void }) {
+  const { containerRef, score, lives, maxLives, foundCount, totalDiffs, elapsedMs } = useSpotDiffGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <SpotDiffHUD stage={stage} score={score} foundCount={foundCount} totalDiffs={totalDiffs} lives={lives} maxLives={maxLives} elapsedMs={elapsedMs} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -326,6 +388,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* SpotDiff */}
+      <Route path="/games/spotdiff/v1" element={<SpotDiffTitleRoute />} />
+      <Route path="/games/spotdiff/v1/stage/:stageId" element={<SpotDiffStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
