@@ -70,16 +70,21 @@ export function GameScreen({ route, navigation }: Props) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* ─── Header ─── */}
+      {/* ─── Header (kocket style) ─── */}
       <View style={styles.header}>
-        <Pressable style={styles.headerBack} onPress={handleHome}>
-          <Text style={styles.headerBackIcon}>{'‹'}</Text>
-        </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {gameName}
-        </Text>
-        {/* Right spacer for centering */}
-        <View style={styles.headerBack} />
+        <View style={styles.headerLeft}>
+          <Pressable style={styles.headerBackButton} onPress={handleHome}>
+            <View style={styles.headerBackArrow}>
+              <Text style={styles.headerBackIcon}>{'‹'}</Text>
+            </View>
+          </Pressable>
+        </View>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle} numberOfLines={1}>
+            {gameName}
+          </Text>
+        </View>
+        <View style={styles.headerRight} />
       </View>
 
       {/* ─── Content ─── */}
@@ -170,34 +175,59 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
 
-  // ─── Header ───
+  // ─── Header (kocket pattern) ───
   header: {
+    width: '100%',
+    height: 56,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
-    paddingHorizontal: 4,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
+    position: 'relative',
   },
-  headerBack: {
-    width: 44,
-    height: 44,
+  headerLeft: {
+    position: 'absolute',
+    left: 16,
+    zIndex: 10,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    position: 'absolute',
+    right: 16,
+    zIndex: 10,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  headerBackButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerBackArrow: {
+    width: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },
   headerBackIcon: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: '#374151',
-    marginTop: -2,
+    fontSize: 24,
+    fontWeight: '400',
+    color: '#111827',
+    marginTop: -1,
+  },
+  headerTitleContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
-    flex: 1,
-    textAlign: 'center',
     fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: '700',
+    textAlign: 'center',
+    color: '#030712',
+    maxWidth: '70%',
   },
 
   // ─── Loading ───
