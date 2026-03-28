@@ -40,6 +40,9 @@ const GRID_BG_COLOR = 0xeef0f3;
 const SELECTED_GLOW_COLOR = 0xffd54f;
 const PATH_LINE_COLOR = 0xff7043;
 const COMBO_WINDOW_MS = 3000; // 3 seconds for combo
+const BASE_PAIR_SCORE = 100;
+const COMBO_BONUS = 50;
+const MAX_TILE_APPEAR_DELAY_MS = 600;
 
 export class PlayScene extends Phaser.Scene {
   private gameConfig?: GameConfig;
@@ -209,7 +212,10 @@ export class PlayScene extends Phaser.Scene {
     bg.setInteractive();
     container.setSize(this.cellSize - 3, this.cellSize - 3);
 
-    // Pop in animation
+    // Pop in animation (cap delay so large boards don't wait too long)
+    const tileIndex = row * this.stageConfig.cols + col;
+    const totalCells = this.stageConfig.rows * this.stageConfig.cols;
+    const delayPerTile = Math.min(15, MAX_TILE_APPEAR_DELAY_MS / totalCells);
     container.setScale(0);
     this.tweens.add({
       targets: container,
@@ -217,7 +223,7 @@ export class PlayScene extends Phaser.Scene {
       scaleY: 1,
       duration: 200,
       ease: 'Back.easeOut',
-      delay: (row * this.stageConfig.cols + col) * 15,
+      delay: tileIndex * delayPerTile,
     });
 
     this.tileContainers[row][col] = container;
@@ -341,7 +347,7 @@ export class PlayScene extends Phaser.Scene {
     this.lastMatchTime = now;
 
     // Score
-    const pairScore = 100 + Math.max(0, this.combo - 1) * 50;
+    const pairScore = BASE_PAIR_SCORE + Math.max(0, this.combo - 1) * COMBO_BONUS;
     this.score += pairScore;
 
     // Draw path line
@@ -351,9 +357,13 @@ export class PlayScene extends Phaser.Scene {
     this.showMatchPopup(a, b, pairScore);
 
     // Remove tiles after brief delay for path visibility
+    // Capture tile colors before board state changes
+    const colorA = TILE_COLORS[(this.board[a.row][a.col] ?? 0) % TILE_COLORS.length];
+    const colorB = TILE_COLORS[(this.board[b.row][b.col] ?? 0) % TILE_COLORS.length];
+
     this.time.delayedCall(300, () => {
-      this.removeTile(a.row, a.col);
-      this.removeTile(b.row, b.col);
+      this.removeTileAnimated(a.row, a.col, colorA);
+      this.removeTileAnimated(b.row, b.col, colorB);
 
       // Clear path
       this.pathGraphics?.clear();
@@ -415,7 +425,7 @@ export class PlayScene extends Phaser.Scene {
 
   // --- Tile removal animation ---
 
-  private removeTile(row: number, col: number): void {
+  private removeTileAnimated(row: number, col: number, particleColor: number): void {
     const container = this.tileContainers[row][col];
     if (!container) return;
 
@@ -423,7 +433,7 @@ export class PlayScene extends Phaser.Scene {
     const cy = container.y;
 
     // Particles
-    this.spawnParticles(cx, cy, TILE_COLORS[this.board[row][col]! % TILE_COLORS.length]);
+    this.spawnParticles(cx, cy, particleColor);
 
     // Shrink + fade
     this.tweens.add({

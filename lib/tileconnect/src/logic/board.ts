@@ -5,6 +5,13 @@ import type { TileType, TileData, StageConfig, PathPoint } from '../types';
 export function generateBoard(config: StageConfig): TileData[] {
   const { rows, cols, typeCount } = config;
   const total = rows * cols;
+
+  if (total % typeCount !== 0 || (total / typeCount) % 2 !== 0) {
+    throw new Error(
+      `Invalid stage config: ${total} tiles / ${typeCount} types must divide evenly into pairs`,
+    );
+  }
+
   const perType = total / typeCount;
 
   // Fill type pool with even counts
@@ -90,6 +97,20 @@ function canWalkLine(
   return false;
 }
 
+/**
+ * Find a connecting path between two tiles of the same type.
+ *
+ * The path can have at most 2 bends (turns). It may travel through:
+ *   - Empty cells (null) on the board
+ *   - A virtual border ring outside the board (row/col = -1 or rows/cols)
+ *
+ * Strategy:
+ *   1. Try direct line (0 bends)
+ *   2. Try L-shape via one corner point (1 bend)
+ *   3. Scan every row/col (including border) for a Z/U-shape (2 bends)
+ *
+ * Returns the path as an array of PathPoints, or null if no valid path exists.
+ */
 export function findPath(
   board: (TileType | null)[][],
   rows: number,
