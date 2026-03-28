@@ -130,6 +130,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.phase !== GamePhase.PLAYING) return;
 
     this.dragPiece = new DragPieceVisual(this, slot.piece, this.cellSize);
+    this.dragPiece.slotIndex = slot.slotIndex;
     slot.setVisible(false);
   }
 
@@ -142,7 +143,7 @@ export class PlayScene extends Phaser.Scene {
     const gridPos = this.pixelToGrid(px, py - this.cellSize * 2);
     this.clearHighlights();
     if (gridPos && canPlace(this.board, this.dragPiece.piece, gridPos.row, gridPos.col)) {
-      this.showHighlight(this.dragPiece.piece, gridPos.row, gridPos.col, true);
+      this.showHighlight(this.dragPiece.piece, gridPos.row, gridPos.col);
     }
   }
 
@@ -173,11 +174,13 @@ export class PlayScene extends Phaser.Scene {
       // Check for line clears
       const lines = findFullLines(this.board);
       if (lines.rows.length > 0 || lines.cols.length > 0) {
+        this.phase = GamePhase.ANIMATING;
         const cleared = clearLines(this.board, lines);
         const lineCount = lines.rows.length + lines.cols.length;
         this.score += calcClearScore(lineCount, cleared.length);
 
-        // Animate clear
+        // Animate clear — lock input until animation done
+        let completed = 0;
         for (const { row, col } of cleared) {
           this.tweens.add({
             targets: this.gridCells[row][col],
@@ -189,6 +192,10 @@ export class PlayScene extends Phaser.Scene {
               this.gridCells[row][col].setScale(1);
               this.gridCells[row][col].setFillStyle(CELL_BG_COLOR);
               this.gridCells[row][col].setStrokeStyle(1, CELL_BORDER_COLOR, 0.5);
+              completed++;
+              if (completed === cleared.length) {
+                this.phase = GamePhase.PLAYING;
+              }
             },
           });
         }
@@ -226,7 +233,7 @@ export class PlayScene extends Phaser.Scene {
 
   private highlightRects: Phaser.GameObjects.Rectangle[] = [];
 
-  private showHighlight(piece: PieceShape, startRow: number, startCol: number, valid: boolean): void {
+  private showHighlight(piece: PieceShape, startRow: number, startCol: number): void {
     for (const cell of piece.cells) {
       const r = startRow + cell.row;
       const c = startCol + cell.col;
