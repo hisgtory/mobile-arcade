@@ -27,19 +27,17 @@ export function createGame(
   const startStage = config?.stage ?? 1;
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
 
-  // Use parent dimensions for exact fit (no letterboxing)
-  const parentW = parent.clientWidth || DEFAULT_WIDTH;
-  const parentH = parent.clientHeight || DEFAULT_HEIGHT;
-
   const game = new Phaser.Game({
     type: Phaser.AUTO,
     parent,
-    width: parentW * dpr,
-    height: parentH * dpr,
+    width: DEFAULT_WIDTH * dpr,
+    height: DEFAULT_HEIGHT * dpr,
     backgroundColor: '#f0f2f5',
     scale: {
-      mode: Phaser.Scale.RESIZE,
-      autoCenter: Phaser.Scale.NO_CENTER,
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: DEFAULT_WIDTH * dpr,
+      height: DEFAULT_HEIGHT * dpr,
     },
     render: {
       pixelArt: true,
