@@ -79,12 +79,31 @@ lib/{game}  →  web/{game}  →  {game}/rn
 
 ## Workflow
 
-1. 사용자 요청 분석
-2. 작업이 어느 영역인지 식별
-3. 해당 teammate에게 명확한 컨텍스트와 함께 작업 위임
-4. 여러 팀이 관련된 경우, 의존성 순서대로 조율:
+1. **gh issue 생성** — 작업 전 반드시 `gh issue create`로 이슈 생성. 이슈 없이 작업 시작 금지
+2. 사용자 요청 분석
+3. 작업이 어느 영역인지 식별
+4. 해당 teammate에게 명확한 컨텍스트와 함께 작업 위임
+5. 여러 팀이 관련된 경우, 의존성 순서대로 조율:
    - PRD 먼저 (기획 확정)
    - lib (코어 로직) → web (웹 빌드) → rn (네이티브 래핑)
+
+### Branch Naming
+
+- 이슈 번호 포함: `feat/issue-{N}-description` 또는 `fix/issue-{N}-description`
+- 관련 이슈 여러 개: `feat/issue-3-5-feature-name`
+
+### Commit Message
+
+- 이슈 번호 포함: `feat: description (#N)` 또는 `fix: description (#N)`
+- PR 본문에 `Closes #N`으로 자동 클로즈 연결
+
+## Change Tracking
+
+작업 중 수정사항이 발생하면:
+
+1. **이슈에 댓글 먼저** — 변경 내용과 이유를 해당 이슈에 `gh issue comment`로 기록
+2. **그 다음 작업** — 댓글 기록 후 실제 코드 수정 진행
+3. **커밋 메시지에 이슈 번호** — `fix: description (#이슈번호)` 형식으로 트래킹
 
 ## Adding a New Game
 

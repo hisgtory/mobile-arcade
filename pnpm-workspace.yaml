@@ -2,3 +2,4 @@ packages:
   - "lib/*"
   - "web/*"
   - "found3/rn"
+  - "rn"
