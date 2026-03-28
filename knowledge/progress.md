@@ -48,3 +48,8 @@
 - 스테이지 URL 라우팅 (`/games/found3/v1/stage/:stageId`)
 - STAGE_CLEAR / GAME_OVER 브릿지 이벤트 추가
 - RN 네이티브 결과 화면 + 광고 placeholder
+- 웹 라우팅 복원 (react-router-dom, 듀얼 경로)
+- web-fe: StageRoute + 브릿지 stageComplete 연동
+- rn-app: ResultScreen(네이티브) + 스테이지 URL 제어 + AD placeholder
+- 아이템 브릿지 연동 (ITEM_USED, 3개 최초 지급)
+- knowledge 팀원 추가 (프로젝트 지식 관리)
