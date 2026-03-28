@@ -56,6 +56,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/blockrush/v1/play',
     isNew: true,
   },
+  {
+    id: 'watersort',
+    name: 'Water Sort',
+    description: 'Sort colored water into tubes!',
+    icon: '🧪',
+    category: 'puzzle',
+    color: '#06B6D4',
+    webPath: '/games/watersort/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
