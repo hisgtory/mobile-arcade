@@ -7,7 +7,7 @@ import {
   type GameConfig,
   type BoardState,
 } from '../types';
-import { createBoard, placeItem, isWon } from '../logic/board';
+import { createBoard, placeItem, isWon, undoPlace } from '../logic/board';
 
 export class PlayScene extends Phaser.Scene {
   private board!: BoardState;
@@ -15,7 +15,7 @@ export class PlayScene extends Phaser.Scene {
   private dpr = 1;
   private selectedItemId: number | null = null;
   private phase: 'idle' | 'animating' | 'celebrating' = 'idle';
-  private moveHistory: { board: BoardState; itemId: number; shelfIndex: number }[] = [];
+  private moveHistory: { itemId: number; shelfIndex: number }[] = [];
   private score = 0;
   private moves = 0;
 
@@ -217,14 +217,13 @@ export class PlayScene extends Phaser.Scene {
     if (this.phase !== 'idle' || this.selectedItemId === null) return;
 
     const itemId = this.selectedItemId;
-    const prevBoard = this.board;
     const { correct, board: newBoard } = placeItem(this.board, itemId, shelfIndex);
 
     this.moves++;
 
     if (correct) {
       this.phase = 'animating';
-      this.moveHistory.push({ board: prevBoard, itemId, shelfIndex });
+      this.moveHistory.push({ itemId, shelfIndex });
       this.board = newBoard;
 
       const container = this.itemSprites.get(itemId);
@@ -350,7 +349,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.moveHistory.length === 0 || this.phase !== 'idle') return;
 
     const last = this.moveHistory.pop()!;
-    this.board = last.board;
+    this.board = undoPlace(this.board, last.itemId, last.shelfIndex);
     this.score = Math.max(0, this.score - 100);
     this.moves = Math.max(0, this.moves - 1);
 
