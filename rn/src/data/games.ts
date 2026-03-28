@@ -67,6 +67,16 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
+    id: 'tictactoe',
+    name: 'Tic Tac Toe',
+    description: 'Beat the AI in classic XO!',
+    icon: '❌',
+    category: 'casual',
+    color: '#EF4444',
+    webPath: '/games/tictactoe/v1/play',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
