@@ -87,10 +87,15 @@
 - **After**: StrictMode 제거
 - **Reason**: 두 개 렌더링 버그 발생
 
-### Phaser 캔버스 모드 변경
-- **Before**: FIT 모드
-- **After**: RESIZE 모드 + 부모 크기 사용
-- **Reason**: 여백 제거
+### Phaser 캔버스 Scale.FIT 확정
+- **Before**: FIT → RESIZE 변경 시도
+- **After**: Scale.FIT로 롤백 확정
+- **Reason**: RESIZE 모드는 flexbox 컨테이너 높이 0일 때 검정 화면 유발. 여백은 React CSS로 관리.
+
+### 에셋 경로 절대화
+- **Before**: 상대 경로 에셋 로드
+- **After**: 절대 경로로 변경
+- **Reason**: nested route(`/stage/:stageId`)에서 상대 경로 에셋 로드 실패. lib에 배포 경로 하드코딩은 기술 부채이나, 빠른 출시 기조상 수용. 향후 `GameConfig.assetBaseUrl`로 분리 예정.
 
 ## Routing & Platform
 

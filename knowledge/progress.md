@@ -53,3 +53,11 @@
 - rn-app: ResultScreen(네이티브) + 스테이지 URL 제어 + AD placeholder
 - 아이템 브릿지 연동 (ITEM_USED, 3개 최초 지급)
 - knowledge 팀원 추가 (프로젝트 지식 관리)
+
+### Bug Fixes
+- Scale.RESIZE → Scale.FIT 롤백 (검정 화면 버그 수정)
+- 에셋 경로 상대→절대 변경 (nested route 에셋 로드 실패 수정)
+- DEV_HOST IP 동적 변경 필요성 확인
+
+### Merged
+- PR #123, #124 머지 완료
