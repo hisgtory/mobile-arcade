@@ -53,7 +53,7 @@ export const GAMES: GameInfo[] = [
     icon: '🟧',
     category: 'puzzle',
     color: '#2563EB',
-    webPath: '/games/blockrush/v1',
+    webPath: '/games/blockrush/v1/play',
     isNew: true,
   },
 ];

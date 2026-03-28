@@ -19,15 +19,20 @@ function formatTime(ms: number): string {
 }
 
 export function GameScreen({ route, navigation }: Props) {
-  const { gameId, gameName, webPath } = route.params;
+  const { gameId, gameName, webPath, hasStages = true } = route.params;
   const insets = useSafeAreaInsets();
 
   const [screen, setScreen] = useState<Screen>('loading');
   const [currentStage, setCurrentStage] = useState(0);
   const [gameResult, setGameResult] = useState<StageCompleteData | null>(null);
 
-  // Load saved stage from AsyncStorage on mount
+  // Load saved stage from AsyncStorage on mount (skip for endless games)
   useEffect(() => {
+    if (!hasStages) {
+      setCurrentStage(1); // dummy value, won't be used in URL
+      setScreen('playing');
+      return;
+    }
     AsyncStorage.getItem(`@arcade/${gameId}/gameState`).then((raw) => {
       try {
         if (raw) {
@@ -43,7 +48,7 @@ export function GameScreen({ route, navigation }: Props) {
       }
       setScreen('playing');
     });
-  }, [gameId]);
+  }, [gameId, hasStages]);
 
   const handleStageComplete = useCallback((data: StageCompleteData) => {
     setGameResult(data);
@@ -99,7 +104,7 @@ export function GameScreen({ route, navigation }: Props) {
           <GameWebView
             gameId={gameId}
             webPath={webPath}
-            stageId={currentStage}
+            stageId={hasStages ? currentStage : undefined}
             onStageComplete={handleStageComplete}
           />
         </View>

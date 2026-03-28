@@ -8,7 +8,7 @@ import type { StageCompleteData } from '../utils/bridge';
 interface GameWebViewProps {
   gameId: string;
   webPath: string;
-  stageId: number;
+  stageId?: number;
   onReady?: () => void;
   onStageComplete?: (data: StageCompleteData) => void;
 }
