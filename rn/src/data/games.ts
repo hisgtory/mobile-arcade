@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'mystery-town',
+    name: 'Mystery Town',
+    description: 'Merge clues to solve the case!',
+    icon: '🔍',
+    category: 'puzzle',
+    color: '#8B5CF6',
+    webPath: '/games/mystery-town/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
