@@ -15,7 +15,6 @@ import { getStageConfig } from '../logic/stage';
 import {
   createBoard,
   swap,
-  isAdjacent,
   findAllMatches,
   removeCells,
   applyGravity,
@@ -137,7 +136,7 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  // ─── COORDINATE HELPERS ────────────────────────────��────
+  // ─── COORDINATE HELPERS ──────────────────────────────
 
   private gridToPixel(row: number, col: number): { x: number; y: number } {
     return {
@@ -358,7 +357,7 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  // ─── EMITTERS ────────────────────────────────────���───────
+  // ─── EMITTERS ──────────────────────────────────────────
 
   private emitScore(): void {
     this.game.events.emit('score-update', {

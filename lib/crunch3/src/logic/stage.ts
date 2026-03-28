@@ -9,6 +9,7 @@ const STAGES: StageConfig[] = [
 ];
 
 export function getStageConfig(stageNum: number): StageConfig {
-  const idx = Math.min(stageNum - 1, STAGES.length - 1);
-  return { ...STAGES[Math.max(0, idx)] };
+  const n = Number.isFinite(stageNum) ? stageNum : 1;
+  const idx = Math.max(0, Math.min(n - 1, STAGES.length - 1));
+  return { ...STAGES[idx] };
 }

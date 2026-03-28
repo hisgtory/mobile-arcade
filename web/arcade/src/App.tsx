@@ -98,7 +98,7 @@ function Crunch3TitleRoute() {
       >
         Play
       </button>
-      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>CC BY 4.0 — hisgtory</p>
+      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
     </PlayLayout>
   );
 }

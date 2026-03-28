@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { createGame, destroyGame, getStageConfig } from '@arcade/lib-crunch3';
 
 export interface GameResult {
@@ -54,7 +54,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
       destroyGame(game);
       gameRef.current = null;
     };
-  }, [stage]);
+  }, [stage, onClear, onGameOver]);
 
   return {
     containerRef,
