@@ -557,7 +557,7 @@ export class PlayScene extends Phaser.Scene {
     this.phase = GamePhase.GAME_OVER;
 
     this.cameras.main.shake(300, 0.008);
-    this.cameras.main.fade(600, 0, 0, 0, false, (_cam: unknown, progress: number) => {
+    this.cameras.main.fade(600, 0, 0, 0, false, (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
       if (progress >= 1) {
         this.game.events.emit('game-over', {
           score: this.score,

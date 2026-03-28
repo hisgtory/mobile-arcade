@@ -61,7 +61,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
         gameRef.current = null;
       }
     };
-  }, []);
+  }, [stage, onClear, onGameOver]);
 
   const doShuffle = () => {
     const scene = gameRef.current?.scene?.getScene('PlayScene') as any;
