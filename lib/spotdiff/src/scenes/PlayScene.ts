@@ -244,8 +244,7 @@ export class PlayScene extends Phaser.Scene {
       this.combo++;
       this.score += 100 * this.combo;
 
-      const diff = this.board.differences.find((d) => d.id === diffId);
-      if (!diff) return;
+      const diff = this.board.differences.find((d) => d.id === diffId)!;
       this.showFoundEffect(diff.x, diff.y);
 
       if (isAllFound(this.board)) {
