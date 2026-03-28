@@ -28,6 +28,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── SlidingMatch ───
+import { ClearScreen as SlideMatchClear } from './games/slidematch/ClearScreen';
+import { HUD as SlideMatchHUD } from './games/slidematch/HUD';
+import { useGame as useSlideMatchGame, type GameResult as SlideMatchResult } from './games/slidematch/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
@@ -272,6 +277,64 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── SlidingMatch Routes ──────────────────────────────
+
+function SlideMatchTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Sliding Match</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Slide rows & columns to match 3!</p>
+      <button
+        onClick={() => navigate('/games/slidematch/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
+    </PlayLayout>
+  );
+}
+
+function SlideMatchStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<SlideMatchResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: SlideMatchResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: SlideMatchResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/slidematch/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/slidematch/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <SlideMatchClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <SlideMatchPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function SlideMatchPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: SlideMatchResult) => void; onGameOver: (r: SlideMatchResult) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useSlideMatchGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <SlideMatchHUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -326,6 +389,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* SlidingMatch */}
+      <Route path="/games/slidematch/v1" element={<SlideMatchTitleRoute />} />
+      <Route path="/games/slidematch/v1/stage/:stageId" element={<SlideMatchStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
