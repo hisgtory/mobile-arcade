@@ -22,6 +22,12 @@ const SHAPE_SIZE_RANGE = 20;
 const MIN_POSITION_OFFSET = 8;
 const POSITION_OFFSET_RANGE = 7;
 
+// Size-diff factor range
+const SIZE_SHRINK_MIN = 0.5;
+const SIZE_SHRINK_RANGE = 0.2;
+const SIZE_GROW_MIN = 1.3;
+const SIZE_GROW_RANGE = 0.2;
+
 export function createBoard(config: StageConfig): BoardState {
   const shapes: ShapeItem[] = [];
   for (let i = 0; i < config.shapeCount; i++) {
@@ -84,8 +90,8 @@ export function createBoard(config: StageConfig): BoardState {
       case 'size': {
         origValue = shape.size;
         const factor = Math.random() < 0.5
-          ? 0.5 + Math.random() * 0.2
-          : 1.3 + Math.random() * 0.2;
+          ? SIZE_SHRINK_MIN + Math.random() * SIZE_SHRINK_RANGE
+          : SIZE_GROW_MIN + Math.random() * SIZE_GROW_RANGE;
         diffValue = shape.size * factor;
         break;
       }
