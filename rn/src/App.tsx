@@ -12,6 +12,7 @@ export type RootStackParamList = {
     gameId: string;
     gameName: string;
     webPath: string;
+    hasStages?: boolean;
   };
 };
 

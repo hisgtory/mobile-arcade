@@ -39,6 +39,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         gameId: game.id,
         gameName: game.name,
         webPath: game.webPath,
+        hasStages: !!game.stageCount,
       });
     },
     [navigation],
