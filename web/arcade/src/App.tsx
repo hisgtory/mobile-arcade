@@ -28,6 +28,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── TicTacToe ───
+import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
+import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -268,6 +272,35 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── TicTacToe Routes ─────────────────────────────────
+
+function TicTacToeTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tic Tac Toe</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Beat the AI in classic XO!</p>
+      <button
+        onClick={() => navigate('/games/tictactoe/v1/play')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function TicTacToePlayRoute() {
+  const { containerRef, playerScore, aiScore } = useTicTacToeGame({ difficulty: 'medium' });
+  return (
+    <PlayLayout>
+      <TicTacToeHUD playerScore={playerScore} aiScore={aiScore} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -289,6 +322,10 @@ export function App() {
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
+
+      {/* TicTacToe */}
+      <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
+      <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
