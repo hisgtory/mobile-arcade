@@ -159,6 +159,9 @@ importers:
       '@arcade/lib-found3':
         specifier: workspace:*
         version: link:../../lib/found3
+      '@arcade/lib-spotdiff':
+        specifier: workspace:*
+        version: link:../../lib/spotdiff
       '@arcade/lib-tictactoe':
         specifier: workspace:*
         version: link:../../lib/tictactoe
