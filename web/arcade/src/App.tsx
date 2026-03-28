@@ -28,6 +28,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── ForestPop ───
+import { ClearScreen as ForestPopClear } from './games/forestpop/ClearScreen';
+import { HUD as ForestPopHUD } from './games/forestpop/HUD';
+import { useGame as useForestPopGame, type GameResult as ForestPopResult } from './games/forestpop/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
@@ -272,6 +277,64 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── ForestPop Routes ──────────────────────────────────
+
+function ForestPopTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#2E7D32', letterSpacing: -1 }}>Forest Pop</h1>
+      <p style={{ fontSize: 16, color: '#66BB6A' }}>Tap matching groups to pop!</p>
+      <button
+        onClick={() => navigate('/games/forestpop/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2E7D32', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
+    </PlayLayout>
+  );
+}
+
+function ForestPopStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<ForestPopResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: ForestPopResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: ForestPopResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/forestpop/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/forestpop/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <ForestPopClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <ForestPopPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function ForestPopPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: ForestPopResult) => void; onGameOver: (r: ForestPopResult) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useForestPopGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <ForestPopHUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -322,6 +385,10 @@ export function App() {
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
+
+      {/* ForestPop */}
+      <Route path="/games/forestpop/v1" element={<ForestPopTitleRoute />} />
+      <Route path="/games/forestpop/v1/stage/:stageId" element={<ForestPopStageRoute />} />
 
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
