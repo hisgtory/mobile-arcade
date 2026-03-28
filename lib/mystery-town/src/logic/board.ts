@@ -1,5 +1,9 @@
 import { MAX_ITEM_LEVEL, type Cell, type BoardState, type StageConfig, type MergeMove } from '../types';
 
+// ─── Constants ───────────────────────────────────────────
+const INITIAL_FILL_RATIO = 0.3;
+const MAX_INITIAL_ITEMS = 8;
+
 // ─── Board Creation ──────────────────────────────────────
 
 export function createBoard(config: StageConfig): BoardState {
@@ -8,7 +12,7 @@ export function createBoard(config: StageConfig): BoardState {
 
   // Start with a few random Lv1 items scattered on the board
   const cells: Cell[] = new Array(totalCells).fill(null);
-  const initialCount = Math.min(Math.floor(totalCells * 0.3), 8);
+  const initialCount = Math.min(Math.floor(totalCells * INITIAL_FILL_RATIO), MAX_INITIAL_ITEMS);
 
   const indices = shuffleIndices(totalCells);
   for (let i = 0; i < initialCount; i++) {

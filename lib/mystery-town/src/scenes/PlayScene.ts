@@ -22,6 +22,15 @@ import {
 const CELL_GAP = 4;
 const BOARD_PADDING = 16;
 
+// ─── Scoring ─────────────────────────────────────────────
+const SCORE_MERGE = 10;
+const SCORE_HIGH_LEVEL_BONUS = 40;
+const SCORE_CLUE_BONUS = 200;
+
+// ─── Animation Delays ────────────────────────────────────
+const CLUE_CELEBRATION_DELAY = 600;
+const NORMAL_MERGE_DELAY = 150;
+
 type Phase = 'idle' | 'merging' | 'celebrating';
 
 export class PlayScene extends Phaser.Scene {
@@ -275,9 +284,9 @@ export class PlayScene extends Phaser.Scene {
     const { clueCreated } = executeMerge(this.board, { fromIdx, toIdx, newLevel });
 
     // Score
-    this.score += 10;
-    if (newLevel >= 3) this.score += 40; // bonus for higher merge
-    if (clueCreated) this.score += 200;
+    this.score += SCORE_MERGE;
+    if (newLevel >= 3) this.score += SCORE_HIGH_LEVEL_BONUS;
+    if (clueCreated) this.score += SCORE_CLUE_BONUS;
 
     this.drawBoard();
     this.animateMerge(toIdx, newLevel, clueCreated);
@@ -317,7 +326,7 @@ export class PlayScene extends Phaser.Scene {
           this.celebrateClue(idx);
         }
 
-        this.time.delayedCall(clueCreated ? 600 : 150, () => {
+        this.time.delayedCall(clueCreated ? CLUE_CELEBRATION_DELAY : NORMAL_MERGE_DELAY, () => {
           // Auto-spawn a new item after merge
           const spawned = spawnItem(this.board);
           if (spawned >= 0) {
