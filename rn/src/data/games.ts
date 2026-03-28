@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'sudoku',
+    name: 'Sudoku',
+    description: 'Classic number brain puzzle!',
+    icon: '🔢',
+    category: 'puzzle',
+    color: '#2563EB',
+    webPath: '/games/sudoku/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
