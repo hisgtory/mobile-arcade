@@ -55,6 +55,7 @@ lib/{game}  →  web/{game}  →  {game}/rn
 | Game Core | `lib/{game}/` | Phaser.io 씬, 게임 로직, 타입 |
 | Web Frontend | `web/{game}/` | React + Stitches UI, Phaser 통합 |
 | RN App | `{game}/rn/` | React Native, WebView 브릿지 |
+| Knowledge | `knowledge/` | 요구사항, 결정, 유저 bias, 진행 상황 기록 |
 
 각 teammate는 자신의 `CLAUDE.md`와 `TASKS.md`를 따릅니다.
 
