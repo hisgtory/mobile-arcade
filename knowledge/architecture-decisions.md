@@ -132,3 +132,60 @@ Phaser Scale.FIT 모드 확정. RESIZE는 사용하지 않음.
 
 ### Rationale
 안정성 우선. RESIZE의 유연성보다 FIT의 확실한 렌더링이 빠른 출시 기조에 부합.
+
+---
+
+## ADR-009: Arcade Super App over Per-Game Apps
+
+### Decision
+게임별 개별 RN 앱(`found3/rn/`)이 아닌 단일 Arcade 슈퍼앱(`rn/`)으로 모든 게임을 서빙.
+
+### Structure
+```
+rn/ (Arcade 단일 앱)
+├── HomeScreen (native 게임 카탈로그)
+├── GameScreen (WebView → /games/{game}/v1/)
+└── Bridge (게임별 독립 저장소 @arcade/{gameId}/...)
+```
+
+### Rationale
+- CPI 효율: 1회 UA로 N개 게임 노출
+- 데이터 피벗: 앱 업데이트 없이 서버사이드로 게임 추가/제거
+- 이탈 방지: 한 게임 질리면 다른 게임으로 전환
+- 앱스토어: 리뷰 1번, 이후 웹 배포만
+
+---
+
+## ADR-010: Unified Web Server
+
+### Decision
+게임별 Vite 서버(`web/found3/`, `web/crunch3/`)를 `web/arcade/` 하나로 통합.
+
+### Structure
+```
+web/arcade/
+├── src/App.tsx         ← React Router (모든 게임 라우팅)
+├── src/games/found3/   ← Found3 컴포넌트/훅
+├── src/games/crunch3/  ← Crunch3 컴포넌트/훅
+├── src/components/     ← 공유 (GameCanvas)
+├── src/styles/         ← 공유 (stitches, global)
+└── public/assets/      ← 공유 에셋 (tiles, audio)
+```
+
+### Rationale
+- 서버 1개로 모든 게임 서빙 (dev/prod 모두)
+- 에셋 중복 제거
+- 공유 스타일/컴포넌트 재사용
+- RN config 단순화 (단일 포트)
+
+---
+
+## ADR-011: Bonjour mDNS for Dev Connectivity
+
+### Decision
+개발 환경에서 IP 하드코딩 대신 Bonjour hostname(`SG-MacBook-Pro.local`) 사용.
+
+### Rationale
+- WiFi/장소 변경 시 IP 수동 변경 불필요
+- Apple 기기 간 자동 해석 (mDNS)
+- `vite.config.ts`에 `allowedHosts: true` 필요

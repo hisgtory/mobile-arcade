@@ -107,3 +107,30 @@
 ### 웹도 독립적 완전한 게임 경험 제공
 - **Added**: 웹에서도 타이틀→게임→결과 전체 플로우 완비
 - **Reason**: "웹에서도 심리스하게 할 수 있어야"
+
+## App Strategy (2026-03-28)
+
+### 게임별 앱 → Arcade 슈퍼앱
+- **Before**: `found3/rn/` — 게임별 개별 RN 앱
+- **After**: `rn/` — 단일 Arcade 앱 (게임 카탈로그 + WebView 런처)
+- **Reason**: CPI 효율, 데이터 드리븐 피벗, 유저 이탈 방지 ("하나에 슈퍼앱처럼 여러 게임을 넣고... 광고 후 이탈을 줄일 수 있을 것 같아")
+
+### 플로팅 뒤로가기 → kocket 글로벌 헤더
+- **Before**: 게임 위에 떠있는 반투명 원형 뒤로가기 버튼
+- **After**: kocket 스타일 고정 헤더 (56px, absolute left/right, centered title)
+- **Reason**: "뒤로가기가 무지성으로 쳐 박혀있으니까 다른걸 덮잖아"
+
+### 게임별 Vite 서버 → 통합 web/arcade/
+- **Before**: `web/found3/` + `web/crunch3/` 각각 별도 Vite 서버
+- **After**: `web/arcade/` 하나의 Vite 프로젝트, React Router로 모든 게임 라우팅
+- **Reason**: "같은 웹서버를 왜 안쓰고 따로 만들었어?"
+
+### IP 기반 → Bonjour hostname
+- **Before**: DEV_HOST_IP 하드코딩 (WiFi 바뀌면 수동 변경)
+- **After**: `SG-MacBook-Pro.local` Bonjour mDNS 호스트네임
+- **Reason**: "sg-2.local 인가 그걸 쓰면 좀 더 이런 문제 해결 쉬울거같은데"
+
+### 에셋 경로 통합
+- **Before**: `/games/{game}/v1/assets/tiles/...` (게임별 경로)
+- **After**: `/assets/tiles/...` (공유 경로)
+- **Reason**: 통합 웹 서버에서 에셋 중복 제거

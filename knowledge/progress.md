@@ -61,3 +61,36 @@
 
 ### Merged
 - PR #123, #124 머지 완료
+
+---
+
+## 2026-03-28~29 (Day 2~3 continued)
+
+### Arcade Super App (`rn/`)
+- Arcade 슈퍼앱 구조 설계 (게임별 앱 → 단일 앱)
+- Native HomeScreen: Featured 배너, New Games, 카테고리 탭, 게임 그리드
+- GameScreen: kocket 스타일 헤더 + WebView + 네이티브 Result
+- 범용 Bridge: `@arcade/{gameId}/...` 게임별 독립 저장소
+- AsyncStorage 스테이지 진행도 영구 저장/복원
+- React Navigation (Home → Game 스택)
+
+### Crunch3 Game
+- `lib/crunch3/` — match-3 코어 엔진 (보드, 매칭, 중력, 캐스케이드)
+- `web/crunch3/` → `web/arcade/`로 통합
+- 8x8 그리드, 스와이프 교환, 3+ 매칭, 콤보 배율
+- 5 스테이지 (목표 점수 + 제한 턴)
+- Arcade HomeScreen에 Found 3 + Crunch 3 등록
+
+### Unified Web (`web/arcade/`)
+- 게임별 Vite 서버 → 단일 통합 Vite 프로젝트
+- React Router로 모든 게임 라우팅
+- 공유 에셋 (`/assets/tiles/`, `/assets/audio/`)
+- `allowedHosts: true` + Bonjour hostname
+
+### Issue-Driven Development
+- CLAUDE.md에 이슈 기반 개발 워크플로우 추가
+- 이슈 #125~#132 생성 및 처리
+
+### Merged
+- PR #126 (Arcade 홈) 머지
+- PR #132 (Crunch3 + 통합 웹) 머지

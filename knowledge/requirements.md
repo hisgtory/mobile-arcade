@@ -76,3 +76,57 @@
 - 3D 눌리는 효과 (튀어나온 느낌, 누르면 들어간 느낌)
 - 아이템 카운트 뱃지 표시
 - 소진 시 AD 표시
+
+---
+
+# Requirements — Arcade Super App
+
+## App Architecture
+- **단일 Arcade 앱** (게임별 개별 앱 X)
+- Native RN HomeScreen: Featured 배너, New Games, 카테고리 탭, 게임 그리드
+- 각 게임은 WebView로 로딩 (게임 브라우저 + WebView 런처)
+- kocket 스타일 글로벌 헤더 (뒤로가기 + 타이틀 중앙 정렬)
+- 게임 카탈로그: `rn/src/data/games.ts`에서 관리 (후에 서버 API로 교체 가능)
+
+## Business Strategy
+- CPI 1번으로 유저가 N개 게임에 노출 (게임별 앱 대비 효율적)
+- 앱 안에서 어떤 게임에 유저가 몰리는지 실시간 확인 → 데이터 드리븐 피벗
+- UA 광고 소재 게임을 상단에 배치 → 광고 → 이탈 방지
+- 새 게임 추가 = 웹 배포만 (앱스토어 리뷰 불필요)
+
+---
+
+# Requirements — Crunch3
+
+## Game Concept
+- **Crunch3**: 스와이프 match-3 퍼즐 (Candy Crush 류)
+- found3의 음식 픽셀아트 에셋 재활용
+- 인접 타일 스와이프로 교환 → 가로/세로 3+ 매칭 → 파괴
+
+## Game Mechanics
+- 8x8 그리드 보드
+- 스와이프 감지 + 인접 타일 교환
+- 매칭 실패 시 되돌리기
+- 중력 (빈 칸에 위 타일 낙하) + 새 타일 생성
+- 캐스케이드 (연쇄 매칭)
+- 제한 턴 모드 (목표 점수 달성)
+- 5 스테이지 (타일 종류 6→10, 턴 25→15)
+
+## Web
+- 통합 웹 서버 (`web/arcade/`)에서 서빙
+- 라우팅: `/games/crunch3/v1` + `/games/crunch3/v1/stage/:id`
+
+## Dev Environment
+- 통합 Vite 서버 (포트 5173, `base: '/'`)
+- Bonjour hostname (`SG-MacBook-Pro.local`) — IP 변경 무관
+- `allowedHosts: true` — .local 호스트 허용
+
+---
+
+# Requirements — Issue-Driven Development
+
+## Workflow
+- 모든 작업 전 `gh issue create`로 이슈 생성 필수
+- 브랜치: `feat/issue-{N}-description` or `fix/issue-{N}-description`
+- 커밋: `feat: description (#N)` + PR에 `Closes #N`
+- 변경 시 이슈에 댓글 먼저 → 그 다음 코드 수정

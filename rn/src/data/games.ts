@@ -46,53 +46,6 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
-  // Placeholder games for UI preview — will be replaced with real games
-  {
-    id: 'stack-tower',
-    name: 'Stack Tower',
-    description: 'Stack blocks as high as you can!',
-    icon: '🏗️',
-    category: 'casual',
-    color: '#2563EB',
-    webPath: '/games/stack-tower/v1',
-    isNew: true,
-  },
-  {
-    id: 'color-match',
-    name: 'Color Match',
-    description: 'Tap the matching colors before time runs out!',
-    icon: '🎨',
-    category: 'puzzle',
-    color: '#8B5CF6',
-    webPath: '/games/color-match/v1',
-  },
-  {
-    id: 'bounce-ball',
-    name: 'Bounce Ball',
-    description: 'Keep the ball bouncing, break all bricks!',
-    icon: '🏓',
-    category: 'action',
-    color: '#059669',
-    webPath: '/games/bounce-ball/v1',
-  },
-  {
-    id: 'card-flip',
-    name: 'Card Flip',
-    description: 'Find matching pairs by flipping cards!',
-    icon: '🃏',
-    category: 'card',
-    color: '#DC2626',
-    webPath: '/games/card-flip/v1',
-  },
-  {
-    id: 'merge-num',
-    name: 'Merge Number',
-    description: 'Merge same numbers to reach 2048!',
-    icon: '🔢',
-    category: 'strategy',
-    color: '#D97706',
-    webPath: '/games/merge-num/v1',
-  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
