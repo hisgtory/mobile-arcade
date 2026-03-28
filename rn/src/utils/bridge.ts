@@ -161,22 +161,19 @@ export class BridgeHost {
   }
 
   private async handleStateLoad(msg: BridgeMessage) {
-    const raw = await AsyncStorage.getItem(this.storageKey('gameState'));
-    const state = raw ? JSON.parse(raw) : null;
+    const state = await this.safeReadJson(this.storageKey('gameState'));
     this.sendResponse(msg.msgId, 'STATE_LOADED', 'ack', state);
   }
 
   private async handleLeaderboardSave(msg: BridgeMessage) {
-    const raw = await AsyncStorage.getItem(this.storageKey('leaderboard'));
-    const entries: any[] = raw ? JSON.parse(raw) : [];
+    const entries: any[] = (await this.safeReadJson(this.storageKey('leaderboard'))) ?? [];
     entries.push(msg.payload);
     await AsyncStorage.setItem(this.storageKey('leaderboard'), JSON.stringify(entries));
     this.sendResponse(msg.msgId, 'ACK', 'ack');
   }
 
   private async handleLeaderboardLoad(msg: BridgeMessage) {
-    const raw = await AsyncStorage.getItem(this.storageKey('leaderboard'));
-    let entries: any[] = raw ? JSON.parse(raw) : [];
+    let entries: any[] = (await this.safeReadJson(this.storageKey('leaderboard'))) ?? [];
     const limit = msg.payload?.limit;
     if (typeof limit === 'number' && limit > 0) {
       entries = entries.slice(-limit);
@@ -191,8 +188,7 @@ export class BridgeHost {
 
   private async handleItemUsed(msg: BridgeMessage) {
     const { itemType, remainingCount } = msg.payload;
-    const raw = await AsyncStorage.getItem(this.storageKey('gameState'));
-    const state = raw ? JSON.parse(raw) : null;
+    const state = await this.safeReadJson(this.storageKey('gameState'));
     if (state && state.itemCounts) {
       state.itemCounts[itemType] = remainingCount;
       await AsyncStorage.setItem(this.storageKey('gameState'), JSON.stringify(state));
@@ -203,12 +199,13 @@ export class BridgeHost {
 
   private handleStageComplete(msg: BridgeMessage, cleared: boolean) {
     this.sendResponse(msg.msgId, 'ACK', 'ack');
-    this.callbacks.onStageComplete?.({
-      stage: msg.payload?.stage,
-      score: msg.payload?.score,
-      elapsedMs: msg.payload?.elapsedMs,
-      cleared,
-    });
+
+    const p = msg.payload ?? {};
+    const stage = Number(p.stage) || 0;
+    const score = Number(p.score) || 0;
+    const elapsedMs = Number(p.elapsedMs) || 0;
+
+    this.callbacks.onStageComplete?.({ stage, score, elapsedMs, cleared });
   }
 
   private async handleHaptic(msg: BridgeMessage) {
@@ -220,6 +217,20 @@ export class BridgeHost {
     };
     await Haptics.impactAsync(impactMap[style] ?? Haptics.ImpactFeedbackStyle.Medium);
     this.sendResponse(msg.msgId, 'ACK', 'ack');
+  }
+
+  // ─── Safe Storage Read ─────────────────────────────────
+
+  private async safeReadJson(key: string): Promise<any> {
+    const raw = await AsyncStorage.getItem(key);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      console.warn(`[BridgeHost:${this.gameId}] Corrupted storage at ${key}, clearing`);
+      await AsyncStorage.removeItem(key).catch(() => {});
+      return null;
+    }
   }
 
   // ─── Response Sender ─────────────────────────────────────

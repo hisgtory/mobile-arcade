@@ -9,7 +9,7 @@ import type { RootStackParamList } from '../App';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
-type Screen = 'playing' | 'result';
+type Screen = 'loading' | 'playing' | 'result';
 
 function formatTime(ms: number): string {
   const sec = Math.floor(ms / 1000);
@@ -22,19 +22,26 @@ export function GameScreen({ route, navigation }: Props) {
   const { gameId, gameName, webPath } = route.params;
   const insets = useSafeAreaInsets();
 
-  const [screen, setScreen] = useState<Screen>('playing');
-  const [currentStage, setCurrentStage] = useState(0); // 0 = loading
+  const [screen, setScreen] = useState<Screen>('loading');
+  const [currentStage, setCurrentStage] = useState(0);
   const [gameResult, setGameResult] = useState<StageCompleteData | null>(null);
 
   // Load saved stage from AsyncStorage on mount
   useEffect(() => {
     AsyncStorage.getItem(`@arcade/${gameId}/gameState`).then((raw) => {
-      if (raw) {
-        const state = JSON.parse(raw);
-        setCurrentStage(state.currentStage ?? 1);
-      } else {
+      try {
+        if (raw) {
+          const state = JSON.parse(raw);
+          setCurrentStage(typeof state?.currentStage === 'number' ? state.currentStage : 1);
+        } else {
+          setCurrentStage(1);
+        }
+      } catch {
+        console.warn('Failed to parse stored game state for', gameId);
+        AsyncStorage.removeItem(`@arcade/${gameId}/gameState`).catch(() => {});
         setCurrentStage(1);
       }
+      setScreen('playing');
     });
   }, [gameId]);
 
@@ -62,32 +69,39 @@ export function GameScreen({ route, navigation }: Props) {
   }, [navigation]);
 
   return (
-    <View style={styles.container}>
-      {/* WebView — always rendered */}
-      <View style={{ flex: screen === 'playing' ? 1 : 0, overflow: 'hidden' }}>
-        {currentStage > 0 && (
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* ─── Header ─── */}
+      <View style={styles.header}>
+        <Pressable style={styles.headerBack} onPress={handleHome}>
+          <Text style={styles.headerBackIcon}>{'‹'}</Text>
+        </Pressable>
+        <Text style={styles.headerTitle} numberOfLines={1}>
+          {gameName}
+        </Text>
+        {/* Right spacer for centering */}
+        <View style={styles.headerBack} />
+      </View>
+
+      {/* ─── Content ─── */}
+      {screen === 'loading' && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#9CA3AF" />
+        </View>
+      )}
+
+      {screen === 'playing' && currentStage > 0 && (
+        <View style={{ flex: 1 }}>
           <GameWebView
             gameId={gameId}
             webPath={webPath}
             stageId={currentStage}
             onStageComplete={handleStageComplete}
           />
-        )}
-      </View>
-
-      {/* Back button — visible during gameplay */}
-      {screen === 'playing' && (
-        <Pressable
-          style={[styles.backButton, { top: insets.top + 8 }]}
-          onPress={handleHome}
-        >
-          <Text style={styles.backButtonText}>{'<'}</Text>
-        </Pressable>
+        </View>
       )}
 
-      {/* Result Overlay */}
       {screen === 'result' && gameResult && (
-        <View style={[styles.resultContainer, { paddingBottom: insets.bottom + 20 }]}>
+        <View style={styles.resultContainer}>
           <View style={styles.resultContent}>
             <Text
               style={[
@@ -105,11 +119,15 @@ export function GameScreen({ route, navigation }: Props) {
               </View>
               <View style={styles.statRow}>
                 <Text style={styles.statLabel}>Score</Text>
-                <Text style={styles.statValue}>{gameResult.score.toLocaleString()}</Text>
+                <Text style={styles.statValue}>
+                  {(gameResult.score ?? 0).toLocaleString()}
+                </Text>
               </View>
               <View style={styles.statRow}>
                 <Text style={styles.statLabel}>Time</Text>
-                <Text style={styles.statValue}>{formatTime(gameResult.elapsedMs)}</Text>
+                <Text style={styles.statValue}>
+                  {formatTime(gameResult.elapsedMs ?? 0)}
+                </Text>
               </View>
             </View>
 
@@ -120,11 +138,17 @@ export function GameScreen({ route, navigation }: Props) {
 
             <View style={styles.buttons}>
               {gameResult.cleared ? (
-                <Pressable style={[styles.button, styles.primaryButton]} onPress={handleNextStage}>
+                <Pressable
+                  style={[styles.button, styles.primaryButton]}
+                  onPress={handleNextStage}
+                >
                   <Text style={styles.primaryButtonText}>Next Stage</Text>
                 </Pressable>
               ) : (
-                <Pressable style={[styles.button, styles.primaryButton]} onPress={handleRetry}>
+                <Pressable
+                  style={[styles.button, styles.primaryButton]}
+                  onPress={handleRetry}
+                >
                   <Text style={styles.primaryButtonText}>Retry</Text>
                 </Pressable>
               )}
@@ -145,30 +169,47 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
-  backButton: {
-    position: 'absolute',
-    left: 12,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.9)',
+
+  // ─── Header ───
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    paddingHorizontal: 4,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  headerBack: {
+    width: 44,
+    height: 44,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.12,
-    shadowRadius: 4,
-    elevation: 2,
-    zIndex: 10,
   },
-  backButtonText: {
-    fontSize: 18,
-    fontWeight: '700',
+  headerBackIcon: {
+    fontSize: 28,
+    fontWeight: '300',
     color: '#374151',
+    marginTop: -2,
   },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#111827',
+  },
+
+  // ─── Loading ───
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // ─── Result ───
   resultContainer: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#F9FAFB',
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -1,12 +1,20 @@
 import { Platform } from 'react-native';
 
-// Dev server host — update this when your WiFi IP changes
-const DEV_HOST_IP = '192.168.1.121';
+// Dev server host: configurable via env, with platform-specific defaults
+const ENV_DEV_HOST =
+  process.env.EXPO_PUBLIC_DEV_HOST ?? process.env.DEV_HOST_IP ?? null;
+
+const DEFAULT_DEV_HOST =
+  Platform.OS === 'android'
+    ? '10.0.2.2' // Android emulator → host machine localhost
+    : 'localhost';
+
+const DEV_HOST = ENV_DEV_HOST || DEFAULT_DEV_HOST;
 const DEV_PORT = 5173;
 
 export function getGameUrl(webPath: string, stageId?: number): string {
   const base = __DEV__
-    ? `http://${DEV_HOST_IP}:${DEV_PORT}${webPath}`
+    ? `http://${DEV_HOST}:${DEV_PORT}${webPath}`
     : `https://arcade.hisgtory.com${webPath}`;
 
   if (stageId !== undefined) {
@@ -15,5 +23,4 @@ export function getGameUrl(webPath: string, stageId?: number): string {
   return base;
 }
 
-// Check if running in development
 declare const __DEV__: boolean;
