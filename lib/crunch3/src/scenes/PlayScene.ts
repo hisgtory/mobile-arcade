@@ -63,11 +63,11 @@ export class PlayScene extends Phaser.Scene {
   }
 
   preload(): void {
-    const base = '/games/crunch3/v1/';
+    const base = '/assets/';
     for (const key of TILE_IMAGES) {
-      this.load.image(key, `${base}assets/tiles/${key}.png`);
+      this.load.image(key, `${base}tiles/${key}.png`);
     }
-    this.load.audio('bgm1', '/games/found3/v1/assets/audio/Spring_Loaded_Scoundrel.mp3');
+    this.load.audio('bgm1', `${base}audio/Spring_Loaded_Scoundrel.mp3`);
   }
 
   create(): void {

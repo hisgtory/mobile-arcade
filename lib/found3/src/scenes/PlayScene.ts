@@ -75,13 +75,12 @@ export class PlayScene extends Phaser.Scene {
   }
 
   preload(): void {
-    // Use absolute path to avoid issues with nested routes like /stage/:id
-    const base = '/games/found3/v1/';
+    const base = '/assets/';
     for (const key of TILE_IMAGES) {
-      this.load.image(key, `${base}assets/tiles/${key}.png`);
+      this.load.image(key, `${base}tiles/${key}.png`);
     }
-    this.load.audio('bgm1', `${base}assets/audio/Spring_Loaded_Scoundrel.mp3`);
-    this.load.audio('bgm2', `${base}assets/audio/Spring_Loaded_Waltz.mp3`);
+    this.load.audio('bgm1', `${base}audio/Spring_Loaded_Scoundrel.mp3`);
+    this.load.audio('bgm2', `${base}audio/Spring_Loaded_Waltz.mp3`);
   }
 
   create(): void {

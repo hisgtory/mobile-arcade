@@ -62,14 +62,14 @@ export enum GamePhase {
 // Use a subset of found3's tile images for crunch3
 // 8 visually distinct food types for match-3
 export const TILE_IMAGES: string[] = [
-  'pizza_margherita',
-  'sushi_salmon',
-  'donut_chocolate',
-  'icecream_vanilla',
-  'cookie_chocolate',
   'cake_strawberry',
   'boba_matcha',
   'coffee_espresso',
-  'hamburger',
-  'hotdog_classic',
+  'fruit_apple',
+  'fruit_strawberry',
+  'fruit_orange',
+  'pastry_croissant',
+  'icecream_1scoop',
+  'onigiri_1',
+  'popsicle_pink',
 ];
