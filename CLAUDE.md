@@ -55,6 +55,7 @@ lib/{game}  →  web/{game}  →  {game}/rn
 | Game Core | `lib/{game}/` | Phaser.io 씬, 게임 로직, 타입 |
 | Web Frontend | `web/{game}/` | React + Stitches UI, Phaser 통합 |
 | RN App | `{game}/rn/` | React Native, WebView 브릿지 |
+| Knowledge | `knowledge/` | 요구사항, 결정, 유저 bias, 진행 상황 기록 |
 
 각 teammate는 자신의 `CLAUDE.md`와 `TASKS.md`를 따릅니다.
 
@@ -94,8 +95,29 @@ lib/{game}  →  web/{game}  →  {game}/rn
 4. `{name}/rn/` RN 앱 래핑 (RN App 팀)
 5. 루트 `pnpm-workspace.yaml`에 패키지 등록
 
+## Knowledge Management
+
+매 턴이 끝나거나 주요 작업이 완료될 때, **knowledge 팀원**에게 다음을 전달하여 기록하게 한다:
+
+1. **유저의 피드백과 결정 변경** — 어떤 요청이 있었고, 뭐가 바뀌었는지
+2. **유저의 고유한 bias와 취향** — 디자인, UX, 기술적 선호도 등
+3. **프로젝트 진행 상황** — 뭐가 완료됐고, 다음은 뭔지
+
+> **핵심 목적**: 유저의 bias를 단순한 "선호"가 아니라 이 프로젝트의 **고유한 identity**로
+> 발전시킨다. 유저가 반복적으로 지적하는 것들이 곧 이 프로젝트의 디자인 철학이 된다.
+> knowledge 팀원은 이를 체계적으로 기록하여, 새 대화/새 팀원이 투입되어도
+> 프로젝트의 identity가 일관되게 유지되도록 한다.
+
+knowledge 폴더:
+- `knowledge/requirements.md` — 유저 요구사항
+- `knowledge/decisions.md` — 유저 피드백으로 바뀐 결정
+- `knowledge/user-preferences.md` — 유저 고유 bias / 디자인 철학
+- `knowledge/progress.md` — 진행 타임라인
+- `knowledge/architecture-decisions.md` — 기술 결정 (ADR)
+
 ## Reference
 
 - README.md: 프로젝트 전체 개요
 - prd/: 게임 기획서
+- knowledge/: 프로젝트 지식 베이스
 - 각 팀 가이드: `{folder}/CLAUDE.md`
