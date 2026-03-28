@@ -4,33 +4,36 @@ import { TUBE_CAPACITY, type Tube, type BoardState, type PourMove, type StageCon
 
 export function createBoard(config: StageConfig): BoardState {
   const { numColors, emptyTubes } = config;
+  const maxAttempts = 1000;
 
-  // Build flat array: 4 of each color
-  const flat: number[] = [];
-  for (let c = 0; c < numColors; c++) {
-    for (let i = 0; i < TUBE_CAPACITY; i++) flat.push(c);
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Build flat array: 4 of each color
+    const flat: number[] = [];
+    for (let c = 0; c < numColors; c++) {
+      for (let i = 0; i < TUBE_CAPACITY; i++) flat.push(c);
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = flat.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [flat[i], flat[j]] = [flat[j], flat[i]];
+    }
+
+    // Distribute into tubes
+    const tubes: Tube[] = [];
+    for (let t = 0; t < numColors; t++) {
+      tubes.push(flat.slice(t * TUBE_CAPACITY, (t + 1) * TUBE_CAPACITY));
+    }
+    // Add empty tubes
+    for (let e = 0; e < emptyTubes; e++) tubes.push([]);
+
+    // Verify solvability — if solvable, return board
+    if (isSolvable(tubes, numColors)) {
+      return { tubes, numColors };
+    }
   }
 
-  // Fisher-Yates shuffle
-  for (let i = flat.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [flat[i], flat[j]] = [flat[j], flat[i]];
-  }
-
-  // Distribute into tubes
-  const tubes: Tube[] = [];
-  for (let t = 0; t < numColors; t++) {
-    tubes.push(flat.slice(t * TUBE_CAPACITY, (t + 1) * TUBE_CAPACITY));
-  }
-  // Add empty tubes
-  for (let e = 0; e < emptyTubes; e++) tubes.push([]);
-
-  // Verify solvability — if not solvable, re-shuffle (rare with 2 empty tubes)
-  if (!isSolvable(tubes, numColors)) {
-    return createBoard(config); // retry
-  }
-
-  return { tubes, numColors };
+  throw new Error(`Failed to create solvable board after ${maxAttempts} attempts`);
 }
 
 // ─── Pour Logic ──────────────────────────────────────────
@@ -115,11 +118,12 @@ export function isSolvable(tubes: Tube[], _numColors: number): boolean {
   visited.add(boardKey(tubes));
 
   let iterations = 0;
+  let head = 0;
   const MAX_ITERATIONS = 50000;
 
-  while (queue.length > 0 && iterations < MAX_ITERATIONS) {
+  while (head < queue.length && iterations < MAX_ITERATIONS) {
     iterations++;
-    const current = queue.shift()!;
+    const current = queue[head++]!;
 
     if (isWon(current)) return true;
 

@@ -11,10 +11,9 @@ export interface GameResult {
 interface UseGameOptions {
   stage: number;
   onClear?: (result: GameResult) => void;
-  onGameOver?: (result: GameResult) => void;
 }
 
-export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
+export function useGame({ stage, onClear }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(0);
   const [moves, setMoves] = useState(0);
@@ -26,8 +25,6 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
     const game = createGame(containerRef.current, {
       stage,
-      onClear: () => {},
-      onGameOver: () => {},
     });
     gameRef.current = game;
 
@@ -47,7 +44,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage, onClear]);
 
   const doUndo = useCallback(() => {
     if (!gameRef.current) return;

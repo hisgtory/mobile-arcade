@@ -51,8 +51,6 @@ export interface BoardState {
 
 export interface GameConfig {
   stage?: number;
-  onClear?: () => void;
-  onGameOver?: () => void;
 }
 
 export interface PourMove {

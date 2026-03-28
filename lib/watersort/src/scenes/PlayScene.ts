@@ -9,7 +9,7 @@ import {
   type PourMove,
   type GameConfig,
 } from '../types';
-import { createBoard, canPour, executePour, isWon, isTubeSolved, topCount } from '../logic/board';
+import { createBoard, canPour, executePour, isWon, isTubeSolved } from '../logic/board';
 
 const TUBE_WIDTH = 40;
 const TUBE_HEIGHT = 140;
