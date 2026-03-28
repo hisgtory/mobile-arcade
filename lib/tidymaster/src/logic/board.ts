@@ -24,6 +24,7 @@ export function createBoard(config: StageConfig): BoardState {
   const floorTop = 60;
   const floorBottom = 370;
 
+  // Optimal column count to keep cells roughly square given the floor dimensions
   const cols = Math.ceil(Math.sqrt(totalItems * (floorRight - floorLeft) / (floorBottom - floorTop)));
   const rows = Math.ceil(totalItems / cols);
   const cellW = (floorRight - floorLeft) / cols;
