@@ -31,6 +31,7 @@ export class PlayScene extends Phaser.Scene {
   private phase: GamePhase = GamePhase.PLAYING;
   private board!: Board;
   private score: number = 0;
+  private consecutiveClears: number = 0; // combo counter
 
   // Visual
   private cellSize: number = 32;
@@ -171,37 +172,77 @@ export class PlayScene extends Phaser.Scene {
       // Remove the used slot
       this.pieceSlots[slotIndex].markUsed();
 
+      // Placement pop animation
+      for (const { row, col } of placed) {
+        const cell = this.gridCells[row][col];
+        cell.setScale(0.5);
+        this.tweens.add({
+          targets: cell,
+          scaleX: 1,
+          scaleY: 1,
+          duration: 150,
+          ease: 'Back.easeOut',
+        });
+      }
+
       // Check for line clears
       const lines = findFullLines(this.board);
       if (lines.rows.length > 0 || lines.cols.length > 0) {
         this.phase = GamePhase.ANIMATING;
+        this.consecutiveClears++;
         const cleared = clearLines(this.board, lines);
         const lineCount = lines.rows.length + lines.cols.length;
-        this.score += calcClearScore(lineCount, cleared.length);
+        const clearScore = calcClearScore(lineCount, cleared.length) * Math.max(1, this.consecutiveClears);
+        this.score += clearScore + placed.length;
 
-        // Animate clear — lock input until animation done
-        let completed = 0;
+        // Screen shake — intensity scales with combo
+        const shakeIntensity = Math.min(3 + this.consecutiveClears * 2, 12);
+        this.cameras.main.shake(200, shakeIntensity / 1000);
+
+        // Flash cleared cells white before destroying
         for (const { row, col } of cleared) {
-          this.tweens.add({
-            targets: this.gridCells[row][col],
-            scaleX: 0,
-            scaleY: 0,
-            duration: 200,
-            ease: 'Back.easeIn',
-            onComplete: () => {
-              this.gridCells[row][col].setScale(1);
-              this.gridCells[row][col].setFillStyle(CELL_BG_COLOR);
-              this.gridCells[row][col].setStrokeStyle(1, CELL_BORDER_COLOR, 0.5);
-              completed++;
-              if (completed === cleared.length) {
-                this.phase = GamePhase.PLAYING;
-              }
-            },
-          });
+          this.gridCells[row][col].setFillStyle(0xffffff);
         }
 
-        this.score += placed.length; // bonus for placement
+        // Combo text popup
+        this.showComboText(lineCount, this.consecutiveClears, clearScore);
+
+        // Staggered destroy animation with particles
+        this.time.delayedCall(100, () => {
+          let completed = 0;
+          cleared.forEach(({ row, col }, i) => {
+            this.time.delayedCall(i * 20, () => {
+              const cell = this.gridCells[row][col];
+              const cx = cell.x;
+              const cy = cell.y;
+              const color = cell.fillColor;
+
+              // Spawn particles
+              this.spawnParticles(cx, cy, color);
+
+              this.tweens.add({
+                targets: cell,
+                scaleX: 0,
+                scaleY: 0,
+                alpha: 0,
+                duration: 250,
+                ease: 'Back.easeIn',
+                onComplete: () => {
+                  cell.setScale(1);
+                  cell.setAlpha(1);
+                  cell.setFillStyle(CELL_BG_COLOR);
+                  cell.setStrokeStyle(1, CELL_BORDER_COLOR, 0.5);
+                  completed++;
+                  if (completed === cleared.length) {
+                    this.phase = GamePhase.PLAYING;
+                  }
+                },
+              });
+            });
+          });
+        });
       } else {
+        this.consecutiveClears = 0;
         this.score += placed.length;
       }
 
@@ -251,6 +292,76 @@ export class PlayScene extends Phaser.Scene {
     this.highlightRects = [];
   }
 
+  // -- JUICE EFFECTS --
+
+  private showComboText(lineCount: number, combo: number, score: number): void {
+    const { width } = this.scale;
+    const gridCenterY = this.gridStartY + (this.cellSize * GRID_SIZE) / 2;
+
+    const messages = ['Nice!', 'Great!', 'Awesome!', 'AMAZING!', 'INCREDIBLE!'];
+    const msgIdx = Math.min(combo - 1, messages.length - 1);
+    const msg = lineCount > 1 ? `${messages[msgIdx]} x${lineCount}` : messages[msgIdx];
+
+    const colors = [0xfa6c41, 0x2563eb, 0x8b5cf6, 0xf43f5e, 0xd97706];
+    const color = colors[Math.min(combo - 1, colors.length - 1)];
+
+    // Combo text
+    const text = this.add.text(width / 2, gridCenterY - 30, msg, {
+      fontSize: `${Math.min(28 + combo * 4, 48)}px`,
+      fontFamily: 'system-ui, sans-serif',
+      fontStyle: 'bold',
+      color: `#${color.toString(16).padStart(6, '0')}`,
+      stroke: '#ffffff',
+      strokeThickness: 4,
+    }).setOrigin(0.5).setDepth(200);
+
+    // Score text below
+    const scoreText = this.add.text(width / 2, gridCenterY + 10, `+${score}`, {
+      fontSize: '20px',
+      fontFamily: 'system-ui, sans-serif',
+      fontStyle: 'bold',
+      color: '#374151',
+    }).setOrigin(0.5).setDepth(200);
+
+    // Animate both up and fade
+    for (const t of [text, scoreText]) {
+      this.tweens.add({
+        targets: t,
+        y: t.y - 60,
+        alpha: 0,
+        scaleX: 1.3,
+        scaleY: 1.3,
+        duration: 800,
+        ease: 'Power2',
+        onComplete: () => t.destroy(),
+      });
+    }
+  }
+
+  private spawnParticles(x: number, y: number, color: number): void {
+    const count = 6;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
+      const speed = 80 + Math.random() * 60;
+      const size = 3 + Math.random() * 3;
+
+      const particle = this.add.rectangle(x, y, size, size, color);
+      particle.setDepth(150);
+
+      this.tweens.add({
+        targets: particle,
+        x: x + Math.cos(angle) * speed,
+        y: y + Math.sin(angle) * speed,
+        alpha: 0,
+        scaleX: 0,
+        scaleY: 0,
+        duration: 400 + Math.random() * 200,
+        ease: 'Power2',
+        onComplete: () => particle.destroy(),
+      });
+    }
+  }
+
   // -- GAME FLOW --
 
   private checkGameOver(): void {
@@ -262,8 +373,15 @@ export class PlayScene extends Phaser.Scene {
 
   private gameOver(): void {
     this.phase = GamePhase.GAME_OVER;
-    this.gameConfig?.onGameOver?.();
-    this.game.events.emit('game-over', { score: this.score });
+
+    // Shake + fade board
+    this.cameras.main.shake(300, 0.008);
+    this.cameras.main.fade(600, 0, 0, 0, false, (_cam: any, progress: number) => {
+      if (progress >= 1) {
+        this.gameConfig?.onGameOver?.();
+        this.game.events.emit('game-over', { score: this.score });
+      }
+    });
   }
 
   private emitScore(): void {
@@ -322,16 +440,15 @@ class PieceSlot {
     hitArea.setInteractive({ draggable: true });
     this.container.add(hitArea);
 
-    hitArea.on('dragstart', () => {
+    hitArea.on('dragstart', (pointer: Phaser.Input.Pointer) => {
       this.onDragStart?.();
     });
 
-    hitArea.on('drag', (_: any, dragX: number, dragY: number) => {
-      this.onDragMove?.(this.container.x + dragX, this.container.y + dragY);
+    hitArea.on('drag', (pointer: Phaser.Input.Pointer) => {
+      this.onDragMove?.(pointer.x, pointer.y);
     });
 
-    hitArea.on('dragend', () => {
-      const pointer = scene.input.activePointer;
+    hitArea.on('dragend', (pointer: Phaser.Input.Pointer) => {
       this.onDragEnd?.(pointer.x, pointer.y);
     });
 

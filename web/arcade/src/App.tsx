@@ -169,7 +169,7 @@ function BlockRushPlayRoute() {
   const [gameResult, setGameResult] = useState<BlockRushResult | null>(null);
 
   const handleGameOver = useCallback((r: BlockRushResult) => {
-    if (!isRN) setGameResult(r);
+    setGameResult(r); // Always show result in web (endless game, no RN stage flow)
   }, []);
 
   if (gameResult) {
