@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { createGame, destroyGame, getPlayScene } from '@arcade/lib-watersort';
+import { stageComplete } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -37,7 +38,9 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     });
 
     game.events.on('stage-clear', (data: { score: number; moves: number; stage: number }) => {
-      onClear?.({ score: data.score, moves: data.moves, stage: data.stage, cleared: true });
+      const result = { score: data.score, moves: data.moves, stage: data.stage, cleared: true };
+      stageComplete({ stage: data.stage, score: data.score, moves: data.moves, cleared: true });
+      onClear?.(result);
     });
 
     return () => {

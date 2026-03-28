@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createGame, destroyGame } from '@arcade/lib-blockrush';
+import { stageComplete } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -26,6 +27,7 @@ export function useGame({ onGameOver }: UseGameOptions) {
     });
 
     game.events.on('game-over', (data: { score: number }) => {
+      stageComplete({ stage: 0, score: data.score, cleared: false });
       onGameOver?.({ score: data.score, cleared: false });
     });
 
