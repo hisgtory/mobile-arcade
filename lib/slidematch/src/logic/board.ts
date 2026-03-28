@@ -11,6 +11,8 @@ import type { TileType, CellPos, StageConfig } from '../types';
 
 export const EMPTY = -1;
 
+const MAX_BOARD_GENERATION_ATTEMPTS = 100;
+
 export type Board = TileType[][];
 
 /** Create a new board with no initial matches */
@@ -24,7 +26,7 @@ export function createBoard(config: StageConfig): Board {
       Array.from({ length: cols }, () => Math.floor(Math.random() * typeCount)),
     );
     attempts++;
-    if (attempts > 100) break; // safety valve
+    if (attempts > MAX_BOARD_GENERATION_ATTEMPTS) break; // safety valve
   } while (findAllMatches(board).length > 0);
 
   return board;

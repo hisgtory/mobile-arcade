@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { createGame, destroyGame, getStageConfig } from '@arcade/lib-slidematch';
 import { stageComplete } from '../../utils/bridge';
 
@@ -17,6 +17,10 @@ interface UseGameOptions {
 export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
+  const onClearRef = useRef(onClear);
+  const onGameOverRef = useRef(onGameOver);
+  onClearRef.current = onClear;
+  onGameOverRef.current = onGameOver;
 
   const stageConfig = getStageConfig(stage);
   const [score, setScore] = useState(0);
@@ -27,11 +31,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const game = createGame(containerRef.current, {
-      stage,
-      onClear: () => {},
-      onGameOver: () => {},
-    });
+    const game = createGame(containerRef.current, { stage });
     gameRef.current = game;
 
     game.events.on('score-update', (data: { score: number; combo: number }) => {
@@ -45,19 +45,19 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
     game.events.on('stage-clear', (data: { score: number; movesUsed: number }) => {
       stageComplete({ stage, score: data.score, cleared: true });
-      onClear?.({ score: data.score, movesUsed: data.movesUsed, cleared: true });
+      onClearRef.current?.({ score: data.score, movesUsed: data.movesUsed, cleared: true });
     });
 
     game.events.on('game-over', (data: { score: number }) => {
       stageComplete({ stage, score: data.score, cleared: false });
-      onGameOver?.({ score: data.score, cleared: false });
+      onGameOverRef.current?.({ score: data.score, cleared: false });
     });
 
     return () => {
       destroyGame(game);
       gameRef.current = null;
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   return {
     containerRef,
