@@ -4,10 +4,11 @@ import { Platform } from 'react-native';
 const ENV_DEV_HOST =
   process.env.EXPO_PUBLIC_DEV_HOST ?? process.env.DEV_HOST_IP ?? null;
 
+// Bonjour hostname — stable across WiFi changes, works from real devices
 const DEFAULT_DEV_HOST =
   Platform.OS === 'android'
     ? '10.0.2.2' // Android emulator → host machine localhost
-    : 'localhost';
+    : 'SG-MacBook-Pro.local';
 
 const DEV_HOST = ENV_DEV_HOST || DEFAULT_DEV_HOST;
 const DEV_PORT = 5173;

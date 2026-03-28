@@ -35,6 +35,17 @@ export const GAMES: GameInfo[] = [
     isFeatured: true,
     isNew: true,
   },
+  {
+    id: 'crunch3',
+    name: 'Crunch 3',
+    description: 'Swipe & match 3 tiles to crush!',
+    icon: '🍩',
+    category: 'puzzle',
+    color: '#8B5CF6',
+    webPath: '/games/crunch3/v1',
+    stageCount: 5,
+    isNew: true,
+  },
   // Placeholder games for UI preview — will be replaced with real games
   {
     id: 'stack-tower',
