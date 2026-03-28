@@ -274,6 +274,9 @@ importers:
       '@arcade/lib-trickyprank':
         specifier: workspace:*
         version: link:../../lib/trickyprank
+      '@arcade/lib-tileconnect':
+        specifier: workspace:*
+        version: link:../../lib/tileconnect
       '@arcade/lib-watersort':
         specifier: workspace:*
         version: link:../../lib/watersort

@@ -41,9 +41,9 @@ export const TILE_IMAGES: string[] = [
   'fruit_strawberry',
   'fruit_orange',
   'fruit_cherry',
-  'fruit_pear',
+  'cake_chocolate',
   'pastry_croissant',
-  'icecream_1scoop',
+  'cake_strawberry',
   'onigiri_1',
   'soda_coke',
 ];
