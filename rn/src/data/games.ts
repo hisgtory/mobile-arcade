@@ -77,6 +77,16 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'number10',
+    name: 'Make 10',
+    description: 'Drag numbers that sum to 10!',
+    icon: '🔢',
+    category: 'puzzle',
+    color: '#3B82F6',
+    webPath: '/games/number10/v1/play',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

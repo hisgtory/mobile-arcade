@@ -134,3 +134,30 @@
 - **Before**: `/games/{game}/v1/assets/tiles/...` (게임별 경로)
 - **After**: `/assets/tiles/...` (공유 경로)
 - **Reason**: 통합 웹 서버에서 에셋 중복 제거
+
+## Game Design (2026-03-29)
+
+### Make 10: 타이머 제거
+- **Before**: 2분 타임 리밋 → 자동 게임 오버
+- **After**: 타이머 없음, "더 이상 합 10 불가" 시에만 게임 오버
+- **Reason**: "이거 타이머 없애줘. 왜 자동 게임 오버 돼?"
+
+### Make 10: 그리드 세로 전환 + 셀 확대
+- **Before**: 17열×10행 (가로), 셀 ~22px (작음)
+- **After**: 10열×17행 (세로), 셀 ~32px (45% 증가), 패딩 최소화
+- **Reason**: "타일 사이즈가 너무 작아. 더 많은 영역을 사용해도 돼. 위 아래로 공간이 많이 남아"
+
+### Water Sort: RN 브릿지 누락 수정
+- **Before**: stage-clear 시 RN에 메시지 안 보냄 → 결과 화면 없음
+- **After**: 공유 브릿지로 STAGE_CLEAR 전송 → RN 결과 화면 정상 작동
+- **Reason**: "이거 다 해도 다음 스테이지로 넘어간다거나 그런 result가 없는데?"
+
+### 게임별 브릿지 → 공유 브릿지
+- **Before**: Found3만 자체 BridgeClient, 나머지 게임은 브릿지 없음
+- **After**: `web/arcade/src/utils/bridge.ts` 공유 유틸로 모든 게임 지원
+- **Reason**: 새 게임 추가 시마다 브릿지 누락 방지
+
+### 게임 변형은 별도 이슈로 분리
+- **Decision**: 현재 PR에 넣지 않고 별도 이슈 등록 후 처리
+- **Examples**: TicTacToe 5x5 (#136), Make 10 Flow (#137)
+- **Reason**: 스코프 크리프 방지, 빠른 머지 우선
