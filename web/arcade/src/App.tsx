@@ -23,6 +23,11 @@ import { useGame as useCrunch3Game, type GameResult as Crunch3Result } from './g
 import { HUD as BlockRushHUD } from './games/blockrush/HUD';
 import { useGame as useBlockRushGame, type GameResult as BlockRushResult } from './games/blockrush/useGame';
 
+// ─── WaterSort ───
+import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
+import { HUD as WaterSortHUD } from './games/watersort/HUD';
+import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -209,6 +214,60 @@ function BlockRushPlaying({ onGameOver }: { onGameOver: (r: BlockRushResult) => 
   );
 }
 
+// ─── WaterSort Routes ─────────────────────────────────
+
+function WaterSortTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Water Sort</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Sort the colors into tubes!</p>
+      <button
+        onClick={() => navigate('/games/watersort/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function WaterSortStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<WaterSortResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: WaterSortResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/watersort/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/watersort/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <WaterSortClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <WaterSortPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: WaterSortResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useWaterSortGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <WaterSortHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -226,6 +285,10 @@ export function App() {
       {/* BlockRush */}
       <Route path="/games/blockrush/v1" element={<BlockRushTitleRoute />} />
       <Route path="/games/blockrush/v1/play" element={<BlockRushPlayRoute />} />
+
+      {/* WaterSort */}
+      <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
+      <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createGame, destroyGame, getStageConfig } from '@arcade/lib-crunch3';
+import { stageComplete } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -43,10 +44,12 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     });
 
     game.events.on('stage-clear', (data: { score: number; movesUsed: number }) => {
+      stageComplete({ stage, score: data.score, cleared: true });
       onClear?.({ score: data.score, movesUsed: data.movesUsed, cleared: true });
     });
 
     game.events.on('game-over', (data: { score: number }) => {
+      stageComplete({ stage, score: data.score, cleared: false });
       onGameOver?.({ score: data.score, cleared: false });
     });
 
