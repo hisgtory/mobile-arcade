@@ -271,3 +271,21 @@ RN HAPTIC_PATTERNS:
 
 ### Rationale
 ADR-009의 슈퍼앱 결정을 물리적 폴더 구조까지 완전히 반영. 레거시 프로토타입 코드 제거로 혼란 방지.
+
+---
+
+## ADR-016: 게임별 라우트 자체 등록 패턴
+
+### Context
+web/arcade App.tsx가 540줄로 비대해짐. 게임 추가마다 import + Route + 컴포넌트 추가가 필요하여 스케일 불가.
+
+### Decision
+Express 스타일 `registerRoutes(basePath, routes)` 레지스트리. 각 게임이 `games/{game}/routes.tsx`에서 자체 등록. App.tsx는 수집된 라우트만 렌더링 (~25줄).
+
+### Rejected Alternative
+`React.lazy()` + `import.meta.glob` 자동 매핑 — 유저가 명시적으로 거부. "잘못된 매핑이 십상".
+
+### Consequences
+- 새 게임 추가 시 `routes.tsx` 생성 + App.tsx에 side-effect import 한 줄만 추가
+- App.tsx가 게임 수에 관계없이 일정 크기 유지
+- 각 게임이 자기 라우트의 소유권을 가짐 (응집도↑)

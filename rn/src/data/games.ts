@@ -108,6 +108,16 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
+    id: 'blockpuzzle',
+    name: 'Block Puzzle',
+    description: 'Jewel block placement puzzle!',
+    icon: '💎',
+    category: 'puzzle',
+    color: '#8B5CF6',
+    webPath: '/games/blockpuzzle/v1',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

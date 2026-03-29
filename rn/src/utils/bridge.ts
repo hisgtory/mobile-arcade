@@ -240,6 +240,8 @@ export class BridgeHost {
     'cell-selected': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
     'number-placed': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
     'mistake-made':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+    // ─── Block Puzzle ─── (piece-placed, line-cleared shared with BlockRush)
+    'combo-cleared': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
     // ─── Fallback (direct style names) ───
     light:  { style: Haptics.ImpactFeedbackStyle.Light, count: 1 },
     medium: { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 },
