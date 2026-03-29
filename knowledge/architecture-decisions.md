@@ -16,6 +16,8 @@ lib/{game}  →  web/{game}  →  {game}/rn
 ### Rationale
 코드 재사용 극대화, 게임별 독립 배포. 하나의 게임 로직으로 웹/앱 동시 서빙.
 
+> **Note**: `{game}/rn` 부분은 ADR-015에 의해 superseded — 현재는 단일 `rn/` 슈퍼앱 구조. 파이프라인은 `lib/{game}` → `web/{game}` → `rn` (단일 슈퍼앱)으로 변경됨.
+
 ---
 
 ## ADR-002: Phaser is Board-Only

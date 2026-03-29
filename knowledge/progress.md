@@ -155,8 +155,8 @@
 - 패배/무승부 시 연승 리셋 (다운그레이드)
 - game-core 팀원이 구현 (첫 팀원 위임 작업)
 
-### RN 앱 폴더 구조 정리
-- `found3/rn/` 레거시 삭제 결정 (초기 프로토타입, 역할 종료)
+### RN 앱 폴더 구조 정리 ✅
+- `found3/rn/` 레거시 삭제 완료 (초기 프로토타입, 역할 종료)
 - `rn/`에 CLAUDE.md + TASKS.md 생성 완료
 - 루트 CLAUDE.md 팀 테이블 `found3/rn/` → `rn/` 업데이트 완료
 - pnpm-workspace.yaml에서 `found3/rn` 항목 제거 완료
