@@ -59,6 +59,10 @@ export function useGame(options: UseGameOptions) {
       gameRef.current = game;
 
       // Listen to Phaser events
+      game.events.on('tile-tapped', () => {
+        bridge.haptic('tile-tapped');
+      });
+
       game.events.on('tile-selected', (data: any) => {
         setSlotItems([...data.slotItems]);
         setRemainingTiles(data.remainingTiles);
@@ -71,6 +75,7 @@ export function useGame(options: UseGameOptions) {
         setSlotItems([...data.slotItems]);
         setScore(data.score);
         setCombo(data.combo);
+        bridge.haptic('slot-matched');
       });
 
       game.events.on('time-update', (data: any) => {

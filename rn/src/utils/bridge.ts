@@ -208,14 +208,29 @@ export class BridgeHost {
     this.callbacks.onStageComplete?.({ stage, score, elapsedMs, cleared });
   }
 
+  // ─── Haptic Patterns ───────────────────────────────────
+  // Web sends game event names, RN decides the haptic pattern.
+  // To change haptic feel, edit this map — no web changes needed.
+
+  private static readonly HAPTIC_PATTERNS: Record<string, { style: Haptics.ImpactFeedbackStyle; count: number }> = {
+    // Found3
+    'tile-tapped':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'slot-matched': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // Fallback styles (direct style names still work)
+    light:  { style: Haptics.ImpactFeedbackStyle.Light, count: 1 },
+    medium: { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 },
+    heavy:  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+  };
+
   private async handleHaptic(msg: BridgeMessage) {
-    const style = msg.payload?.style ?? 'medium';
-    const impactMap: Record<string, Haptics.ImpactFeedbackStyle> = {
-      light: Haptics.ImpactFeedbackStyle.Light,
-      medium: Haptics.ImpactFeedbackStyle.Medium,
-      heavy: Haptics.ImpactFeedbackStyle.Heavy,
-    };
-    await Haptics.impactAsync(impactMap[style] ?? Haptics.ImpactFeedbackStyle.Medium);
+    const event = msg.payload?.style ?? 'medium';
+    const pattern = BridgeHost.HAPTIC_PATTERNS[event]
+      ?? { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 };
+
+    for (let i = 0; i < pattern.count; i++) {
+      await Haptics.impactAsync(pattern.style);
+      if (i < pattern.count - 1) await new Promise((r) => setTimeout(r, 60));
+    }
     this.sendResponse(msg.msgId, 'ACK', 'ack');
   }
 

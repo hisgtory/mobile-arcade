@@ -226,3 +226,27 @@ stageComplete({ stage, score, cleared }) → postMessage('STAGE_CLEAR' | 'GAME_O
 - RN GameScreen이 `hasStages` 플래그로 분기
 - `stage: 0`은 "스테이지 없음"을 명시적으로 표현
 - Found3/Crunch3/WaterSort는 실제 stage 번호 전송
+
+---
+
+## ADR-014: Event-Driven Haptic — RN Owns Haptic Patterns
+
+### Decision
+웹은 게임 이벤트명만 브릿지로 전달, RN이 `HAPTIC_PATTERNS` 맵에서 햅틱 패턴(스타일, 횟수)을 결정.
+
+### Structure
+```
+Web: bridge.haptic('tile-tapped')     → HAPTIC { style: 'tile-tapped' }
+Web: bridge.haptic('slot-matched')    → HAPTIC { style: 'slot-matched' }
+
+RN HAPTIC_PATTERNS:
+  'tile-tapped'  → Heavy × 1
+  'slot-matched' → Heavy × 6 (60ms interval)
+  'light'/'medium'/'heavy' → fallback (하위 호환)
+```
+
+### Rationale
+- 네이티브 동작(햅틱)은 네이티브(RN)가 소유해야 응집도↑ 결합도↓
+- 햅틱 튜닝 시 RN 맵만 수정, 웹 코드 변경 불필요
+- 새 게임 이벤트 추가 시 RN 맵에 한 줄 추가로 완료
+- 하위 호환: 직접 스타일명(light/medium/heavy)도 fallback으로 지원
