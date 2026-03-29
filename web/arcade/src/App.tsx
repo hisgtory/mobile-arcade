@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── Tangram ───
+import { ClearScreen as TangramClear } from './games/tangram/ClearScreen';
+import { HUD as TangramHUD } from './games/tangram/HUD';
+import { useGame as useTangramGame, type GameResult as TangramResult } from './games/tangram/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -301,6 +306,60 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Tangram Routes ───────────────────────────────────
+
+function TangramTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tangram</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Fill the silhouette with triangle pieces!</p>
+      <button
+        onClick={() => navigate('/games/tangram/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function TangramStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<TangramResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: TangramResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/tangram/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/tangram/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <TangramClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <TangramPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function TangramPlaying({ stage, onClear }: { stage: number; onClear: (r: TangramResult) => void }) {
+  const { containerRef, score, moves, doReset, doRestart } = useTangramGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <TangramHUD stage={stage} score={score} moves={moves} onReset={doReset} onRestart={doRestart} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -326,6 +385,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* Tangram */}
+      <Route path="/games/tangram/v1" element={<TangramTitleRoute />} />
+      <Route path="/games/tangram/v1/stage/:stageId" element={<TangramStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
