@@ -411,11 +411,17 @@ export class PlayScene extends Phaser.Scene {
     // Emit stage clear
     this.time.delayedCall(1200, () => {
       this.game.events.emit('stage-clear', {
-        score: Math.max(100, 1000 - this.moves * 50),
+        score: this.calcScore(),
         moves: this.moves,
         stage: this.config.stage ?? 1,
       });
     });
+  }
+
+  // ─── Score ─────────────────────────────────────────────
+
+  private calcScore(): number {
+    return Math.max(100, 1000 - this.moves * 50);
   }
 
   // ─── Undo ─────────────────────────────────────────────
@@ -439,7 +445,7 @@ export class PlayScene extends Phaser.Scene {
   // ─── Events ───────────────────────────────────────────
 
   private emitState() {
-    this.game.events.emit('score-update', { score: Math.max(0, 1000 - this.moves * 50) });
+    this.game.events.emit('score-update', { score: this.calcScore() });
     this.game.events.emit('moves-update', { moves: this.moves });
   }
 }
