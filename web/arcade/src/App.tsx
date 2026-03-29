@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── HelloTown ───
+import { ClearScreen as HelloTownClear } from './games/hellotown/ClearScreen';
+import { HUD as HelloTownHUD } from './games/hellotown/HUD';
+import { useGame as useHelloTownGame, type GameResult as HelloTownResult } from './games/hellotown/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -301,6 +306,63 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── HelloTown Routes ─────────────────────────────────
+
+function HelloTownTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 40, fontWeight: 800, color: '#8B4513', letterSpacing: -1 }}>Hello Town</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Merge items to build your town!</p>
+      <button
+        onClick={() => navigate('/games/hellotown/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#8B4513', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function HelloTownStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<HelloTownResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: HelloTownResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: HelloTownResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/hellotown/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/hellotown/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <HelloTownClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <HelloTownPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function HelloTownPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: HelloTownResult) => void; onGameOver: (r: HelloTownResult) => void }) {
+  const { containerRef, score, maxLevel, movesLeft, targetLevel } = useHelloTownGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <HelloTownHUD stage={stage} score={score} targetLevel={targetLevel} maxLevel={maxLevel} movesLeft={movesLeft} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -326,6 +388,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* HelloTown */}
+      <Route path="/games/hellotown/v1" element={<HelloTownTitleRoute />} />
+      <Route path="/games/hellotown/v1/stage/:stageId" element={<HelloTownStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
