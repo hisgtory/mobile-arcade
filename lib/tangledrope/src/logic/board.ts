@@ -70,6 +70,7 @@ export function isWon(pins: Pin[], ropes: Rope[]): boolean {
 
 // ─── Board Creation ──────────────────────────────────────
 
+/** Minimum padding from canvas edges to prevent pins from being placed too close to borders */
 const PADDING = 50;
 
 /**

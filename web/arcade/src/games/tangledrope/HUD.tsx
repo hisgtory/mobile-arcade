@@ -51,7 +51,7 @@ const ActionBtn = styled('button', {
   '&:active': { opacity: 0.7 },
 });
 
-const CrossBadge = styled('span', {
+const TangleBadge = styled('span', {
   fontSize: 22,
   fontWeight: 700,
   variants: {
@@ -71,7 +71,7 @@ export function HUD({ stage, moves, intersections, onUndo, onRestart }: HUDProps
       </StatBlock>
       <StatBlock>
         <StatLabel>Tangles</StatLabel>
-        <CrossBadge solved={intersections === 0}>{intersections}</CrossBadge>
+        <TangleBadge solved={intersections === 0}>{intersections}</TangleBadge>
       </StatBlock>
       <StatBlock>
         <StatLabel>Moves</StatLabel>
