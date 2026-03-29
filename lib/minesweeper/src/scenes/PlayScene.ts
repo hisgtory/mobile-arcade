@@ -7,6 +7,10 @@
  * Events emitted:
  *   'state-update' — { minesRemaining, elapsed, phase }
  *   'game-over'    — { won, elapsed }
+ *   'cell-tapped'  — (haptic: cell reveal)
+ *   'flag-toggled' — (haptic: flag toggle)
+ *   'mine-hit'     — (haptic: mine explosion)
+ *   'game-clear'   — (haptic: win celebration)
  */
 
 import Phaser from 'phaser';
@@ -255,9 +259,15 @@ export class PlayScene extends Phaser.Scene {
       });
     }
 
+    // Haptic: immediate cell tap feedback (before animation)
+    this.game.events.emit('cell-tapped');
+
     const revealed = revealCell(this.board, row, col);
 
     if (cell.mine) {
+      // Haptic: mine explosion
+      this.game.events.emit('mine-hit');
+
       // Hit a mine — game over
       this.phase = 'lost';
       if (this.timerEvent) this.timerEvent.remove();
@@ -271,7 +281,6 @@ export class PlayScene extends Phaser.Scene {
       const allMines = revealAllMines(this.board);
       this.animateReveal(allMines, () => {
         this.drawBoard();
-        this.showGameOverOverlay(false);
         this.game.events.emit('game-over', { won: false, elapsed: this.elapsed });
       });
       return;
@@ -283,8 +292,11 @@ export class PlayScene extends Phaser.Scene {
       if (checkWin(this.board)) {
         this.phase = 'won';
         if (this.timerEvent) this.timerEvent.remove();
+
+        // Haptic: win celebration
+        this.game.events.emit('game-clear');
+
         this.drawBoard();
-        this.showGameOverOverlay(true);
         this.game.events.emit('game-over', { won: true, elapsed: this.elapsed });
       }
     });
@@ -297,6 +309,8 @@ export class PlayScene extends Phaser.Scene {
 
     const toggled = toggleFlag(this.board, row, col);
     if (toggled) {
+      // Haptic: flag toggle feedback (before visual update)
+      this.game.events.emit('flag-toggled');
       this.updateCell(row, col);
       this.emitState();
     }
@@ -382,85 +396,6 @@ export class PlayScene extends Phaser.Scene {
       rect.setFillStyle(HIDDEN_COLOR);
       rect.setStrokeStyle(1, GRID_LINE_COLOR, 0.4);
     }
-  }
-
-  private showGameOverOverlay(won: boolean): void {
-    const { width, height } = this.scale;
-
-    // Semi-transparent overlay
-    const overlay = this.add.rectangle(width / 2, height / 2, width, height, 0x000000, 0.4);
-    overlay.setDepth(200);
-
-    // Result card
-    const cardW = width * 0.75;
-    const cardH = 200 * this.dpr;
-    const card = this.add.rectangle(width / 2, height / 2, cardW, cardH, 0xffffff);
-    card.setStrokeStyle(2, 0xe5e7eb);
-    card.setDepth(201);
-
-    // Title
-    const title = this.add.text(
-      width / 2,
-      height / 2 - 50 * this.dpr,
-      won ? '🎉 You Win!' : '💥 Game Over',
-      {
-        fontSize: `${28 * this.dpr}px`,
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        fontStyle: 'bold',
-        color: won ? '#059669' : '#DC2626',
-      },
-    ).setOrigin(0.5).setDepth(202);
-
-    // Time
-    const timeText = this.add.text(
-      width / 2,
-      height / 2 - 10 * this.dpr,
-      `Time: ${this.formatTime(this.elapsed)}`,
-      {
-        fontSize: `${18 * this.dpr}px`,
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        color: '#374151',
-      },
-    ).setOrigin(0.5).setDepth(202);
-
-    // Play Again button
-    const btnY = height / 2 + 45 * this.dpr;
-    const btnW = 160 * this.dpr;
-    const btnH = 44 * this.dpr;
-    const btn = this.add.graphics().setDepth(202);
-    btn.fillStyle(0x2563eb, 1);
-    btn.fillRoundedRect(width / 2 - btnW / 2, btnY - btnH / 2, btnW, btnH, 12 * this.dpr);
-
-    const btnText = this.add.text(width / 2, btnY, 'Play Again', {
-      fontSize: `${16 * this.dpr}px`,
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      color: '#ffffff',
-      fontStyle: 'bold',
-    }).setOrigin(0.5).setDepth(203);
-
-    const hitArea = this.add.rectangle(width / 2, btnY, btnW, btnH).setInteractive().setAlpha(0.001).setDepth(204);
-    hitArea.on('pointerdown', () => {
-      this.scene.restart({ config: this.gameConfig, dpr: this.dpr });
-    });
-
-    // Animate card elements in with staggered delay
-    card.setAlpha(0);
-    title.setAlpha(0);
-    timeText.setAlpha(0);
-    btn.setAlpha(0);
-    btnText.setAlpha(0);
-
-    this.tweens.add({ targets: card, alpha: 1, duration: 300, ease: 'Cubic.easeOut' });
-    this.tweens.add({ targets: title, alpha: 1, duration: 300, delay: 100, ease: 'Cubic.easeOut' });
-    this.tweens.add({ targets: timeText, alpha: 1, duration: 300, delay: 150, ease: 'Cubic.easeOut' });
-    this.tweens.add({ targets: btn, alpha: 1, duration: 300, delay: 200, ease: 'Cubic.easeOut' });
-    this.tweens.add({ targets: btnText, alpha: 1, duration: 300, delay: 200, ease: 'Cubic.easeOut' });
-  }
-
-  private formatTime(seconds: number): string {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
   private pixelToGrid(px: number, py: number): { row: number; col: number } | null {

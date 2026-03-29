@@ -25,7 +25,7 @@ export interface DifficultyConfig {
 export const DIFFICULTIES: Record<Difficulty, DifficultyConfig> = {
   easy: { rows: 9, cols: 9, mines: 10, label: 'Easy' },
   medium: { rows: 16, cols: 16, mines: 40, label: 'Medium' },
-  expert: { rows: 16, cols: 30, mines: 99, label: 'Expert' },
+  expert: { rows: 16, cols: 16, mines: 56, label: 'Expert' },
 };
 
 export type GamePhase = 'ready' | 'playing' | 'won' | 'lost';

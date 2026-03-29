@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createGame, destroyGame, type Difficulty } from '@arcade/lib-minesweeper';
-import { stageComplete } from '../../utils/bridge';
+import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
   won: boolean;
@@ -24,6 +24,11 @@ export function useGame({ difficulty = 'easy', onGameOver }: UseGameOptions) {
     if (!containerRef.current) return;
 
     const game = createGame(containerRef.current, { difficulty });
+
+    game.events.on('cell-tapped', () => haptic('cell-tapped'));
+    game.events.on('flag-toggled', () => haptic('flag-toggled'));
+    game.events.on('mine-hit', () => haptic('mine-hit'));
+    game.events.on('game-clear', () => haptic('game-clear'));
 
     game.events.on('state-update', (data: { minesRemaining: number; elapsed: number; phase: string }) => {
       setMinesRemaining(data.minesRemaining);

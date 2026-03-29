@@ -332,7 +332,7 @@ function MinesweeperTitleRoute() {
           onClick={() => navigate('/games/minesweeper/v1/play/expert')}
           style={{ backgroundColor: '#DC2626', color: '#fff', border: 'none', padding: '16px', borderRadius: 16, fontSize: 18, fontWeight: 700, cursor: 'pointer' }}
         >
-          Expert (30×16)
+          Expert (16×16)
         </button>
       </div>
     </PlayLayout>
