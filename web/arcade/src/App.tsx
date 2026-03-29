@@ -28,6 +28,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── BlockyQuest ───
+import { ClearScreen as BlockyQuestClear } from './games/blockyquest/ClearScreen';
+import { HUD as BlockyQuestHUD } from './games/blockyquest/HUD';
+import { useGame as useBlockyQuestGame, type GameResult as BlockyQuestResult } from './games/blockyquest/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
