@@ -257,7 +257,7 @@ const DESIGNS: DesignConfig[] = [
 ];
 
 export function getStageConfig(stage: number): StageConfig {
-  const idx = Math.min(stage - 1, DESIGNS.length - 1);
+  const idx = Math.max(0, Math.min(stage - 1, DESIGNS.length - 1));
   return {
     stage,
     design: DESIGNS[idx],
