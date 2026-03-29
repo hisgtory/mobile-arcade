@@ -452,9 +452,9 @@ export class PlayScene extends Phaser.Scene {
     const w = DEFAULT_WIDTH * this.dpr;
     const h = DEFAULT_HEIGHT * this.dpr;
 
-    // Completion bonus
+    // Bonus: add coverage % as extra score (rewards filling the grid)
     const coverage = getCoveragePercent(this.board);
-    this.score += coverage; // Bonus for coverage
+    this.score += coverage;
 
     // Confetti burst
     for (let i = 0; i < 30; i++) {

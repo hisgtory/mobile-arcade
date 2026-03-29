@@ -106,7 +106,8 @@ function tryGenerateBoard(
     paths.push({ colorIndex: f, coords: path });
   }
 
-  // Check coverage - we need at least 70% of cells covered
+  // Require at least 70% grid coverage to ensure puzzles feel substantial
+  // (lower coverage creates too many disconnected empty cells)
   if (used.size < totalCells * 0.7) return null;
 
   // Build board state
