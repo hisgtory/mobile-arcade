@@ -342,7 +342,7 @@ function MinesweeperTitleRoute() {
 function MinesweeperPlayRoute() {
   const { difficulty: diffParam } = useParams();
   const navigate = useNavigate();
-  const difficulty = (['easy', 'medium', 'expert'].includes(diffParam || '') ? diffParam : 'easy') as MSDifficulty;
+  const difficulty = (Object.keys(MS_DIFFICULTIES).includes(diffParam || '') ? diffParam : 'easy') as MSDifficulty;
   const [gameResult, setGameResult] = useState<MinesweeperResult | null>(null);
 
   const handleGameOver = useCallback((r: MinesweeperResult) => {

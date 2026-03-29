@@ -443,23 +443,18 @@ export class PlayScene extends Phaser.Scene {
       this.scene.restart({ config: this.gameConfig, dpr: this.dpr });
     });
 
-    // Animate card in
-    for (const obj of [card, title, timeText, btn, btnText, hitArea]) {
-      (obj as any).setAlpha?.(0);
-      this.tweens.add({
-        targets: obj,
-        alpha: (obj as any).alpha !== undefined ? 1 : 0.001,
-        duration: 300,
-        ease: 'Cubic.easeOut',
-      });
-    }
-    // Fix: re-set alpha for objects
+    // Animate card elements in with staggered delay
     card.setAlpha(0);
     title.setAlpha(0);
     timeText.setAlpha(0);
+    btn.setAlpha(0);
+    btnText.setAlpha(0);
+
     this.tweens.add({ targets: card, alpha: 1, duration: 300, ease: 'Cubic.easeOut' });
     this.tweens.add({ targets: title, alpha: 1, duration: 300, delay: 100, ease: 'Cubic.easeOut' });
     this.tweens.add({ targets: timeText, alpha: 1, duration: 300, delay: 150, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: btn, alpha: 1, duration: 300, delay: 200, ease: 'Cubic.easeOut' });
+    this.tweens.add({ targets: btnText, alpha: 1, duration: 300, delay: 200, ease: 'Cubic.easeOut' });
   }
 
   private formatTime(seconds: number): string {

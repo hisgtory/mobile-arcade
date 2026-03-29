@@ -14,6 +14,8 @@ interface UseGameOptions {
 
 export function useGame({ difficulty = 'easy', onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
   const [minesRemaining, setMinesRemaining] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [phase, setPhase] = useState<string>('ready');
@@ -31,13 +33,13 @@ export function useGame({ difficulty = 'easy', onGameOver }: UseGameOptions) {
 
     game.events.on('game-over', (data: { won: boolean; elapsed: number }) => {
       stageComplete({ stage: 0, score: data.elapsed, cleared: data.won });
-      onGameOver?.({ won: data.won, elapsed: data.elapsed });
+      onGameOverRef.current?.({ won: data.won, elapsed: data.elapsed });
     });
 
     return () => {
       destroyGame(game);
     };
-  }, [difficulty, onGameOver]);
+  }, [difficulty]);
 
   return { containerRef, minesRemaining, elapsed, phase };
 }
