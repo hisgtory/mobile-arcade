@@ -277,6 +277,60 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── MahjongMatch Routes ──────────────────────────────
+
+function MahjongMatchTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Mahjong Match</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Match free tiles to clear the board!</p>
+      <button
+        onClick={() => navigate('/games/mahjong-match/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function MahjongMatchStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<MahjongMatchResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: MahjongMatchResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/mahjong-match/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/mahjong-match/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <MahjongMatchClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <MahjongMatchPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function MahjongMatchPlaying({ stage, onClear }: { stage: number; onClear: (r: MahjongMatchResult) => void }) {
+  const { containerRef, score, moves, matchesLeft, doShuffle, doHint, doRestart } = useMahjongMatchGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <MahjongMatchHUD stage={stage} score={score} moves={moves} matchesLeft={matchesLeft} onShuffle={doShuffle} onHint={doHint} onRestart={doRestart} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -327,6 +381,10 @@ export function App() {
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
+
+      {/* MahjongMatch */}
+      <Route path="/games/mahjong-match/v1" element={<MahjongMatchTitleRoute />} />
+      <Route path="/games/mahjong-match/v1/stage/:stageId" element={<MahjongMatchStageRoute />} />
 
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />

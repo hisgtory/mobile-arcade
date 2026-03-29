@@ -14,6 +14,7 @@
     "@arcade/lib-crunch3": "workspace:*",
     "@arcade/lib-blockrush": "workspace:*",
     "@arcade/lib-watersort": "workspace:*",
+    "@arcade/lib-mahjong-match": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
     "@stitches/react": "^1.2.8",
     "react": "^18.3.0",
