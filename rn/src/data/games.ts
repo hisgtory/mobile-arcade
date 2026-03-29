@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'anipang4',
+    name: 'Anipang 4',
+    description: 'Match tiles before time runs out!',
+    icon: '🍉',
+    category: 'puzzle',
+    color: '#EC4899',
+    webPath: '/games/anipang4/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
