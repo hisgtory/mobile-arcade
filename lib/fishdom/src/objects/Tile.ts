@@ -41,6 +41,7 @@ export class Tile extends Phaser.GameObjects.Container {
     const fontSize = Math.floor(size * 0.55);
     this.icon = scene.add.text(0, 0, emoji, {
       fontSize: `${fontSize}px`,
+      fontFamily: 'system-ui, -apple-system, sans-serif',
     });
     this.icon.setOrigin(0.5, 0.5);
     this.add(this.icon);
