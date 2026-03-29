@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'brainout',
+    name: 'Brain Out',
+    description: '넌센스 퀴즈에 도전하세요!',
+    icon: '🧠',
+    category: 'puzzle',
+    color: '#F59E0B',
+    webPath: '/games/brainout/v1',
+    stageCount: 10,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

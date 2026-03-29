@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── BrainOut ───
+import { ClearScreen as BrainOutClear } from './games/brainout/ClearScreen';
+import { HUD as BrainOutHUD } from './games/brainout/HUD';
+import { useGame as useBrainOutGame, type GameResult as BrainOutResult } from './games/brainout/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -303,6 +308,65 @@ function TicTacToePlayRoute() {
 
 // ─── Root ──────────────────────────────────────────────
 
+// ─── BrainOut Routes ──────────────────────────────────
+
+function BrainOutTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#FFF8F0' }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#78350F', letterSpacing: -1 }}>🧠 Brain Out</h1>
+      <p style={{ fontSize: 16, color: '#92400E' }}>넌센스 퀴즈에 도전하세요!</p>
+      <button
+        onClick={() => navigate('/games/brainout/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#F59E0B', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function BrainOutStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<BrainOutResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: BrainOutResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: BrainOutResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/brainout/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/brainout/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <BrainOutClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <BrainOutPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function BrainOutPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: BrainOutResult) => void; onGameOver: (r: BrainOutResult) => void }) {
+  const { containerRef, score, hintsLeft, puzzleIndex, totalPuzzles, doHint } = useBrainOutGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout css={{ backgroundColor: '#FFF8F0' }}>
+      <BrainOutHUD stage={stage} score={score} puzzleIndex={puzzleIndex} totalPuzzles={totalPuzzles} hintsLeft={hintsLeft} onHint={doHint} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
+// ─── Root ──────────────────────────────────────────────
+
 export function App() {
   globalStyles();
   return (
@@ -326,6 +390,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* BrainOut */}
+      <Route path="/games/brainout/v1" element={<BrainOutTitleRoute />} />
+      <Route path="/games/brainout/v1/stage/:stageId" element={<BrainOutStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
