@@ -1,5 +1,6 @@
 /**
- * Lightweight bridge for sending stage-clear/game-over messages to RN.
+ * Lightweight bridge for RN communication.
+ * Sends haptic events, stage-clear, and game-over messages.
  * Shared across all games in web/arcade.
  */
 
