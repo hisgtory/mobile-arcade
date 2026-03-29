@@ -130,6 +130,7 @@ export class PlayScene extends Phaser.Scene {
       if (this.gameOver || this.checkingEnd) return;
       const { col, row } = this.pointerToCell(p.x, p.y);
       if (col < 0 || row < 0 || col >= COLS || row >= ROWS) return;
+      this.game.events.emit('drag-start');
       this.isDragging = true;
       this.dragStartCol = col;
       this.dragStartRow = row;
@@ -208,6 +209,8 @@ export class PlayScene extends Phaser.Scene {
     );
 
     if (!checkSum(selected)) return;
+
+    this.game.events.emit('cells-cleared');
 
     // Clear matched cells
     const cleared = clearCells(this.cells, selected);

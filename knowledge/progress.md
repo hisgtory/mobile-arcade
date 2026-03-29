@@ -133,13 +133,13 @@
 - #136 — Tic Tac Toe 5x5 그리드 스케일링 (연승 시 3→4→5)
 - #137 — Make 10 Flow (중력 + 리필 endless 변형)
 
-### Haptic (#191) — In Progress
-- `lib/found3/PlayScene.ts` — `tile-tapped` 즉시 이벤트 추가
-- `web/arcade/games/found3/useGame.ts` — 이벤트명만 bridge로 전달
-- `lib/found3/bridge/BridgeClient.ts` — haptic(style, count) 지원
+### Haptic (#191) ✅ — PR #192 머지
+- `lib/found3/src/scenes/PlayScene.ts` — `tile-tapped` 즉시 이벤트 추가
+- `web/arcade/src/games/found3/useGame.ts` — 이벤트명만 bridge로 전달
+- `lib/found3/src/bridge/BridgeClient.ts` — haptic(style) 이벤트명 전달 (RN이 패턴 결정)
 - `rn/src/utils/bridge.ts` — `HAPTIC_PATTERNS` 맵 도입 (event → pattern)
 - `rn/src/components/GameWebView.tsx` — onError/onHttpError 디버그 핸들러 추가
-- `rn/app.json` — iOS ATS NSAllowsArbitraryLoads 추가
+- `rn/app.json` — iOS ATS NSAllowsLocalNetworking 추가
 
 ### Roadmap Updated
 - `prd/game-priority.md` — Block Rush, Water Sort, Tic Tac Toe 완료 표시
