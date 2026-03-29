@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'candyfriends',
+    name: 'Candy Friends',
+    description: 'Match 3 sweet candies!',
+    icon: '🍬',
+    category: 'puzzle',
+    color: '#EC4899',
+    webPath: '/games/candyfriends/v1',
+    stageCount: 10,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
