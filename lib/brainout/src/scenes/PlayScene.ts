@@ -27,7 +27,7 @@ interface ChoiceButton {
 export class PlayScene extends Phaser.Scene {
   private stageNum: number = 1;
   private stageConfig!: StageConfig;
-  private config?: GameConfig;
+  private gameConfig?: GameConfig;
   private dpr = 1;
 
   // Game state
@@ -50,10 +50,10 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { config?: GameConfig; dpr?: number }): void {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
-    this.stageNum = this.config.stage ?? 1;
+  init(data: { stage?: number; gameConfig?: GameConfig }): void {
+    this.stageNum = data?.stage ?? 1;
+    this.gameConfig = data?.gameConfig ?? (this.game as any).__brainoutConfig;
+    this.dpr = (this.game as any).__dpr || 1;
   }
 
   preload(): void {
@@ -408,7 +408,7 @@ export class PlayScene extends Phaser.Scene {
 
   private stageClear(): void {
     this.phase = GamePhase.CLEAR;
-    this.config?.onClear?.();
+    this.gameConfig?.onClear?.();
     this.game.events.emit('stage-clear', {
       score: this.score,
       puzzlesSolved: this.puzzles.length,
@@ -417,7 +417,7 @@ export class PlayScene extends Phaser.Scene {
 
   private gameOver(): void {
     this.phase = GamePhase.GAME_OVER;
-    this.config?.onGameOver?.();
+    this.gameConfig?.onGameOver?.();
     this.game.events.emit('game-over', {
       score: this.score,
     });
