@@ -313,8 +313,7 @@ stateDiagram-v2
 
 | 이벤트 | 방향 | 데이터 |
 |--------|------|--------|
-| `NAVIGATE_HOME` | Web → RN | `{ target: 'game-home' }` |
-| `NAVIGATE_ARCADE` | Web → RN | `{ target: 'arcade-home' }` |
+| `NAVIGATE` | Web → RN | `{ target: 'arcade' }` — Arcade Home으로 이동 |
 | `STAGE_CLEAR` | Web → RN | 기존 유지 |
 | `GAME_OVER` | Web → RN | 기존 유지 |
 

@@ -11,7 +11,7 @@ import { SlotBar } from './SlotBar';
 import { ItemBar } from './ItemBar';
 import { useGame as useFound3Game, type GameResult as Found3Result } from './useGame';
 
-const STAGES: StageInfo[] = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, cleared: false }));
+const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, cleared: false }));
 
 function Found3HomeRoute() {
   const navigate = useNavigate();

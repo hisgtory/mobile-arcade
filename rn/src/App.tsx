@@ -28,21 +28,23 @@ function App() {
   const [initialGameParams, setInitialGameParams] = useState<RootStackParamList['Game'] | undefined>();
 
   useEffect(() => {
-    AsyncStorage.getItem('@arcade/lastPlayedGame').then((gameId) => {
-      if (gameId) {
-        const game = getGameById(gameId);
-        if (game) {
-          setInitialRoute('Game');
-          setInitialGameParams({
-            gameId: game.id,
-            gameName: game.name,
-            webPath: game.webPath,
-            hasStages: !!game.stageCount,
-          });
+    AsyncStorage.getItem('@arcade/lastPlayedGame')
+      .then((gameId) => {
+        if (gameId) {
+          const game = getGameById(gameId);
+          if (game) {
+            setInitialRoute('Game');
+            setInitialGameParams({
+              gameId: game.id,
+              gameName: game.name,
+              webPath: game.webPath,
+              hasStages: !!game.stageCount,
+            });
+          }
         }
-      }
-      setReady(true);
-    });
+      })
+      .catch(() => {})
+      .finally(() => setReady(true));
   }, []);
 
   if (!ready) {

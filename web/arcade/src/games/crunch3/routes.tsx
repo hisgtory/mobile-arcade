@@ -9,7 +9,7 @@ import { ClearScreen as Crunch3Clear } from './ClearScreen';
 import { HUD as Crunch3HUD } from './HUD';
 import { useGame as useCrunch3Game, type GameResult as Crunch3Result } from './useGame';
 
-const STAGES: StageInfo[] = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, cleared: false }));
+const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, cleared: false }));
 
 function Crunch3HomeRoute() {
   const navigate = useNavigate();

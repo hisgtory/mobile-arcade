@@ -115,6 +115,7 @@ export function StageMap({ stages, currentStage, onStageSelect }: StageMapProps)
                 state={state}
                 onClick={() => state !== 'locked' && onStageSelect(stage.id)}
                 disabled={state === 'locked'}
+                aria-label={`Stage ${stage.id}${state === 'cleared' ? ', cleared' : state === 'current' ? ', current' : ', locked'}`}
               >
                 {state === 'cleared' ? '✓' : stage.id}
               </NodeCircle>
