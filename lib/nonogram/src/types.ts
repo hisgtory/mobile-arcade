@@ -41,4 +41,6 @@ export interface StageConfig {
 // ─── Game Config ─────────────────────────────────────────
 export interface GameConfig {
   stage?: number;
+  onClear?: () => void;
+  onGameOver?: () => void;
 }
