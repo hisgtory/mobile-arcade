@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── SaveDoge ───
+import { ClearScreen as SaveDogeClear } from './games/savedoge/ClearScreen';
+import { HUD as SaveDogeHUD } from './games/savedoge/HUD';
+import { useGame as useSaveDogeGame, type GameResult as SaveDogeResult } from './games/savedoge/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -301,6 +306,64 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── SaveDoge Routes ──────────────────────────────────
+
+function SaveDogeTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <div style={{ fontSize: 64 }}>🐕</div>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Save the Doge</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Draw lines to protect the Doge!</p>
+      <button
+        onClick={() => navigate('/games/savedoge/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#22C55E', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function SaveDogeStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<SaveDogeResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: SaveDogeResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: SaveDogeResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/savedoge/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/savedoge/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <SaveDogeClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <SaveDogePlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function SaveDogePlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: SaveDogeResult) => void; onGameOver: (r: SaveDogeResult) => void }) {
+  const { containerRef, score, ink, maxInk, doUndo, doRestart } = useSaveDogeGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <SaveDogeHUD stage={stage} score={score} ink={ink} maxInk={maxInk} onUndo={doUndo} onRestart={doRestart} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -326,6 +389,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* SaveDoge */}
+      <Route path="/games/savedoge/v1" element={<SaveDogeTitleRoute />} />
+      <Route path="/games/savedoge/v1/stage/:stageId" element={<SaveDogeStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
