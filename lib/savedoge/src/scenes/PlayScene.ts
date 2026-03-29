@@ -689,4 +689,26 @@ export class PlayScene extends Phaser.Scene {
   private emitScore() {
     this.game.events.emit('score-update', { score: this.score });
   }
+
+  // ─── Cleanup ──────────────────────────────────────────
+
+  shutdown(): void {
+    if (this.graceTimer) {
+      this.graceTimer.destroy();
+      this.graceTimer = undefined;
+    }
+    if (this.hazardTimer) {
+      this.hazardTimer.destroy();
+      this.hazardTimer = undefined;
+    }
+    for (const h of this.hazardObjects) {
+      if (h.active) h.destroy();
+    }
+    this.hazardObjects = [];
+    this.lines = [];
+    this.drawPoints = [];
+    this.input.off('pointerdown');
+    this.input.off('pointermove');
+    this.input.off('pointerup');
+  }
 }
