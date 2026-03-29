@@ -13,10 +13,14 @@ export interface TileData {
   type: TileType;
   row: number;
   col: number;
+  /** Special tile created by 4+ matches */
+  special?: 'line_h' | 'line_v' | 'bomb';
 }
 
 export interface MatchResult {
   cells: CellPos[];
+  /** If 4+, indicates special tile to create */
+  special?: 'line_h' | 'line_v' | 'bomb';
 }
 
 export interface SwapResult {
@@ -55,14 +59,14 @@ export enum GamePhase {
   GAME_OVER = 'game_over',
 }
 
-// Aquatic-themed tile emojis for Fishdom
+// 8 visually distinct aquatic emoji types for match-3
 export const TILE_EMOJIS: string[] = [
-  '🐠', // tropical fish
-  '🐟', // fish
-  '🦀', // crab
-  '🐚', // shell
-  '🌊', // wave
-  '⭐', // starfish
-  '🐙', // octopus
-  '🦑', // squid
+  '🐠',
+  '🐟',
+  '🦀',
+  '🐚',
+  '🌊',
+  '⭐',
+  '🐙',
+  '🦑',
 ];

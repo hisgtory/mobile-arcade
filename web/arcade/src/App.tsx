@@ -284,11 +284,11 @@ function FishdomTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#0c4a6e', letterSpacing: -1 }}>🐠 Fishdom</h1>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#0C4A6E', letterSpacing: -1 }}>🐠 Fishdom</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Match 3 to build your aquarium!</p>
       <button
         onClick={() => navigate('/games/fishdom/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#0ea5e9', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+        style={{ marginTop: 32, backgroundColor: '#0EA5E9', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
       >
         Play
       </button>
@@ -385,13 +385,13 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
-      {/* Fishdom */}
-      <Route path="/games/fishdom/v1" element={<FishdomTitleRoute />} />
-      <Route path="/games/fishdom/v1/stage/:stageId" element={<FishdomStageRoute />} />
-
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* Fishdom */}
+      <Route path="/games/fishdom/v1" element={<FishdomTitleRoute />} />
+      <Route path="/games/fishdom/v1/stage/:stageId" element={<FishdomStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

@@ -12,7 +12,7 @@ export class Tile extends Phaser.GameObjects.Container {
   public gridRow: number;
   public gridCol: number;
   private bg: Phaser.GameObjects.Rectangle;
-  private icon: Phaser.GameObjects.Text;
+  private label: Phaser.GameObjects.Text;
   private tileSize: number;
 
   constructor(
@@ -32,19 +32,19 @@ export class Tile extends Phaser.GameObjects.Container {
     this.tileSize = size;
 
     // Background
-    this.bg = scene.add.rectangle(0, 0, size - 2, size - 2, 0xe8f4fd, 1);
-    this.bg.setStrokeStyle(1, 0xb3d9f2, 0.8);
+    this.bg = scene.add.rectangle(0, 0, size - 2, size - 2, 0xffffff, 1);
+    this.bg.setStrokeStyle(1, 0xe5e7eb, 0.8);
     this.add(this.bg);
 
-    // Emoji icon
+    // Emoji text
     const emoji = TILE_EMOJIS[type % TILE_EMOJIS.length];
     const fontSize = Math.floor(size * 0.55);
-    this.icon = scene.add.text(0, 0, emoji, {
+    this.label = scene.add.text(0, 0, emoji, {
       fontSize: `${fontSize}px`,
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      fontFamily: '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif',
     });
-    this.icon.setOrigin(0.5, 0.5);
-    this.add(this.icon);
+    this.label.setOrigin(0.5, 0.5);
+    this.add(this.label);
 
     this.setSize(size, size);
     this.setInteractive();
@@ -54,7 +54,7 @@ export class Tile extends Phaser.GameObjects.Container {
   updateType(type: TileType): void {
     this.tileType = type;
     const emoji = TILE_EMOJIS[type % TILE_EMOJIS.length];
-    this.icon.setText(emoji);
+    this.label.setText(emoji);
   }
 
   animateDestroy(onComplete: () => void): void {

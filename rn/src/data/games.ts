@@ -83,7 +83,7 @@ export const GAMES: GameInfo[] = [
     description: 'Match 3 to build your aquarium!',
     icon: '🐠',
     category: 'puzzle',
-    color: '#0ea5e9',
+    color: '#0EA5E9',
     webPath: '/games/fishdom/v1',
     stageCount: 5,
     isNew: true,

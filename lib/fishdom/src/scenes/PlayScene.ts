@@ -73,8 +73,8 @@ export class PlayScene extends Phaser.Scene {
     this.stageConfig = getStageConfig(this.stageNum);
     this.movesLeft = this.stageConfig.maxMoves;
 
-    // Background — ocean blue
-    this.cameras.main.setBackgroundColor('#e0f2fe');
+    // Background
+    this.cameras.main.setBackgroundColor('#e8f4f8');
 
     // Calculate tile size to fit board
     const padding = 20 * dpr;
