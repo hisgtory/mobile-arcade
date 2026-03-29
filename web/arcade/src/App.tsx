@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── ToonBlast ───
+import { ClearScreen as ToonBlastClear } from './games/toonblast/ClearScreen';
+import { HUD as ToonBlastHUD } from './games/toonblast/HUD';
+import { useGame as useToonBlastGame, type GameResult as ToonBlastResult } from './games/toonblast/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -296,6 +301,63 @@ function TicTacToePlayRoute() {
   return (
     <PlayLayout>
       <TicTacToeHUD playerScore={playerScore} aiScore={aiScore} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
+// ─── ToonBlast Routes ──────────────────────────────────
+
+function ToonBlastTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#1a1a2e' }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#e2e8f0', letterSpacing: -1 }}>Toon Blast</h1>
+      <p style={{ fontSize: 16, color: '#8b8fa3' }}>Tap blocks to blast!</p>
+      <button
+        onClick={() => navigate('/games/toonblast/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#FA6C41', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function ToonBlastStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<ToonBlastResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: ToonBlastResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: ToonBlastResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/toonblast/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/toonblast/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <ToonBlastClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <ToonBlastPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function ToonBlastPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: ToonBlastResult) => void; onGameOver: (r: ToonBlastResult) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useToonBlastGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout css={{ backgroundColor: '#1a1a2e' }}>
+      <ToonBlastHUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>
   );
