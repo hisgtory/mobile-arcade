@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { createGame, destroyGame, getPlayScene } from '@arcade/lib-sudoku';
-import { stageComplete } from '../../utils/bridge';
+import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -51,6 +51,11 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
     const game = createGame(containerRef.current, { stage });
     gameRef.current = game;
+
+    game.events.on('cell-selected', () => haptic('cell-selected'));
+    game.events.on('number-placed', () => haptic('number-placed'));
+    game.events.on('mistake-made', () => haptic('mistake-made'));
+    game.events.on('game-clear', () => haptic('game-clear'));
 
     game.events.on('state-update', (data: GameState) => {
       setGameState({ ...data });

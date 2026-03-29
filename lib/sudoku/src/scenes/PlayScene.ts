@@ -285,6 +285,9 @@ export class PlayScene extends Phaser.Scene {
 
     const { row, col } = cellPos;
 
+    // Haptic: cell selection feedback (before visual update)
+    this.game.events.emit('cell-selected');
+
     if (row === this.selectedRow && col === this.selectedCol) {
       // Deselect on double tap
       this.selectedRow = -1;
@@ -312,20 +315,23 @@ export class PlayScene extends Phaser.Scene {
     } else {
       const wasCorrect = placeNumber(this.board, this.selectedRow, this.selectedCol, num);
 
-      if (!wasCorrect) {
+      if (wasCorrect) {
+        // Haptic: correct number placed
+        this.game.events.emit('number-placed');
+      } else {
+        // Haptic: mistake made
+        this.game.events.emit('mistake-made');
         this.shakeCell(this.selectedRow, this.selectedCol);
       }
 
       // Check game state
       if (isGameOver(this.board)) {
         this.phase = 'lost';
-        this.time.delayedCall(800, () => {
-          this.game.events.emit('game-over', {
-            score: this.calculateScore(),
-            mistakes: this.board.mistakes,
-            elapsedMs: this.elapsedMs,
-            stage: this.config.stage ?? 1,
-          });
+        this.game.events.emit('game-over', {
+          score: this.calculateScore(),
+          mistakes: this.board.mistakes,
+          elapsedMs: this.elapsedMs,
+          stage: this.config.stage ?? 1,
         });
       } else if (isComplete(this.board)) {
         this.phase = 'won';
@@ -426,10 +432,21 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private celebrateWin() {
+    // Haptic: win celebration (before animation)
+    this.game.events.emit('game-clear');
+
+    // Emit stage-clear immediately (React decides UI timing)
+    this.game.events.emit('stage-clear', {
+      score: this.calculateScore(),
+      mistakes: this.board.mistakes,
+      elapsedMs: this.elapsedMs,
+      stage: this.config.stage ?? 1,
+    });
+
     const w = DEFAULT_WIDTH * this.dpr;
     const h = DEFAULT_HEIGHT * this.dpr;
 
-    // Confetti
+    // Confetti (visual effect only, non-blocking)
     for (let i = 0; i < 30; i++) {
       const colors = [0x2563eb, 0x22c55e, 0xeab308, 0xa855f7, 0xf97316];
       const color = colors[Math.floor(Math.random() * colors.length)];
@@ -455,15 +472,6 @@ export class PlayScene extends Phaser.Scene {
         onComplete: () => p.destroy(),
       });
     }
-
-    this.time.delayedCall(1200, () => {
-      this.game.events.emit('stage-clear', {
-        score: this.calculateScore(),
-        mistakes: this.board.mistakes,
-        elapsedMs: this.elapsedMs,
-        stage: this.config.stage ?? 1,
-      });
-    });
   }
 
   // ─── Events ───────────────────────────────────────────
@@ -471,6 +479,7 @@ export class PlayScene extends Phaser.Scene {
   private emitState() {
     const counts = getNumberCounts(this.board);
     this.game.events.emit('state-update', {
+      phase: this.phase,
       mistakes: this.board.mistakes,
       maxMistakes: this.board.maxMistakes,
       elapsedMs: this.elapsedMs,

@@ -57,25 +57,6 @@ function solve(grid: number[][]): boolean {
   return true; // all cells filled
 }
 
-/** Solve without randomization — for validation */
-function solveOrdered(grid: number[][]): boolean {
-  for (let r = 0; r < GRID_SIZE; r++) {
-    for (let c = 0; c < GRID_SIZE; c++) {
-      if (grid[r][c] === 0) {
-        for (let n = 1; n <= 9; n++) {
-          if (isValidPlacement(grid, r, c, n)) {
-            grid[r][c] = n;
-            if (solveOrdered(grid)) return true;
-            grid[r][c] = 0;
-          }
-        }
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 /** Count solutions (stop at 2) */
 function countSolutions(grid: number[][], limit = 2): number {
   for (let r = 0; r < GRID_SIZE; r++) {
