@@ -28,6 +28,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── CarJam ───
+import { ClearScreen as CarJamClear } from './games/carjam/ClearScreen';
+import { HUD as CarJamHUD } from './games/carjam/HUD';
+import { useGame as useCarJamGame, type GameResult as CarJamResult } from './games/carjam/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
@@ -272,6 +277,60 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── CarJam Routes ─────────────────────────────────────
+
+function CarJamTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Car Jam</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Tap cars to clear the traffic!</p>
+      <button
+        onClick={() => navigate('/games/carjam/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function CarJamStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<CarJamResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: CarJamResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/carjam/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/carjam/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <CarJamClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <CarJamPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function CarJamPlaying({ stage, onClear }: { stage: number; onClear: (r: CarJamResult) => void }) {
+  const { containerRef, score, moves, carsRemaining, carsTotal, doUndo, doRestart } = useCarJamGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <CarJamHUD stage={stage} score={score} moves={moves} carsRemaining={carsRemaining} carsTotal={carsTotal} onUndo={doUndo} onRestart={doRestart} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -322,6 +381,10 @@ export function App() {
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
+
+      {/* CarJam */}
+      <Route path="/games/carjam/v1" element={<CarJamTitleRoute />} />
+      <Route path="/games/carjam/v1/stage/:stageId" element={<CarJamStageRoute />} />
 
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
