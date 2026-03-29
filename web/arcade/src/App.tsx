@@ -28,6 +28,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── MahjongMatch ───
+import { ClearScreen as MahjongMatchClear } from './games/mahjong-match/ClearScreen';
+import { HUD as MahjongMatchHUD } from './games/mahjong-match/HUD';
+import { useGame as useMahjongMatchGame, type GameResult as MahjongMatchResult } from './games/mahjong-match/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
