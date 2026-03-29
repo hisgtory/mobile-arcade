@@ -236,6 +236,10 @@ export class BridgeHost {
     'flag-toggled':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
     'mine-hit':      { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
     'game-clear':    { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Sudoku ───
+    'cell-selected': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'number-placed': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'mistake-made':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
     // ─── Fallback (direct style names) ───
     light:  { style: Haptics.ImpactFeedbackStyle.Light, count: 1 },
     medium: { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 },

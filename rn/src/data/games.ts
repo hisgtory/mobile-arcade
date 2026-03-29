@@ -97,6 +97,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/minesweeper/v1',
     isNew: true,
   },
+  {
+    id: 'sudoku',
+    name: 'Sudoku',
+    description: 'Classic number brain puzzle!',
+    icon: '🧩',
+    category: 'puzzle',
+    color: '#7C3AED',
+    webPath: '/games/sudoku/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

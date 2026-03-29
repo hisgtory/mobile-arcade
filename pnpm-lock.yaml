@@ -58,6 +58,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/sudoku:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/tictactoe:
     dependencies:
       phaser:
@@ -141,6 +151,9 @@ importers:
       '@arcade/lib-number10':
         specifier: workspace:*
         version: link:../../lib/number10
+      '@arcade/lib-sudoku':
+        specifier: workspace:*
+        version: link:../../lib/sudoku
       '@arcade/lib-tictactoe':
         specifier: workspace:*
         version: link:../../lib/tictactoe
