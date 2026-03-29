@@ -62,6 +62,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/dreamstore:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/found3:
     dependencies:
       phaser:
@@ -146,6 +156,9 @@ importers:
       '@arcade/lib-crunch3':
         specifier: workspace:*
         version: link:../../lib/crunch3
+      '@arcade/lib-dreamstore':
+        specifier: workspace:*
+        version: link:../../lib/dreamstore
       '@arcade/lib-found3':
         specifier: workspace:*
         version: link:../../lib/found3
