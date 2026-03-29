@@ -229,6 +229,7 @@ export class PlayScene extends Phaser.Scene {
 
   private onCellTap(index: number) {
     if (this.phase !== 'player_turn') return;
+    this.game.events.emit('cell-tapped');
 
     const next = makeMove(this.board, index);
     if (!next) return;

@@ -213,10 +213,25 @@ export class BridgeHost {
   // To change haptic feel, edit this map — no web changes needed.
 
   private static readonly HAPTIC_PATTERNS: Record<string, { style: Haptics.ImpactFeedbackStyle; count: number }> = {
-    // Found3
-    'tile-tapped':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
-    'slot-matched': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
-    // Fallback styles (direct style names still work)
+    // ─── Found3 ───
+    'tile-tapped':   { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'slot-matched':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Crunch3 ───
+    'tile-swapped':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'match-cleared': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── BlockRush ───
+    'piece-placed':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'line-cleared':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── WaterSort ───
+    'tube-tapped':   { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'tube-solved':   { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── TicTacToe ───
+    'cell-tapped':   { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'round-end':     { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+    // ─── Number10 (Make 10) ───
+    'drag-start':    { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'cells-cleared': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Fallback (direct style names) ───
     light:  { style: Haptics.ImpactFeedbackStyle.Light, count: 1 },
     medium: { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 },
     heavy:  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },

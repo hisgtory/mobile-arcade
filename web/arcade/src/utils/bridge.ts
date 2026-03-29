@@ -20,6 +20,10 @@ function sendToRN(type: string, payload: Record<string, unknown>): void {
   window.ReactNativeWebView!.postMessage(JSON.stringify(msg));
 }
 
+export function haptic(event: string): void {
+  sendToRN('HAPTIC', { style: event });
+}
+
 export function stageComplete(data: {
   stage: number;
   score: number;

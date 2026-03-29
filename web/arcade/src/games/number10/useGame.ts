@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createGame, destroyGame, TOTAL_CELLS } from '@arcade/lib-number10';
-import { stageComplete } from '../../utils/bridge';
+import { stageComplete, haptic } from '../../utils/bridge';
 
 export function useGame() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -11,6 +11,9 @@ export function useGame() {
     if (!containerRef.current) return;
 
     const game = createGame(containerRef.current);
+
+    game.events.on('drag-start', () => haptic('drag-start'));
+    game.events.on('cells-cleared', () => haptic('cells-cleared'));
 
     game.events.on('score-update', (data: { score: number; remaining: number }) => {
       setScore(data.score);

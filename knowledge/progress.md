@@ -133,7 +133,7 @@
 - #136 — Tic Tac Toe 5x5 그리드 스케일링 (연승 시 3→4→5)
 - #137 — Make 10 Flow (중력 + 리필 endless 변형)
 
-### Haptic (#191) — In Progress
+### Haptic (#191) ✅ — PR #192 머지
 - `lib/found3/PlayScene.ts` — `tile-tapped` 즉시 이벤트 추가
 - `web/arcade/games/found3/useGame.ts` — 이벤트명만 bridge로 전달
 - `lib/found3/bridge/BridgeClient.ts` — haptic(style, count) 지원
