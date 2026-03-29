@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'skewerjam',
+    name: 'Skewer Jam',
+    description: 'Sort food on skewers!',
+    icon: '🍢',
+    category: 'puzzle',
+    color: '#EA580C',
+    webPath: '/games/skewerjam/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

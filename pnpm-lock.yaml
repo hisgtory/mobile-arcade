@@ -72,6 +72,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/skewerjam:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/tictactoe:
     dependencies:
       phaser:
@@ -149,6 +159,9 @@ importers:
       '@arcade/lib-found3':
         specifier: workspace:*
         version: link:../../lib/found3
+      '@arcade/lib-skewerjam':
+        specifier: workspace:*
+        version: link:../../lib/skewerjam
       '@arcade/lib-tictactoe':
         specifier: workspace:*
         version: link:../../lib/tictactoe
