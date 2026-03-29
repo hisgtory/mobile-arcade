@@ -8,23 +8,29 @@ import type { NodePos, Edge, BoardState, StageConfig } from '../types';
  */
 export function createBoard(config: StageConfig): BoardState {
   const { nodeCount, edgeCount } = config;
+  const maxAttempts = 100;
 
-  // 1. Generate solution positions on a circle (no crossings)
-  const solutionNodes = generateCirclePositions(nodeCount);
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // 1. Generate solution positions on a circle (no crossings)
+    const solutionNodes = generateCirclePositions(nodeCount);
 
-  // 2. Generate edges that don't cross in the circular layout
-  const edges = generatePlanarEdges(solutionNodes, edgeCount);
+    // 2. Generate edges that don't cross in the circular layout
+    const edges = generatePlanarEdges(solutionNodes, edgeCount);
 
-  // 3. Scramble node positions to introduce crossings
-  const scrambledNodes = scramblePositions(solutionNodes);
+    // 3. Scramble node positions to introduce crossings
+    const scrambledNodes = scramblePositions(solutionNodes);
 
-  // Make sure we have at least one crossing
-  const crossings = countCrossings(scrambledNodes, edges);
-  if (crossings === 0) {
-    // Force some crossings by swapping node positions
-    return createBoard(config);
+    // Make sure we have at least one crossing
+    const crossings = countCrossings(scrambledNodes, edges);
+    if (crossings > 0) {
+      return { nodes: scrambledNodes, edges };
+    }
   }
 
+  // Fallback: return board even without crossings (very unlikely)
+  const solutionNodes = generateCirclePositions(nodeCount);
+  const edges = generatePlanarEdges(solutionNodes, edgeCount);
+  const scrambledNodes = scramblePositions(solutionNodes);
   return { nodes: scrambledNodes, edges };
 }
 

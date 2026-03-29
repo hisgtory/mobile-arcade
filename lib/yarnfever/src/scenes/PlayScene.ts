@@ -16,6 +16,13 @@ import { createBoard, countCrossings, getCrossingEdges } from '../logic/board';
 const NODE_RADIUS = 14;
 const EDGE_WIDTH = 3;
 
+// Pre-parsed hex colors
+const NODE_COLOR_HEX = parseInt(NODE_COLOR.replace('#', ''), 16);
+const NODE_ACTIVE_HEX = parseInt(NODE_ACTIVE_COLOR.replace('#', ''), 16);
+const EDGE_NORMAL_HEX = parseInt(EDGE_NORMAL_COLOR.replace('#', ''), 16);
+const EDGE_CROSS_HEX = parseInt(EDGE_CROSS_COLOR.replace('#', ''), 16);
+const EDGE_CLEAR_HEX = parseInt(EDGE_CLEAR_COLOR.replace('#', ''), 16);
+
 type GamePhase = 'idle' | 'dragging' | 'celebrating';
 
 export class PlayScene extends Phaser.Scene {
@@ -98,11 +105,11 @@ export class PlayScene extends Phaser.Scene {
       const isCrossing = crossingEdges.has(i);
       let colorHex: number;
       if (this.crossings === 0) {
-        colorHex = parseInt(EDGE_CLEAR_COLOR.replace('#', ''), 16);
+        colorHex = EDGE_CLEAR_HEX;
       } else if (isCrossing) {
-        colorHex = parseInt(EDGE_CROSS_COLOR.replace('#', ''), 16);
+        colorHex = EDGE_CROSS_HEX;
       } else {
-        colorHex = parseInt(EDGE_NORMAL_COLOR.replace('#', ''), 16);
+        colorHex = EDGE_NORMAL_HEX;
       }
 
       gfx.lineStyle(EDGE_WIDTH * scale, colorHex, 1);
@@ -117,10 +124,10 @@ export class PlayScene extends Phaser.Scene {
 
     for (const node of this.board.nodes) {
       const nodeColor = this.crossings === 0
-        ? parseInt(EDGE_CLEAR_COLOR.replace('#', ''), 16)
+        ? EDGE_CLEAR_HEX
         : (node.id === this.dragNode
-          ? parseInt(NODE_ACTIVE_COLOR.replace('#', ''), 16)
-          : parseInt(NODE_COLOR.replace('#', ''), 16));
+          ? NODE_ACTIVE_HEX
+          : NODE_COLOR_HEX);
 
       const circle = this.add.circle(node.x, node.y, nodeRadius, nodeColor, 1);
       circle.setStrokeStyle(2 * scale, 0xffffff);
