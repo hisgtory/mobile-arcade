@@ -15,6 +15,8 @@
     "@arcade/lib-blockrush": "workspace:*",
     "@arcade/lib-watersort": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
+    "@arcade/lib-minesweeper": "workspace:*",
+    "@arcade/lib-number10": "workspace:*",
     "@arcade/lib-sudoku": "workspace:*",
     "@stitches/react": "^1.2.8",
     "react": "^18.3.0",

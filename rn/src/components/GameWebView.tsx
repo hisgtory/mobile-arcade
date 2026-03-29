@@ -31,6 +31,7 @@ export function GameWebView({
   }, [onStageComplete]);
 
   const uri = getGameUrl(webPath, stageId);
+  if (__DEV__) console.log(`[GameWebView] Loading: ${uri}`);
 
   return (
     <WebView
@@ -40,6 +41,8 @@ export function GameWebView({
       style={styles.webview}
       onMessage={bridge.handleMessage}
       onLoadEnd={onReady}
+      onError={(e) => console.error('[WebView] Error:', e.nativeEvent.description)}
+      onHttpError={(e) => console.error('[WebView] HTTP Error:', e.nativeEvent.statusCode, e.nativeEvent.url)}
       javaScriptEnabled
       domStorageEnabled
       allowsInlineMediaPlayback

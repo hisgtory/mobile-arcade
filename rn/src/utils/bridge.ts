@@ -229,6 +229,13 @@ export class BridgeHost {
     'cell-tapped':   { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
     'round-end':     { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
     'grid-upgrade':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+    // ─── Number10 (Make 10) ───
+    'drag-start':    { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'cells-cleared': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Minesweeper ───
+    'flag-toggled':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'mine-hit':      { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+    'game-clear':    { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
     // ─── Sudoku ───
     'cell-selected': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
     'number-placed': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
