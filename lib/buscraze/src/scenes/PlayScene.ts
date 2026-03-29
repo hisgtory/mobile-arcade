@@ -20,6 +20,10 @@ import {
 
 const VEHICLE_RADIUS = 6;
 
+function getVehicleLabel(vehicle: Vehicle): string {
+  return vehicle.isTarget ? '🚌' : '🚗';
+}
+
 type GamePhase = 'idle' | 'dragging' | 'animating' | 'celebrating';
 
 export class PlayScene extends Phaser.Scene {
@@ -103,6 +107,37 @@ export class PlayScene extends Phaser.Scene {
       deltaCol: Math.round(dx / step),
       deltaRow: Math.round(dy / step),
     };
+  }
+
+  /** Clamp a raw grid delta to the max valid distance from the drag start position. */
+  private clampDragDelta(vehicle: Vehicle, rawDR: number, rawDC: number): { finalDR: number; finalDC: number } {
+    let finalDR = vehicle.direction === 'vertical' ? rawDR : 0;
+    let finalDC = vehicle.direction === 'horizontal' ? rawDC : 0;
+    const offsetR = vehicle.row - this.dragStartPos.row;
+    const offsetC = vehicle.col - this.dragStartPos.col;
+
+    if (finalDR !== 0) {
+      const dir = finalDR > 0 ? 1 : -1;
+      let maxDist = 0;
+      for (let d = 1; d <= Math.abs(finalDR); d++) {
+        if (canMoveVehicle(this.board, vehicle.id, dir * d - offsetR, 0)) {
+          maxDist = d;
+        } else break;
+      }
+      finalDR = dir * maxDist;
+    }
+    if (finalDC !== 0) {
+      const dir = finalDC > 0 ? 1 : -1;
+      let maxDist = 0;
+      for (let d = 1; d <= Math.abs(finalDC); d++) {
+        if (canMoveVehicle(this.board, vehicle.id, 0, dir * d - offsetC)) {
+          maxDist = d;
+        } else break;
+      }
+      finalDC = dir * maxDist;
+    }
+
+    return { finalDR, finalDC };
   }
 
   // ─── Drawing ──────────────────────────────────────────
@@ -205,11 +240,10 @@ export class PlayScene extends Phaser.Scene {
       highlight.fillRoundedRect(x + 2 * this.dpr, y + 2 * this.dpr, vw - 4 * this.dpr, vh * 0.35, { tl: radius, tr: radius, bl: 0, br: 0 });
 
       // Vehicle icon/label
-      const label = vehicle.isTarget ? '🚌' : '🚗';
       const text = this.add.text(
         x + vw / 2,
         y + vh / 2,
-        label,
+        getVehicleLabel(vehicle),
         { fontSize: `${Math.floor(this.cellSize * 0.5)}px` },
       );
       text.setOrigin(0.5, 0.5);
@@ -252,8 +286,7 @@ export class PlayScene extends Phaser.Scene {
     highlight.fillStyle(0xffffff, 0.2);
     highlight.fillRoundedRect(x + 2 * this.dpr, y + 2 * this.dpr, vw - 4 * this.dpr, vh * 0.35, { tl: radius, tr: radius, bl: 0, br: 0 });
 
-    const label = vehicle.isTarget ? '🚌' : '🚗';
-    const text = this.add.text(x + vw / 2, y + vh / 2, label, {
+    const text = this.add.text(x + vw / 2, y + vh / 2, getVehicleLabel(vehicle), {
       fontSize: `${Math.floor(this.cellSize * 0.5)}px`,
     });
     text.setOrigin(0.5, 0.5);
@@ -291,32 +324,7 @@ export class PlayScene extends Phaser.Scene {
       const dx = pointer.x - this.dragStartPointer.x;
       const dy = pointer.y - this.dragStartPointer.y;
       const { deltaCol, deltaRow } = this.pixelToGridDelta(dx, dy);
-
-      // Clamp to valid direction
-      let finalDR = vehicle.direction === 'vertical' ? deltaRow : 0;
-      let finalDC = vehicle.direction === 'horizontal' ? deltaCol : 0;
-
-      // Find max valid move in the drag direction
-      if (finalDR !== 0) {
-        const dir = finalDR > 0 ? 1 : -1;
-        let maxDist = 0;
-        for (let d = 1; d <= Math.abs(finalDR); d++) {
-          if (canMoveVehicle(this.board, vehicle.id, dir * d - (vehicle.row - this.dragStartPos.row), 0)) {
-            maxDist = d;
-          } else break;
-        }
-        finalDR = dir * maxDist;
-      }
-      if (finalDC !== 0) {
-        const dir = finalDC > 0 ? 1 : -1;
-        let maxDist = 0;
-        for (let d = 1; d <= Math.abs(finalDC); d++) {
-          if (canMoveVehicle(this.board, vehicle.id, 0, dir * d - (vehicle.col - this.dragStartPos.col))) {
-            maxDist = d;
-          } else break;
-        }
-        finalDC = dir * maxDist;
-      }
+      const { finalDR, finalDC } = this.clampDragDelta(vehicle, deltaRow, deltaCol);
 
       // Preview position - move from the drag start position
       const previewRow = this.dragStartPos.row + finalDR;
@@ -349,8 +357,7 @@ export class PlayScene extends Phaser.Scene {
         hl.fillStyle(0xffffff, 0.2);
         hl.fillRoundedRect(x + 2 * this.dpr, y + 2 * this.dpr, vw - 4 * this.dpr, vh * 0.35, { tl: radius, tr: radius, bl: 0, br: 0 });
 
-        const label = vehicle.isTarget ? '🚌' : '🚗';
-        const text = this.add.text(x + vw / 2, y + vh / 2, label, {
+        const text = this.add.text(x + vw / 2, y + vh / 2, getVehicleLabel(vehicle), {
           fontSize: `${Math.floor(this.cellSize * 0.5)}px`,
         });
         text.setOrigin(0.5, 0.5);
@@ -376,37 +383,11 @@ export class PlayScene extends Phaser.Scene {
       }
 
       // Determine actual move from start pos
-      // We need to figure out where the vehicle visually ended up
       const pointer = this.input.activePointer;
       const dx = pointer.x - this.dragStartPointer.x;
       const dy = pointer.y - this.dragStartPointer.y;
       const { deltaCol, deltaRow } = this.pixelToGridDelta(dx, dy);
-
-      let finalDR = vehicle.direction === 'vertical' ? deltaRow : 0;
-      let finalDC = vehicle.direction === 'horizontal' ? deltaCol : 0;
-
-      // Clamp to max valid distance from drag start
-      const totalDR = finalDR;
-      const totalDC = finalDC;
-      finalDR = 0;
-      finalDC = 0;
-
-      if (totalDR !== 0) {
-        const dir = totalDR > 0 ? 1 : -1;
-        for (let d = 1; d <= Math.abs(totalDR); d++) {
-          if (canMoveVehicle(this.board, vehicle.id, dir * d - (vehicle.row - this.dragStartPos.row), 0)) {
-            finalDR = dir * d;
-          } else break;
-        }
-      }
-      if (totalDC !== 0) {
-        const dir = totalDC > 0 ? 1 : -1;
-        for (let d = 1; d <= Math.abs(totalDC); d++) {
-          if (canMoveVehicle(this.board, vehicle.id, 0, dir * d - (vehicle.col - this.dragStartPos.col))) {
-            finalDC = dir * d;
-          } else break;
-        }
-      }
+      const { finalDR, finalDC } = this.clampDragDelta(vehicle, deltaRow, deltaCol);
 
       // Apply the actual board delta from current position
       const actualDR = this.dragStartPos.row + finalDR - vehicle.row;

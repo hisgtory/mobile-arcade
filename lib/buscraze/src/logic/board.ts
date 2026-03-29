@@ -184,18 +184,8 @@ function buildGrid(board: BoardState): number[][] {
 export function isWon(board: BoardState): boolean {
   const target = board.vehicles.find(v => v.isTarget);
   if (!target) return false;
-  // Target bus has exited: its rightmost cell is at or beyond the exit column
-  return target.col + target.length > board.gridCols - 1 &&
-    isClearPath(board, target);
-}
-
-function isClearPath(board: BoardState, target: Vehicle): boolean {
-  const grid = buildGrid(board);
-  // Check if all cells from target's right end to grid edge are clear
-  for (let c = target.col + target.length; c < board.gridCols; c++) {
-    if (grid[target.row][c] !== -1) return false;
-  }
-  return true;
+  // Target bus has exited: its rightmost cell reaches the grid edge
+  return target.col + target.length >= board.gridCols;
 }
 
 export function canTargetExit(board: BoardState): boolean {
