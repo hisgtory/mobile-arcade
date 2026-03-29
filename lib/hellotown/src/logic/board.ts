@@ -70,6 +70,8 @@ export function canMerge(board: Board, from: CellPos, to: CellPos): boolean {
     return false;
   }
 
+  if (!isAdjacent(from, to)) return false;
+
   const fromVal = board[from.row][from.col];
   const toVal = board[to.row][to.col];
 

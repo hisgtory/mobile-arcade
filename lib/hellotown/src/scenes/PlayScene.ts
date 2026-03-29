@@ -222,9 +222,8 @@ export class PlayScene extends Phaser.Scene {
       const fromPos: CellPos = { row: this.dragItem.gridRow, col: this.dragItem.gridCol };
       const toPos: CellPos = { row: targetRow, col: targetCol };
 
-      const item = this.dragItem;
       this.clearSelection();
-      this.tryMergeOrMove(fromPos, toPos, item);
+      this.tryMergeOrMove(fromPos, toPos);
     });
 
     this.input.on('pointerup', () => {
@@ -272,7 +271,7 @@ export class PlayScene extends Phaser.Scene {
 
   // ─── MERGE + MOVE LOGIC ────────────────────────────────
 
-  private async tryMergeOrMove(from: CellPos, to: CellPos, _fromItem: MergeItem): Promise<void> {
+  private async tryMergeOrMove(from: CellPos, to: CellPos): Promise<void> {
     if (this.phase !== GamePhase.PLAYING) return;
     this.phase = GamePhase.ANIMATING;
 

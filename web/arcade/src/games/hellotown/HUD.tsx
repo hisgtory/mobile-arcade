@@ -51,7 +51,7 @@ interface HUDProps {
 }
 
 export function HUD({ stage, score, targetLevel, maxLevel, movesLeft }: HUDProps) {
-  const targetEmoji = ITEM_LABELS[targetLevel % ITEM_LABELS.length] || '🌟';
+  const targetEmoji = ITEM_LABELS[targetLevel] || '🌟';
 
   return (
     <Container>
