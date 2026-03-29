@@ -37,6 +37,10 @@ import { HUD as MinesweeperHUD } from './games/minesweeper/HUD';
 import { useGame as useMinesweeperGame, type GameResult as MinesweeperResult } from './games/minesweeper/useGame';
 import { type Difficulty as MSDifficulty, DIFFICULTIES as MS_DIFFICULTIES } from '@arcade/lib-minesweeper';
 
+// ─── Number10 ───
+import { HUD as Number10HUD } from './games/number10/HUD';
+import { useGame as useNumber10Game } from './games/number10/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -339,6 +343,25 @@ function MinesweeperTitleRoute() {
   );
 }
 
+// ─── Number10 Routes ──────────────────────────────────
+
+function Number10TitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Make 10</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Drag to select numbers that sum to 10!</p>
+      <button
+        onClick={() => navigate('/games/number10/v1/play')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
 function MinesweeperPlayRoute() {
   const { difficulty: diffParam } = useParams();
   const navigate = useNavigate();
@@ -389,6 +412,16 @@ function MinesweeperPlaying({ difficulty, onGameOver }: { difficulty: MSDifficul
   );
 }
 
+function Number10PlayRoute() {
+  const { containerRef, score, remaining } = useNumber10Game();
+  return (
+    <PlayLayout>
+      <Number10HUD score={score} remaining={remaining} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -418,6 +451,10 @@ export function App() {
       {/* Minesweeper */}
       <Route path="/games/minesweeper/v1" element={<MinesweeperTitleRoute />} />
       <Route path="/games/minesweeper/v1/play/:difficulty" element={<MinesweeperPlayRoute />} />
+
+      {/* Number10 */}
+      <Route path="/games/number10/v1" element={<Number10TitleRoute />} />
+      <Route path="/games/number10/v1/play" element={<Number10PlayRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

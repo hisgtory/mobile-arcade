@@ -134,3 +134,54 @@
 - **Before**: `/games/{game}/v1/assets/tiles/...` (게임별 경로)
 - **After**: `/assets/tiles/...` (공유 경로)
 - **Reason**: 통합 웹 서버에서 에셋 중복 제거
+
+## Game Design (2026-03-29)
+
+### Make 10: 타이머 제거
+- **Before**: 2분 타임 리밋 → 자동 게임 오버
+- **After**: 타이머 없음, "더 이상 합 10 불가" 시에만 게임 오버
+- **Reason**: "이거 타이머 없애줘. 왜 자동 게임 오버 돼?"
+
+### Make 10: 그리드 세로 전환 + 셀 확대
+- **Before**: 17열×10행 (가로), 셀 ~22px (작음)
+- **After**: 10열×17행 (세로), 셀 ~32px (45% 증가), 패딩 최소화
+- **Reason**: "타일 사이즈가 너무 작아. 더 많은 영역을 사용해도 돼. 위 아래로 공간이 많이 남아"
+
+### Water Sort: RN 브릿지 누락 수정
+- **Before**: stage-clear 시 RN에 메시지 안 보냄 → 결과 화면 없음
+- **After**: 공유 브릿지로 STAGE_CLEAR 전송 → RN 결과 화면 정상 작동
+- **Reason**: "이거 다 해도 다음 스테이지로 넘어간다거나 그런 result가 없는데?"
+
+### 게임별 브릿지 → 공유 브릿지
+- **Before**: Found3만 자체 BridgeClient, 나머지 게임은 브릿지 없음
+- **After**: `web/arcade/src/utils/bridge.ts` 공유 유틸로 모든 게임 지원
+- **Reason**: 새 게임 추가 시마다 브릿지 누락 방지
+
+### 게임 변형은 별도 이슈로 분리
+- **Decision**: 현재 PR에 넣지 않고 별도 이슈 등록 후 처리
+- **Examples**: TicTacToe 5x5 (#136), Make 10 Flow (#137)
+- **Reason**: 스코프 크리프 방지, 빠른 머지 우선
+
+## Haptic Architecture (2026-03-29)
+
+### 웹이 햅틱 결정 → RN이 햅틱 결정
+- **Before**: 웹 useGame 훅이 `bridge.haptic('heavy', 6)` 처럼 스타일+횟수를 직접 지정
+- **After**: 웹은 게임 이벤트명만 전달 (`bridge.haptic('tile-tapped')`), RN `HAPTIC_PATTERNS` 맵이 이벤트 → 패턴 결정
+- **Reason**: "웹뷰가 결정하면 응집도가 내려가고 결합도가 높아진다" — 네이티브 동작은 네이티브가 소유해야
+
+### 햅틱 강도 조정
+- **Before**: `light` (타일 탭), `heavy` × 1 (3매치 클리어)
+- **After**: `heavy` (타일 탭), `heavy` × 6 (3매치 클리어)
+- **Reason**: "햅틱이 약해. 6번으로 늘려줘. tap도 heavy로"
+
+### 햅틱 즉시 반응
+- **Before**: `tile-selected` 이벤트 (애니메이션 200ms 후) 에서 햅틱 발생 → 체감 0.5~1초 딜레이
+- **After**: `tile-tapped` 이벤트 (탭 즉시) 에서 햅틱 발생 → 즉시 피드백
+- **Reason**: "아이템 선택하면 약간 딜레이 후에 진동이 와. 이 딜레이가 해소돼야"
+
+## RN App Structure (2026-03-29)
+
+### found3/rn/ 레거시 삭제 → rn/ 슈퍼앱으로 통합
+- **Before**: `found3/rn/` (싱글 게임 전용 RN 앱) + `rn/` (슈퍼앱) 공존
+- **After**: `found3/rn/` 삭제, `rn/` 단일 슈퍼앱으로 통합
+- **Reason**: `rn/`이 실제 프로덕션 앱 (com.hisgtory.arcade)이며 모든 게임을 포함하는 슈퍼앱 구조. `found3/rn/`은 초기 프로토타입으로 역할 종료
