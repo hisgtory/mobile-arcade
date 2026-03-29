@@ -31,7 +31,7 @@ export function GameWebView({
   }, [onStageComplete]);
 
   const uri = getGameUrl(webPath, stageId);
-  console.log(`[GameWebView] Loading: ${uri}`);
+  if (__DEV__) console.log(`[GameWebView] Loading: ${uri}`);
 
   return (
     <WebView

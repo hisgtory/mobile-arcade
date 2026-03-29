@@ -102,8 +102,8 @@ export class BridgeClient {
     return res.payload ?? { rewarded: false };
   }
 
-  haptic(style: HapticStyle, count = 1): void {
-    this.send('HAPTIC', { style, count }).catch(() => {});
+  haptic(style: HapticStyle): void {
+    this.send('HAPTIC', { style }).catch(() => {});
   }
 
   itemUsed(itemType: string, remainingCount: number): void {
