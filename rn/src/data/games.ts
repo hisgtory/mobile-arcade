@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'escaperoom',
+    name: 'Escape Room',
+    description: 'Find clues & solve puzzles to escape!',
+    icon: '🚪',
+    category: 'puzzle',
+    color: '#7C3AED',
+    webPath: '/games/escaperoom/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
