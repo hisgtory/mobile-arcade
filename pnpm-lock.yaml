@@ -52,6 +52,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/colorslide:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/crunch3:
     dependencies:
       phaser:
@@ -143,6 +153,9 @@ importers:
       '@arcade/lib-blockrush':
         specifier: workspace:*
         version: link:../../lib/blockrush
+      '@arcade/lib-colorslide':
+        specifier: workspace:*
+        version: link:../../lib/colorslide
       '@arcade/lib-crunch3':
         specifier: workspace:*
         version: link:../../lib/crunch3
