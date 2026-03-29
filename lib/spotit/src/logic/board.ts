@@ -75,10 +75,16 @@ export function generateBoard(config: StageConfig): {
   shuffle(positions);
 
   const items: ItemData[] = [];
+  const assignedTargetTypes = new Set<ItemType>();
+
   for (let i = 0; i < itemCount; i++) {
     const pos = positions[i];
     const type = itemTypes[i];
-    const isTarget = targetTypes.includes(type) && !items.some(it => it.type === type && it.isTarget);
+    const isTarget = targetTypes.includes(type) && !assignedTargetTypes.has(type);
+
+    if (isTarget) {
+      assignedTargetTypes.add(type);
+    }
 
     items.push({
       id: nextId(),
@@ -87,18 +93,19 @@ export function generateBoard(config: StageConfig): {
       y: pos.y,
       rotation: (Math.random() - 0.5) * 20,
       scale: 0.85 + Math.random() * 0.3,
-      isTarget: isTarget,
+      isTarget,
       found: false,
     });
   }
 
-  // Ensure all target types have exactly one target item
+  // Safety: ensure every target type has exactly one target item
   for (const t of targetTypes) {
-    const hasTarget = items.some(it => it.type === t && it.isTarget);
-    if (!hasTarget) {
-      // Find any item with this type and mark it as target
+    if (!assignedTargetTypes.has(t)) {
       const item = items.find(it => it.type === t);
-      if (item) item.isTarget = true;
+      if (item) {
+        item.isTarget = true;
+        assignedTargetTypes.add(t);
+      }
     }
   }
 
