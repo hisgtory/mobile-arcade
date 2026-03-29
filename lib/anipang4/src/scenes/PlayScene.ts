@@ -277,7 +277,10 @@ export class PlayScene extends Phaser.Scene {
 
     // Check if target reached early (clear before time runs out)
     if (this.score >= this.stageConfig.targetScore && this.timeLeft > 0) {
-      this.timerEvent?.remove();
+      if (this.timerEvent) {
+        this.timerEvent.remove();
+        this.timerEvent = undefined;
+      }
       this.stageClear();
     } else if (this.timeLeft > 0) {
       this.phase = GamePhase.PLAYING;
