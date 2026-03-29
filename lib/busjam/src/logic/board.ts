@@ -97,10 +97,8 @@ export function moveToBoarding(
   if (!passenger) return false;
   if (board.boardingArea.length >= BOARDING_AREA_LIMIT) return false;
 
-  // Only allow picking from the front (first non-null in column from bottom)
-  // Actually for Bus Jam: passengers can be tapped from any visible position
-  // But they must not be blocked — only the front row (row 0) or exposed passengers
-  // Simple rule: only the bottom-most non-null passenger in each column can be picked
+  // Only the front-most (lowest row index) passenger in each column can be picked.
+  // If any passenger exists in a row below, this one is blocked.
   for (let r = 0; r < row; r++) {
     if (board.queue[r]?.[col] != null) {
       return false; // blocked by passenger below

@@ -40,7 +40,7 @@ export function getStageConfig(stage: number): StageConfig {
   ];
   if (stage <= configs.length) return configs[stage - 1];
   // Beyond stage 10: scale up
-  const numColors = Math.min(5 + Math.floor((stage - 5) / 2), 8);
+  const numColors = Math.min(5 + Math.floor((stage - 5) / 2), PASSENGER_COLORS.length);
   const numBuses = Math.min(5 + (stage - 5), 12);
   const queueRows = Math.min(numBuses, 10);
   return { stage, numColors, numBuses, queueRows, queueCols: 3 };
