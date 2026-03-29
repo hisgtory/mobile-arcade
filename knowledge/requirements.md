@@ -162,9 +162,11 @@
 - Minimax AI (3단계: easy/medium/hard)
 - Endless 라운드 (Play Again으로 계속)
 
-## Planned Enhancement (#136)
-- 연승 시 그리드 확장: 3x3 → 4x4 → 5x5
-- Depth-limited minimax + alpha-beta pruning 필요
+## Grid Scaling (#136) — 구현 완료 (PR #195)
+- 연승 0~2 → 3x3(3줄), 3~5 → 4x4(4줄), 6+ → 5x5(4줄)
+- 패배/무승부 시 연승 리셋 → 그리드 다운그레이드
+- Depth-limited alpha-beta pruning (4x4 depth 6, 5x5 depth 4)
+- 그리드 업그레이드 시 "4x4!" 애니메이션 + 햅틱
 
 ---
 

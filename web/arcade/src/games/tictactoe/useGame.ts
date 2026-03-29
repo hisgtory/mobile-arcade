@@ -26,6 +26,7 @@ export function useGame({ difficulty = 'medium' }: UseGameOptions) {
 
     game.events.on('cell-tapped', () => haptic('cell-tapped'));
     game.events.on('round-end', () => haptic('round-end'));
+    game.events.on('grid-upgrade', () => haptic('grid-upgrade'));
 
     game.events.on('score-update', (data: { playerScore: number; aiScore: number; roundsPlayed: number }) => {
       setPlayerScore(data.playerScore);

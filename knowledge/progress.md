@@ -141,6 +141,20 @@
 - `rn/src/components/GameWebView.tsx` — onError/onHttpError 디버그 핸들러 추가
 - `rn/app.json` — iOS ATS NSAllowsLocalNetworking 추가
 
+### Haptic All Games (#193) ✅ — PR #194 머지
+- CLAUDE.md에 햅틱 가이드 추가 (새 게임 추가 시 필수)
+- 공유 브릿지에 `haptic()` 함수 추가
+- 5개 게임에 햅틱 이벤트 추가 (Crunch3, BlockRush, WaterSort, TicTacToe, Number10)
+- RN HAPTIC_PATTERNS에 12개 이벤트 매핑
+
+### TicTacToe 5x5 Grid Scaling (#136) — PR #195 (리뷰 중)
+- 연승 기반 그리드 확장: 3x3 → 4x4 → 5x5
+- 동적 WIN_LINES 생성 (NxN + M-in-a-row)
+- AI: depth-limited alpha-beta pruning (4x4/5x5)
+- 그리드 업그레이드 애니메이션 + 햅틱
+- 패배/무승부 시 연승 리셋 (다운그레이드)
+- game-core 팀원이 구현 (첫 팀원 위임 작업)
+
 ### Roadmap Updated
 - `prd/game-priority.md` — Block Rush, Water Sort, Tic Tac Toe 완료 표시
 - #136 추가 (3.5순위)
