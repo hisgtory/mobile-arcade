@@ -28,6 +28,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── LineDraw ───
+import { ClearScreen as LineDrawClear } from './games/linedraw/ClearScreen';
+import { HUD as LineDrawHUD } from './games/linedraw/HUD';
+import { useGame as useLineDrawGame, type GameResult as LineDrawResult } from './games/linedraw/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
@@ -272,6 +277,60 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── LineDraw Routes ──────────────────────────────────
+
+function LineDrawTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Line Draw</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Draw a path through every cell!</p>
+      <button
+        onClick={() => navigate('/games/linedraw/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function LineDrawStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<LineDrawResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: LineDrawResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/linedraw/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/linedraw/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <LineDrawClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <LineDrawPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function LineDrawPlaying({ stage, onClear }: { stage: number; onClear: (r: LineDrawResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useLineDrawGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <LineDrawHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -322,6 +381,10 @@ export function App() {
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
+
+      {/* LineDraw */}
+      <Route path="/games/linedraw/v1" element={<LineDrawTitleRoute />} />
+      <Route path="/games/linedraw/v1/stage/:stageId" element={<LineDrawStageRoute />} />
 
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />

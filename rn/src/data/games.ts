@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'linedraw',
+    name: 'Line Draw',
+    description: 'Draw a path through every cell!',
+    icon: '✏️',
+    category: 'puzzle',
+    color: '#2563EB',
+    webPath: '/games/linedraw/v1',
+    stageCount: 10,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
