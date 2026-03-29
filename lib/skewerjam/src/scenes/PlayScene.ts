@@ -19,6 +19,7 @@ const SKEWER_GAP = 14;
 const LIFT_Y = -20;
 const STICK_COLOR = 0x8B6914;
 const STICK_TIP_COLOR = 0xA67C1A;
+const FALLBACK_COLORS = [0xEF4444, 0x3B82F6, 0x22C55E, 0xEAB308, 0xA855F7, 0xF97316, 0xEC4899, 0x06B6D4, 0x92400E, 0x84CC16, 0x6366F1, 0xF43F5E];
 
 type GamePhase = 'idle' | 'moving' | 'celebrating';
 
@@ -167,8 +168,7 @@ export class PlayScene extends Phaser.Scene {
           container.add(sprite);
         } else {
           // Fallback colored circle
-          const colors = [0xEF4444, 0x3B82F6, 0x22C55E, 0xEAB308, 0xA855F7, 0xF97316, 0xEC4899, 0x06B6D4, 0x92400E, 0x84CC16, 0x6366F1, 0xF43F5E];
-          const circle = this.add.circle(0, itemY, itemSz / 2, colors[foodIdx % colors.length]);
+          const circle = this.add.circle(0, itemY, itemSz / 2, FALLBACK_COLORS[foodIdx % FALLBACK_COLORS.length]);
           container.add(circle);
         }
       }
@@ -294,8 +294,7 @@ export class PlayScene extends Phaser.Scene {
         sprite.setDepth(100);
         item = sprite;
       } else {
-        const colors = [0xEF4444, 0x3B82F6, 0x22C55E, 0xEAB308, 0xA855F7, 0xF97316];
-        const circle = this.add.circle(srcPos.x, startY, itemSz / 2, colors[foodIdx % colors.length]);
+        const circle = this.add.circle(srcPos.x, startY, itemSz / 2, FALLBACK_COLORS[foodIdx % FALLBACK_COLORS.length]);
         circle.setDepth(100);
         item = circle;
       }
