@@ -19,7 +19,8 @@ type BridgeRequestType =
   | 'HAPTIC'
   | 'ITEM_USED'
   | 'STAGE_CLEAR'
-  | 'GAME_OVER';
+  | 'GAME_OVER'
+  | 'NAVIGATE';
 
 type BridgeResponseType =
   | 'ACK'
@@ -54,6 +55,7 @@ export interface StageCompleteData {
 
 export interface BridgeHostCallbacks {
   onStageComplete?: (data: StageCompleteData) => void;
+  onNavigateArcade?: () => void;
 }
 
 // ─── Response Type Mapping ──────────────────────────────────
@@ -68,6 +70,7 @@ const RESPONSE_TYPE_MAP: Record<BridgeRequestType, BridgeResponseType> = {
   ITEM_USED: 'ACK',
   STAGE_CLEAR: 'ACK',
   GAME_OVER: 'ACK',
+  NAVIGATE: 'ACK',
 };
 
 // ─── BridgeHost ─────────────────────────────────────────────
@@ -135,6 +138,9 @@ export class BridgeHost {
           break;
         case 'GAME_OVER':
           this.handleStageComplete(msg, false);
+          break;
+        case 'NAVIGATE':
+          this.handleNavigate(msg);
           break;
         default:
           this.sendResponse(msg.msgId, 'ACK', 'error', undefined, 'unknown_type');
@@ -206,6 +212,14 @@ export class BridgeHost {
     const elapsedMs = Number(p.elapsedMs) || 0;
 
     this.callbacks.onStageComplete?.({ stage, score, elapsedMs, cleared });
+  }
+
+  private handleNavigate(msg: BridgeMessage) {
+    const target = msg.payload?.target;
+    if (target === 'arcade') {
+      this.callbacks.onNavigateArcade?.();
+    }
+    this.sendResponse(msg.msgId, 'ACK', 'ack');
   }
 
   // ─── Haptic Patterns ───────────────────────────────────

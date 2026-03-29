@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GameCanvas } from '../../components/GameCanvas';
+import { GameHomeLayout } from '../../components/GameHomeLayout';
+import { StageMap, type StageInfo } from '../../components/StageMap';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
 import { ClearScreen as SudokuClear } from './ClearScreen';
@@ -8,19 +10,18 @@ import { HUD as SudokuHUD } from './HUD';
 import { NumberPad as SudokuNumberPad } from './NumberPad';
 import { useGame as useSudokuGame, type GameResult as SudokuResult } from './useGame';
 
-function SudokuTitleRoute() {
+const STAGES: StageInfo[] = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, cleared: false }));
+
+function SudokuHomeRoute() {
   const navigate = useNavigate();
   return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Sudoku</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Classic number puzzle!</p>
-      <button
-        onClick={() => navigate('/games/sudoku/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
-        Play
-      </button>
-    </PlayLayout>
+    <GameHomeLayout title="Sudoku" icon="🔢">
+      <StageMap
+        stages={STAGES}
+        currentStage={1}
+        onStageSelect={(stage) => navigate(`/games/sudoku/v1/stage/${stage}`)}
+      />
+    </GameHomeLayout>
   );
 }
 
@@ -73,6 +74,6 @@ function SudokuPlaying({ stage, onClear, onGameOver }: { stage: number; onClear:
 }
 
 registerRoutes('/games/sudoku/v1', [
-  { path: '', element: <SudokuTitleRoute /> },
+  { path: '', element: <SudokuHomeRoute /> },
   { path: 'stage/:stageId', element: <SudokuStageRoute /> },
 ]);

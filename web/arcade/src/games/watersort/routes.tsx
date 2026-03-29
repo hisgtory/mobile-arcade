@@ -1,25 +1,26 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GameCanvas } from '../../components/GameCanvas';
+import { GameHomeLayout } from '../../components/GameHomeLayout';
+import { StageMap, type StageInfo } from '../../components/StageMap';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
 import { ClearScreen as WaterSortClear } from './ClearScreen';
 import { HUD as WaterSortHUD } from './HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './useGame';
 
-function WaterSortTitleRoute() {
+const STAGES: StageInfo[] = Array.from({ length: 30 }, (_, i) => ({ id: i + 1, cleared: false }));
+
+function WaterSortHomeRoute() {
   const navigate = useNavigate();
   return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Water Sort</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Sort the colors into tubes!</p>
-      <button
-        onClick={() => navigate('/games/watersort/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
-        Play
-      </button>
-    </PlayLayout>
+    <GameHomeLayout title="Water Sort" icon="💧">
+      <StageMap
+        stages={STAGES}
+        currentStage={1}
+        onStageSelect={(stage) => navigate(`/games/watersort/v1/stage/${stage}`)}
+      />
+    </GameHomeLayout>
   );
 }
 
@@ -60,6 +61,6 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
 }
 
 registerRoutes('/games/watersort/v1', [
-  { path: '', element: <WaterSortTitleRoute /> },
+  { path: '', element: <WaterSortHomeRoute /> },
   { path: 'stage/:stageId', element: <WaterSortStageRoute /> },
 ]);

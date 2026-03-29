@@ -1,24 +1,26 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GameCanvas } from '../../components/GameCanvas';
+import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { PlayLayout } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
 import { HUD as BlockPuzzleHUD } from './HUD';
 import { useGame as useBlockPuzzleGame, type GameResult as BlockPuzzleResult } from './useGame';
 
-function BlockPuzzleTitleRoute() {
+function BlockPuzzleHomeRoute() {
   const navigate = useNavigate();
   return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Block Puzzle</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Fill lines with block pieces!</p>
-      <button
-        onClick={() => navigate('/games/blockpuzzle/v1/play')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
-        Play
-      </button>
-    </PlayLayout>
+    <GameHomeLayout title="Block Puzzle" icon="💎">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+        <p style={{ fontSize: 16, color: '#6B7280' }}>Fill lines with block pieces!</p>
+        <button
+          onClick={() => navigate('/games/blockpuzzle/v1/play')}
+          style={{ marginTop: 16, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '18px 56px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+        >
+          Play
+        </button>
+      </div>
+    </GameHomeLayout>
   );
 }
 
@@ -68,6 +70,6 @@ function BlockPuzzlePlaying({ onGameOver }: { onGameOver: (r: BlockPuzzleResult)
 }
 
 registerRoutes('/games/blockpuzzle/v1', [
-  { path: '', element: <BlockPuzzleTitleRoute /> },
+  { path: '', element: <BlockPuzzleHomeRoute /> },
   { path: 'play', element: <BlockPuzzlePlayRoute /> },
 ]);
