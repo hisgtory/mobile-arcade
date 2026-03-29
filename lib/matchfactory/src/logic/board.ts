@@ -1,8 +1,8 @@
 /**
  * Board logic for Match Factory
  *
- * Grid creation, tile matching, gravity, and refill.
- * Board is a 2D array: board[row][col] = TileType (-1 = empty)
+ * Handles grid creation, tile placement, gravity, and new tile generation.
+ * The board is a 2D array: board[row][col] = TileType (-1 = empty)
  */
 
 import type { TileType, CellPos, StageConfig } from '../types';
@@ -37,6 +37,9 @@ export function findAllMatches(board: Board): CellPos[][] {
   const rows = board.length;
   const cols = board[0].length;
   const matches: CellPos[][] = [];
+  const visited = new Set<string>();
+
+  const key = (r: number, c: number) => `${r},${c}`;
 
   // Horizontal
   for (let r = 0; r < rows; r++) {
@@ -49,6 +52,10 @@ export function findAllMatches(board: Board): CellPos[][] {
       if (len >= 3) {
         const cells: CellPos[] = [];
         for (let i = c; i < end; i++) {
+          const k = key(r, i);
+          if (!visited.has(k)) {
+            visited.add(k);
+          }
           cells.push({ row: r, col: i });
         }
         matches.push(cells);
@@ -58,6 +65,7 @@ export function findAllMatches(board: Board): CellPos[][] {
   }
 
   // Vertical
+  visited.clear();
   for (let c = 0; c < cols; c++) {
     for (let r = 0; r <= rows - 3; r++) {
       const t = board[r][c];
@@ -116,7 +124,7 @@ function mergeOverlapping(groups: CellPos[][]): CellPos[][] {
   return merged;
 }
 
-/** Remove matched cells (set to EMPTY) */
+/** Remove matched cells (set to EMPTY) and return count removed */
 export function removeCells(board: Board, cells: CellPos[]): number {
   for (const { row, col } of cells) {
     board[row][col] = EMPTY;
@@ -124,7 +132,7 @@ export function removeCells(board: Board, cells: CellPos[]): number {
   return cells.length;
 }
 
-/** Apply gravity: drop tiles down into empty cells */
+/** Apply gravity: drop tiles down into empty cells. Returns cells that moved. */
 export function applyGravity(board: Board): { from: CellPos; to: CellPos }[] {
   const rows = board.length;
   const cols = board[0].length;
@@ -147,7 +155,7 @@ export function applyGravity(board: Board): { from: CellPos; to: CellPos }[] {
   return moves;
 }
 
-/** Fill empty cells at top with new random tiles */
+/** Fill empty cells at top with new random tiles. Returns new tile positions. */
 export function fillEmpty(board: Board, typeCount: number): CellPos[] {
   const rows = board.length;
   const cols = board[0].length;
@@ -171,15 +179,9 @@ export function calcMatchScore(cellCount: number, combo: number): number {
   return base * Math.max(1, combo);
 }
 
-/**
- * Count how many of each tile type were matched.
- * Returns a map of TileType → count.
- */
-export function countMatchedTypes(
-  board: Board,
-  cells: CellPos[],
-): Map<number, number> {
-  const counts = new Map<number, number>();
+/** Count matched tile types from a set of cells (for order tracking) */
+export function countMatchedTypes(board: Board, cells: CellPos[]): Map<TileType, number> {
+  const counts = new Map<TileType, number>();
   for (const { row, col } of cells) {
     const t = board[row][col];
     if (t !== EMPTY) {

@@ -86,13 +86,7 @@ export class PlayScene extends Phaser.Scene {
     // Load stage
     this.stageConfig = getStageConfig(this.stageNum);
     this.movesLeft = this.stageConfig.maxMoves;
-
-    // Initialize orders
-    this.orders = this.stageConfig.orders.map((o) => ({
-      type: o.type,
-      target: o.target,
-      collected: 0,
-    }));
+    this.orders = this.stageConfig.orders.map((o) => ({ ...o, collected: 0 }));
 
     // Background
     this.cameras.main.setBackgroundColor('#f0f2f5');
@@ -273,7 +267,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private async processMatches(matches: CellPos[][]): Promise<void> {
-    // Gather all unique matched cells
+    // Collect all unique cells
     const allCells: CellPos[] = [];
     for (const group of matches) {
       this.combo++;
@@ -287,10 +281,8 @@ export class PlayScene extends Phaser.Scene {
       }
     }
 
-    // Count matched types BEFORE removing from board
+    // Count matched types before removing (for order tracking)
     const typeCounts = countMatchedTypes(this.board, allCells);
-
-    // Update orders
     for (const order of this.orders) {
       const matched = typeCounts.get(order.type) ?? 0;
       if (matched > 0) {
@@ -360,7 +352,7 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
-  // ─── ORDER HELPERS ──────────────────────────────────────
+  // ─── ORDER CHECKING ────────────────────────────────────
 
   private allOrdersFulfilled(): boolean {
     return this.orders.every((o) => o.collected >= o.target);

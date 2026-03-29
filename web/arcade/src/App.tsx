@@ -314,7 +314,7 @@ function MatchFactoryTitleRoute() {
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Match Factory</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Match items to fill factory orders!</p>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Swipe & match to fill orders!</p>
       <button
         onClick={() => navigate('/games/matchfactory/v1/stage/1')}
         style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}

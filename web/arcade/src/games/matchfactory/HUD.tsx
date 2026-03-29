@@ -1,11 +1,10 @@
 import { styled } from '../../styles/stitches.config';
-import { TILE_IMAGES } from '@arcade/lib-matchfactory';
-import type { Order } from '@arcade/lib-matchfactory';
+import { TILE_IMAGES, type Order } from '@arcade/lib-matchfactory';
 
 const Container = styled('div', {
   display: 'flex',
   flexDirection: 'column',
-  padding: '10px 16px',
+  padding: '12px 16px',
   backgroundColor: '$surface',
   borderBottom: '1px solid $gray100',
   gap: 8,
@@ -48,21 +47,15 @@ const OrdersRow = styled('div', {
 const OrderItem = styled('div', {
   display: 'flex',
   alignItems: 'center',
-  gap: 4,
-  padding: '4px 8px',
+  gap: 6,
+  padding: '4px 10px',
   borderRadius: 8,
-  fontSize: 13,
+  fontSize: 14,
   fontWeight: 600,
   variants: {
     fulfilled: {
-      true: {
-        backgroundColor: '#dcfce7',
-        color: '#16a34a',
-      },
-      false: {
-        backgroundColor: '#f3f4f6',
-        color: '$text',
-      },
+      true: { backgroundColor: '#D1FAE5', color: '#065F46' },
+      false: { backgroundColor: '$gray100', color: '$text' },
     },
   },
 });
@@ -108,17 +101,12 @@ export function HUD({ stage, score, movesLeft, combo, orders }: HUDProps) {
       </TopRow>
       <OrdersRow>
         {orders.map((order, i) => {
-          const imageKey = TILE_IMAGES[order.type % TILE_IMAGES.length];
           const done = order.collected >= order.target;
+          const imageKey = TILE_IMAGES[order.type % TILE_IMAGES.length];
           return (
             <OrderItem key={i} fulfilled={done}>
-              <OrderIcon
-                src={`/assets/tiles/${imageKey}.png`}
-                alt={imageKey}
-              />
-              <span>
-                {done ? '✓' : `${order.collected}/${order.target}`}
-              </span>
+              <OrderIcon src={`/assets/tiles/${imageKey}.png`} alt={imageKey} />
+              {done ? '✓' : `${order.collected}/${order.target}`}
             </OrderItem>
           );
         })}

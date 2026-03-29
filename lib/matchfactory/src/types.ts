@@ -1,7 +1,5 @@
 /**
  * Match Factory game type definitions
- *
- * A match-3 swap puzzle with collection-order goals instead of score targets.
  */
 
 export type TileType = number;
@@ -17,11 +15,7 @@ export interface TileData {
   col: number;
 }
 
-export interface MatchResult {
-  cells: CellPos[];
-}
-
-/** A single order: collect N tiles of a specific type */
+/** A single collection order: collect N tiles of a given type */
 export interface Order {
   type: TileType;
   target: number;
@@ -30,12 +24,15 @@ export interface Order {
 
 export interface StageConfig {
   stage: number;
-  /** Number of distinct tile types on the board */
+  /** Number of distinct tile types (6-8) */
   typeCount: number;
+  /** Grid rows */
   rows: number;
+  /** Grid cols */
   cols: number;
+  /** Max moves allowed */
   maxMoves: number;
-  /** Orders to fulfill */
+  /** Collection orders to fulfill */
   orders: { type: TileType; target: number }[];
 }
 
@@ -54,16 +51,16 @@ export enum GamePhase {
   GAME_OVER = 'game_over',
 }
 
-// Factory-themed tile images — industrial/food items for the factory
+// 10 visually distinct food tile images for match-3
 export const TILE_IMAGES: string[] = [
   'fruit_apple',
-  'fruit_orange',
   'cheese_gouda',
   'coffee_espresso',
   'eggs_fried',
+  'fruit_orange',
   'pastry_croissant',
-  'jam_strawberry',
-  'soymilk_choco',
-  'vegetable_carrot',
-  'canned_soup',
+  'boba_matcha',
+  'cake_strawberry',
+  'onigiri_1',
+  'popsicle_pink',
 ];

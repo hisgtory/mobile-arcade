@@ -26,11 +26,6 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     stageConfig.orders.map((o) => ({ ...o, collected: 0 })),
   );
 
-  const onClearRef = useRef(onClear);
-  onClearRef.current = onClear;
-  const onGameOverRef = useRef(onGameOver);
-  onGameOverRef.current = onGameOver;
-
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -51,24 +46,24 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     });
 
     game.events.on('orders-update', (data: { orders: Order[] }) => {
-      setOrders(data.orders.map((o) => ({ ...o })));
+      setOrders(data.orders);
     });
 
     game.events.on('stage-clear', (data: { score: number; movesUsed: number }) => {
       stageComplete({ stage, score: data.score, cleared: true });
-      onClearRef.current?.({ score: data.score, movesUsed: data.movesUsed, cleared: true });
+      onClear?.({ score: data.score, movesUsed: data.movesUsed, cleared: true });
     });
 
     game.events.on('game-over', (data: { score: number }) => {
       stageComplete({ stage, score: data.score, cleared: false });
-      onGameOverRef.current?.({ score: data.score, cleared: false });
+      onGameOver?.({ score: data.score, cleared: false });
     });
 
     return () => {
       destroyGame(game);
       gameRef.current = null;
     };
-  }, [stage]);
+  }, [stage, onClear, onGameOver]);
 
   return {
     containerRef,
