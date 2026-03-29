@@ -162,6 +162,9 @@ importers:
       '@arcade/lib-tictactoe':
         specifier: workspace:*
         version: link:../../lib/tictactoe
+      '@arcade/lib-trafficjam':
+        specifier: workspace:*
+        version: link:../../lib/trafficjam
       '@arcade/lib-watersort':
         specifier: workspace:*
         version: link:../../lib/watersort
