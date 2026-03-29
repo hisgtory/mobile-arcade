@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── Arrows ───
+import { ClearScreen as ArrowsClear } from './games/arrows/ClearScreen';
+import { HUD as ArrowsHUD } from './games/arrows/HUD';
+import { useGame as useArrowsGame, type GameResult as ArrowsResult } from './games/arrows/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -301,6 +306,60 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Arrows Routes ────────────────────────────────────
+
+function ArrowsTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Arrows</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Rotate arrows to find the path!</p>
+      <button
+        onClick={() => navigate('/games/arrows/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function ArrowsStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<ArrowsResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: ArrowsResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/arrows/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/arrows/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <ArrowsClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <ArrowsPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function ArrowsPlaying({ stage, onClear }: { stage: number; onClear: (r: ArrowsResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useArrowsGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <ArrowsHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -326,6 +385,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* Arrows */}
+      <Route path="/games/arrows/v1" element={<ArrowsTitleRoute />} />
+      <Route path="/games/arrows/v1/stage/:stageId" element={<ArrowsStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
