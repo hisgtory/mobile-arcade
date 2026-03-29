@@ -38,7 +38,6 @@ export class PlayScene extends Phaser.Scene {
   private gridStartX: number = 0;
   private gridStartY: number = 0;
   private gridCells: Phaser.GameObjects.Rectangle[][] = [];
-  private highlightRects: Phaser.GameObjects.Rectangle[] = [];
 
   constructor() {
     super({ key: 'PlayScene' });
@@ -315,11 +314,6 @@ export class PlayScene extends Phaser.Scene {
     return { row, col };
   }
 
-  private clearHighlights(): void {
-    for (const rect of this.highlightRects) rect.destroy();
-    this.highlightRects = [];
-  }
-
   // -- JUICE EFFECTS --
 
   private showScorePopup(
@@ -439,6 +433,5 @@ export class PlayScene extends Phaser.Scene {
 
   shutdown(): void {
     this.gridCells = [];
-    this.highlightRects = [];
   }
 }
