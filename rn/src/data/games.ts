@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'spotit',
+    name: 'Spot It!',
+    description: 'Find the hidden objects!',
+    icon: '🔍',
+    category: 'puzzle',
+    color: '#F59E0B',
+    webPath: '/games/spotit/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
