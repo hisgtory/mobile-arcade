@@ -109,9 +109,7 @@ export class PlayScene extends Phaser.Scene {
     const availableH = h * 0.55;
     const availableW = w * 0.9;
 
-    const triH = (this.stageConfig.gridRows + 1) > 0
-      ? availableH / (this.stageConfig.gridRows + 1)
-      : availableH / 5;
+    const triH = availableH / (this.stageConfig.gridRows + 1);
 
     // triSize from height: h = triSize * sqrt(3) / 2
     const triSizeFromH = (triH * 2) / Math.sqrt(3);

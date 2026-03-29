@@ -59,7 +59,7 @@ export function HUD({ stage, score, moves, onReset, onRestart }: HUDProps) {
         <StatValue>{stage}</StatValue>
       </StatBlock>
       <StatBlock>
-        <StatLabel>Pieces</StatLabel>
+        <StatLabel>Placed</StatLabel>
         <StatValue>{moves}</StatValue>
       </StatBlock>
       <StatBlock>
