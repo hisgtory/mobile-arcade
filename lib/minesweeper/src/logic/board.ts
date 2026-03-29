@@ -5,7 +5,7 @@
  * First click is always safe (mines placed after first click).
  */
 
-import { type Cell, type CellState, type DifficultyConfig, DIFFICULTIES, type Difficulty } from '../types';
+import { type Cell, type CellState, type DifficultyConfig } from '../types';
 
 export type Board = Cell[][];
 

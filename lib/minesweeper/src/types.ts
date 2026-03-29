@@ -32,5 +32,4 @@ export type GamePhase = 'ready' | 'playing' | 'won' | 'lost';
 
 export interface GameConfig {
   difficulty?: Difficulty;
-  onGameOver?: () => void;
 }

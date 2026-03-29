@@ -25,8 +25,6 @@ import {
   type Board,
 } from '../logic/board';
 import {
-  DEFAULT_WIDTH,
-  DEFAULT_HEIGHT,
   DIFFICULTIES,
   type Difficulty,
   type DifficultyConfig,
@@ -35,12 +33,8 @@ import {
 } from '../types';
 
 // Colors
-const BG_COLOR = 0xf0f2f5;
 const HIDDEN_COLOR = 0xd1d5db;
-const HIDDEN_HOVER_COLOR = 0xbfc5cd;
 const REVEALED_COLOR = 0xf9fafb;
-const FLAG_COLOR = 0xef4444;
-const MINE_COLOR = 0x1f2937;
 const MINE_HIT_COLOR = 0xef4444;
 const GRID_LINE_COLOR = 0x9ca3af;
 
@@ -271,6 +265,7 @@ export class PlayScene extends Phaser.Scene {
       // Hit a mine — game over
       this.phase = 'lost';
       if (this.timerEvent) this.timerEvent.remove();
+      this.emitState();
 
       // Highlight the hit mine
       this.updateCells(revealed);
@@ -292,6 +287,7 @@ export class PlayScene extends Phaser.Scene {
       if (checkWin(this.board)) {
         this.phase = 'won';
         if (this.timerEvent) this.timerEvent.remove();
+        this.emitState();
 
         // Haptic: win celebration
         this.game.events.emit('game-clear');
