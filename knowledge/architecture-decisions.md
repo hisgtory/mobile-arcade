@@ -16,6 +16,8 @@ lib/{game}  →  web/{game}  →  {game}/rn
 ### Rationale
 코드 재사용 극대화, 게임별 독립 배포. 하나의 게임 로직으로 웹/앱 동시 서빙.
 
+> **Note**: `{game}/rn` 부분은 ADR-015에 의해 superseded — 현재는 단일 `rn/` 슈퍼앱 구조. 파이프라인은 `lib/{game}` → `web/{game}` → `rn` (단일 슈퍼앱)으로 변경됨.
+
 ---
 
 ## ADR-002: Phaser is Board-Only
@@ -250,3 +252,22 @@ RN HAPTIC_PATTERNS:
 - 햅틱 튜닝 시 RN 맵만 수정, 웹 코드 변경 불필요
 - 새 게임 이벤트 추가 시 RN 맵에 한 줄 추가로 완료
 - 하위 호환: 직접 스타일명(light/medium/heavy)도 fallback으로 지원
+
+---
+
+## ADR-015: 단일 RN 슈퍼앱 구조 확정
+
+### Context
+초기에는 게임별 독립 RN 앱 (`found3/rn/`)으로 시작했으나, ADR-009에서 슈퍼앱 (`rn/`)으로 전환 결정. 이후 `found3/rn/`과 `rn/`이 공존하는 상태가 지속됨.
+
+### Decision
+모든 게임은 단일 RN 슈퍼앱 (`rn/`, @arcade/app)에서 WebView로 로드. 게임별 독립 RN 프로젝트는 만들지 않음. `found3/rn/`은 레거시로 삭제.
+
+### Consequences
+- `{game}/rn/` 패턴 폐기 — 새 게임 추가 시 `rn/`에서 WebView URL만 추가하면 됨
+- 파이프라인 구조 변경: `lib/{game}` → `web/{game}` → `rn` (단일 슈퍼앱)
+- pnpm-workspace.yaml에서 `found3/rn` 제거
+- 루트 CLAUDE.md 팀 테이블 `found3/rn/` → `rn/` 반영
+
+### Rationale
+ADR-009의 슈퍼앱 결정을 물리적 폴더 구조까지 완전히 반영. 레거시 프로토타입 코드 제거로 혼란 방지.
