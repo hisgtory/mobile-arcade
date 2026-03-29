@@ -432,46 +432,16 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private celebrateWin() {
-    // Haptic: win celebration (before animation)
+    // Haptic: win celebration
     this.game.events.emit('game-clear');
 
-    // Emit stage-clear immediately (React decides UI timing)
+    // Emit stage-clear immediately (React handles UI/effects)
     this.game.events.emit('stage-clear', {
       score: this.calculateScore(),
       mistakes: this.board.mistakes,
       elapsedMs: this.elapsedMs,
       stage: this.config.stage ?? 1,
     });
-
-    const w = DEFAULT_WIDTH * this.dpr;
-    const h = DEFAULT_HEIGHT * this.dpr;
-
-    // Confetti (visual effect only, non-blocking)
-    for (let i = 0; i < 30; i++) {
-      const colors = [0x2563eb, 0x22c55e, 0xeab308, 0xa855f7, 0xf97316];
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      const size = (4 + Math.random() * 6) * this.dpr;
-      const p = this.add.rectangle(
-        w / 2 + (Math.random() - 0.5) * 60 * this.dpr,
-        h / 2,
-        size,
-        size * 1.5,
-        color,
-      );
-      p.setDepth(300);
-      p.setRotation(Math.random() * Math.PI);
-
-      this.tweens.add({
-        targets: p,
-        x: p.x + (Math.random() - 0.5) * w * 0.8,
-        y: p.y + (Math.random() - 0.5) * h * 0.6,
-        rotation: p.rotation + (Math.random() - 0.5) * 4,
-        alpha: 0,
-        duration: 1000 + Math.random() * 500,
-        ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
-      });
-    }
   }
 
   // ─── Events ───────────────────────────────────────────

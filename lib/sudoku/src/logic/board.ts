@@ -119,12 +119,34 @@ function removeCells(solution: number[][], removals: number): number[][] {
   return puzzle;
 }
 
+function countEmpty(puzzle: number[][]): number {
+  let count = 0;
+  for (const row of puzzle) {
+    for (const val of row) {
+      if (val === 0) count++;
+    }
+  }
+  return count;
+}
+
 // ─── Board Creation ──────────────────────────────────────
 
 export function createBoard(difficulty: Difficulty): BoardState {
   const config = DIFFICULTY_CONFIGS[difficulty];
-  const solution = generateFullGrid();
-  const puzzle = removeCells(solution, config.removals);
+  const minRemovals = Math.floor(config.removals * 0.8);
+
+  let solution: number[][];
+  let puzzle: number[][];
+
+  // Retry if removeCells couldn't reach 80% of target (uniqueness constraint)
+  let attempts = 0;
+  do {
+    solution = generateFullGrid();
+    puzzle = removeCells(solution, config.removals);
+    attempts++;
+  } while (
+    countEmpty(puzzle) < minRemovals && attempts < 5
+  );
 
   const grid: Grid = puzzle.map((row, r) =>
     row.map((val, c) => ({
