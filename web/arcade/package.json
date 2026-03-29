@@ -13,7 +13,6 @@
     "@arcade/lib-found3": "workspace:*",
     "@arcade/lib-crunch3": "workspace:*",
     "@arcade/lib-blockrush": "workspace:*",
-    "@arcade/lib-starrynight": "workspace:*",
     "@arcade/lib-watersort": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
     "@stitches/react": "^1.2.8",

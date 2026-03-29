@@ -13,7 +13,7 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
     parent,
     width: DEFAULT_WIDTH * dpr,
     height: DEFAULT_HEIGHT * dpr,
-    backgroundColor: '#0b1120',
+    backgroundColor: '#0f172a',
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
@@ -27,7 +27,7 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
     scene: [PlayScene],
   });
 
-  (game as any).__starryConfig = config;
+  (game as any).__starrynightConfig = config;
   (game as any).__dpr = dpr;
   game.scene.start('PlayScene', { gameConfig: config });
 

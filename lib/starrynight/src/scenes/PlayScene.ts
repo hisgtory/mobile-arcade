@@ -1,9 +1,9 @@
 /**
- * PlayScene for Starry Night
+ * PlayScene for StarryNight
  *
  * 10x10 grid + 3 piece slots at bottom.
  * Drag pieces onto the grid. Full rows/cols clear.
- * Starry-night theme: dark sky, twinkling stars, cosmic colors.
+ * Starry night cosmic theme.
  *
  * Events emitted:
  *   'score-update' — { score }
@@ -23,18 +23,16 @@ import {
 } from '../logic/board';
 import { GamePhase, GRID_SIZE, randomPiece, type GameConfig, type PieceShape } from '../types';
 
-// Starry night palette
-const CELL_BORDER_COLOR = 0x374151;
+const CELL_BORDER_COLOR = 0x334155;
 const CELL_BG_COLOR = 0x1e293b;
 const GRID_BG_COLOR = 0x0f172a;
-const BG_COLOR = '#0b1120';
 
 export class PlayScene extends Phaser.Scene {
   private gameConfig?: GameConfig;
   private phase: GamePhase = GamePhase.PLAYING;
   private board!: Board;
   private score: number = 0;
-  private consecutiveClears: number = 0;
+  private consecutiveClears: number = 0; // combo counter
 
   // Visual
   private cellSize: number = 32;
@@ -42,19 +40,17 @@ export class PlayScene extends Phaser.Scene {
   private gridStartY: number = 0;
   private gridCells: Phaser.GameObjects.Rectangle[][] = [];
   private pieceSlots: PieceSlot[] = [];
+  private stars: Phaser.GameObjects.Arc[] = [];
 
   // Drag state
   private dragPiece: DragPieceVisual | null = null;
-
-  // Background stars
-  private stars: Phaser.GameObjects.Arc[] = [];
 
   constructor() {
     super({ key: 'PlayScene' });
   }
 
   init(data: { gameConfig?: GameConfig }): void {
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__starryConfig;
+    this.gameConfig = data?.gameConfig ?? (this.game as any).__starrynightConfig;
   }
 
   create(): void {
@@ -65,10 +61,10 @@ export class PlayScene extends Phaser.Scene {
     this.board = createBoard();
     this.score = 0;
 
-    this.cameras.main.setBackgroundColor(BG_COLOR);
+    this.cameras.main.setBackgroundColor('#0f172a');
 
-    // Create twinkling star background
-    this.createStarField(width, height);
+    // Twinkling star background
+    this.createStars(width, height);
 
     // Calculate cell size to fit grid with space for pieces below
     const gridAreaH = height * 0.65;
@@ -107,25 +103,23 @@ export class PlayScene extends Phaser.Scene {
     this.emitScore();
   }
 
-  // -- STAR BACKGROUND --
+  // -- STARS --
 
-  private createStarField(width: number, height: number): void {
+  private createStars(width: number, height: number): void {
     this.stars = [];
     const count = 40;
     for (let i = 0; i < count; i++) {
       const x = Math.random() * width;
       const y = Math.random() * height;
-      const size = 0.5 + Math.random() * 1.5;
-      const alpha = 0.2 + Math.random() * 0.6;
-
-      const star = this.add.circle(x, y, size, 0xffffff, alpha);
+      const radius = 0.5 + Math.random() * 1.5;
+      const star = this.add.circle(x, y, radius, 0xffffff, 0.3 + Math.random() * 0.5);
       star.setDepth(0);
       this.stars.push(star);
 
-      // Twinkling animation
+      // Twinkle animation
       this.tweens.add({
         targets: star,
-        alpha: { from: alpha, to: alpha * 0.3 },
+        alpha: 0.1 + Math.random() * 0.3,
         duration: 1500 + Math.random() * 2000,
         yoyo: true,
         repeat: -1,
@@ -138,6 +132,7 @@ export class PlayScene extends Phaser.Scene {
   // -- PIECE SLOTS --
 
   private spawnPieceSlots(): void {
+    // Clear old
     for (const slot of this.pieceSlots) {
       slot.destroy();
     }
@@ -173,8 +168,10 @@ export class PlayScene extends Phaser.Scene {
 
   private updateDrag(px: number, py: number): void {
     if (!this.dragPiece) return;
+    // Offset up so finger doesn't cover the piece
     this.dragPiece.moveTo(px, py - this.cellSize * 2);
 
+    // Highlight valid placement
     const gridPos = this.pixelToGrid(px, py - this.cellSize * 2);
     this.clearHighlights();
     if (gridPos && canPlace(this.board, this.dragPiece.piece, gridPos.row, gridPos.col)) {
@@ -194,12 +191,13 @@ export class PlayScene extends Phaser.Scene {
     this.clearHighlights();
 
     if (gridPos && canPlace(this.board, piece, gridPos.row, gridPos.col)) {
+      // Valid placement
       const placed = placePiece(this.board, piece, gridPos.row, gridPos.col);
 
       // Update visual grid
       for (const { row, col } of placed) {
         this.gridCells[row][col].setFillStyle(piece.color);
-        this.gridCells[row][col].setStrokeStyle(1, 0xffffff, 0.2);
+        this.gridCells[row][col].setStrokeStyle(1, 0xffffff, 0.3);
       }
 
       // Remove the used slot
@@ -228,11 +226,11 @@ export class PlayScene extends Phaser.Scene {
         const clearScore = calcClearScore(lineCount, cleared.length) * Math.max(1, this.consecutiveClears);
         this.score += clearScore + placed.length;
 
-        // Screen shake
+        // Screen shake — intensity scales with combo
         const shakeIntensity = Math.min(3 + this.consecutiveClears * 2, 12);
         this.cameras.main.shake(200, shakeIntensity / 1000);
 
-        // Flash cleared cells with star glow
+        // Flash cleared cells golden before destroying
         for (const { row, col } of cleared) {
           this.gridCells[row][col].setFillStyle(0xfbbf24);
         }
@@ -240,7 +238,7 @@ export class PlayScene extends Phaser.Scene {
         // Combo text popup
         this.showComboText(lineCount, this.consecutiveClears, clearScore);
 
-        // Staggered destroy animation with star particles
+        // Staggered destroy animation with particles
         this.time.delayedCall(100, () => {
           let completed = 0;
           cleared.forEach(({ row, col }, i) => {
@@ -250,7 +248,8 @@ export class PlayScene extends Phaser.Scene {
               const cy = cell.y;
               const color = cell.fillColor;
 
-              this.spawnStarParticles(cx, cy, color);
+              // Spawn particles
+              this.spawnParticles(cx, cy, color);
 
               this.tweens.add({
                 targets: cell,
@@ -330,13 +329,14 @@ export class PlayScene extends Phaser.Scene {
     const { width } = this.scale;
     const gridCenterY = this.gridStartY + (this.cellSize * GRID_SIZE) / 2;
 
-    const messages = ['✨ Nice!', '⭐ Great!', '🌟 Awesome!', '💫 AMAZING!', '🌠 INCREDIBLE!'];
+    const messages = ['Nice!', 'Great!', 'Awesome!', 'AMAZING!', 'INCREDIBLE!'];
     const msgIdx = Math.min(combo - 1, messages.length - 1);
     const msg = lineCount > 1 ? `${messages[msgIdx]} x${lineCount}` : messages[msgIdx];
 
-    const colors = [0xfbbf24, 0x818cf8, 0xa78bfa, 0xf472b6, 0x38bdf8];
+    const colors = [0xfbbf24, 0xa78bfa, 0x60a5fa, 0xf472b6, 0x34d399];
     const color = colors[Math.min(combo - 1, colors.length - 1)];
 
+    // Combo text
     const text = this.add.text(width / 2, gridCenterY - 30, msg, {
       fontSize: `${Math.min(28 + combo * 4, 48)}px`,
       fontFamily: 'system-ui, sans-serif',
@@ -346,13 +346,15 @@ export class PlayScene extends Phaser.Scene {
       strokeThickness: 4,
     }).setOrigin(0.5).setDepth(200);
 
+    // Score text below
     const scoreText = this.add.text(width / 2, gridCenterY + 10, `+${score}`, {
       fontSize: '20px',
       fontFamily: 'system-ui, sans-serif',
       fontStyle: 'bold',
-      color: '#e2e8f0',
+      color: '#fbbf24',
     }).setOrigin(0.5).setDepth(200);
 
+    // Animate both up and fade
     for (const t of [text, scoreText]) {
       this.tweens.add({
         targets: t,
@@ -367,15 +369,14 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
-  private spawnStarParticles(x: number, y: number, color: number): void {
-    const count = 8;
+  private spawnParticles(x: number, y: number, color: number): void {
+    const count = 6;
     for (let i = 0; i < count; i++) {
       const angle = (Math.PI * 2 * i) / count + Math.random() * 0.5;
       const speed = 80 + Math.random() * 60;
-      const size = 2 + Math.random() * 3;
+      const size = 3 + Math.random() * 3;
 
-      // Use circles for star-like particles
-      const particle = this.add.circle(x, y, size, color);
+      const particle = this.add.circle(x, y, size / 2, color);
       particle.setDepth(150);
 
       this.tweens.add({
@@ -385,7 +386,7 @@ export class PlayScene extends Phaser.Scene {
         alpha: 0,
         scaleX: 0,
         scaleY: 0,
-        duration: 500 + Math.random() * 300,
+        duration: 400 + Math.random() * 200,
         ease: 'Power2',
         onComplete: () => particle.destroy(),
       });
@@ -404,6 +405,7 @@ export class PlayScene extends Phaser.Scene {
   private gameOver(): void {
     this.phase = GamePhase.GAME_OVER;
 
+    // Shake + fade board
     this.cameras.main.shake(300, 0.008);
     this.cameras.main.fade(600, 0, 0, 0, false, (_cam: any, progress: number) => {
       if (progress >= 1) {
@@ -445,6 +447,7 @@ class PieceSlot {
 
     this.container = scene.add.container(x, y);
 
+    // Calculate piece bounds for centering
     const maxR = Math.max(...piece.cells.map((c) => c.row));
     const maxC = Math.max(...piece.cells.map((c) => c.col));
     const offsetX = -(maxC + 1) * cellSize / 2;
@@ -458,10 +461,11 @@ class PieceSlot {
         cellSize - 2,
         piece.color,
       );
-      rect.setStrokeStyle(1, 0xffffff, 0.2);
+      rect.setStrokeStyle(1, 0xffffff, 0.3);
       this.container.add(rect);
     }
 
+    // Make interactive
     const hitW = (maxC + 1) * cellSize + 20;
     const hitH = (maxR + 1) * cellSize + 20;
     const hitArea = scene.add.rectangle(0, 0, hitW, hitH, 0x000000, 0);
@@ -516,7 +520,7 @@ class DragPieceVisual {
         piece.color,
         0.8,
       );
-      rect.setStrokeStyle(1, 0xffffff, 0.3);
+      rect.setStrokeStyle(1, 0xffffff, 0.4);
       this.container.add(rect);
     }
   }

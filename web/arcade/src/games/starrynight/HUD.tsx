@@ -6,7 +6,7 @@ const Container = styled('div', {
   alignItems: 'center',
   padding: '12px 16px',
   backgroundColor: '#0f172a',
-  borderBottom: '1px solid #1e293b',
+  borderBottom: '1px solid #334155',
   gap: 24,
 });
 

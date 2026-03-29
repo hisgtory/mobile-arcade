@@ -1,5 +1,5 @@
 /**
- * Board logic for Starry Night
+ * Board logic for StarryNight
  *
  * 10x10 grid. Place pieces, clear full rows/cols.
  * board[row][col] = 0 (empty) or hex color (filled)
@@ -101,6 +101,7 @@ export function clearLines(
 
 /** Calculate score for clearing lines */
 export function calcClearScore(lineCount: number, cellCount: number): number {
+  // Bonus for clearing multiple lines at once
   const lineBonus = lineCount <= 1 ? 1 : lineCount;
   return cellCount * 10 * lineBonus;
 }

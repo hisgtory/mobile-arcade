@@ -1,8 +1,5 @@
 /**
- * Starry Night type definitions
- *
- * Block puzzle with a starry-night theme.
- * Same core mechanics as BlockRush: 10x10 grid, drag pieces, clear full rows/cols.
+ * StarryNight type definitions
  */
 
 export enum GamePhase {
@@ -23,15 +20,15 @@ export interface PieceShape {
 
 export const GRID_SIZE = 10;
 
-// Starry Night block colors — cosmic palette
+// Block colors — cosmic, starry theme
 export const BLOCK_COLORS: number[] = [
   0xfbbf24, // golden star
-  0x818cf8, // lavender
-  0x38bdf8, // sky blue
+  0xa78bfa, // lavender
+  0x60a5fa, // sky blue
   0xf472b6, // pink nebula
   0x34d399, // aurora green
   0xfb923c, // warm amber
-  0xa78bfa, // violet
+  0xc084fc, // violet
 ];
 
 // All possible piece shapes (tetromino-inspired + extras)
