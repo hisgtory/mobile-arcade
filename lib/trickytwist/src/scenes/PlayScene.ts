@@ -13,6 +13,10 @@ import { generatePuzzleSet, calcScore } from '../logic/board';
 
 type GamePhase = 'idle' | 'showing' | 'answered' | 'celebrating';
 
+const WIN_THRESHOLD = 0.5;
+const CORRECT_ANSWER_DELAY = 800;
+const WRONG_ANSWER_DELAY = 1500;
+
 export class PlayScene extends Phaser.Scene {
   private config!: GameConfig;
   private dpr = 1;
@@ -361,7 +365,7 @@ export class PlayScene extends Phaser.Scene {
     this.emitState();
 
     // Move to next puzzle after delay
-    this.time.delayedCall(isCorrect ? 800 : 1500, () => {
+    this.time.delayedCall(isCorrect ? CORRECT_ANSWER_DELAY : WRONG_ANSWER_DELAY, () => {
       this.currentPuzzle++;
       if (this.currentPuzzle >= this.puzzles.length) {
         this.onStageEnd();
