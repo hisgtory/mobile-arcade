@@ -40,10 +40,10 @@ export function createBoard(): HexBoard {
 }
 
 /** Check if a piece can be placed at offset (oq, or) */
-export function canPlace(board: HexBoard, piece: PieceShape, oq: number, or_: number): boolean {
+export function canPlace(board: HexBoard, piece: PieceShape, oq: number, offsetR: number): boolean {
   for (const cell of piece.cells) {
     const q = oq + cell.q;
-    const r = or_ + cell.r;
+    const r = offsetR + cell.r;
     const key = hexKey(q, r);
     if (!board.has(key)) return false; // outside board
     if (board.get(key) !== 0) return false; // occupied
@@ -56,12 +56,12 @@ export function placePiece(
   board: HexBoard,
   piece: PieceShape,
   oq: number,
-  or_: number,
+  offsetR: number,
 ): HexCoord[] {
   const placed: HexCoord[] = [];
   for (const cell of piece.cells) {
     const q = oq + cell.q;
-    const r = or_ + cell.r;
+    const r = offsetR + cell.r;
     board.set(hexKey(q, r), piece.color);
     placed.push({ q, r });
   }

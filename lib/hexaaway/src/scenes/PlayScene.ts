@@ -346,10 +346,10 @@ export class PlayScene extends Phaser.Scene {
 
   private highlightHexes: Phaser.GameObjects.Polygon[] = [];
 
-  private showHighlight(piece: PieceShape, oq: number, or_: number): void {
+  private showHighlight(piece: PieceShape, oq: number, offsetR: number): void {
     for (const c of piece.cells) {
       const q = oq + c.q;
-      const r = or_ + c.r;
+      const r = offsetR + c.r;
       if (isValidCell(q, r)) {
         const { x, y } = this.hexToPixel(q, r);
         const hex = this.createHexPolygon(x, y, this.hexSize - 1, piece.color, 0.3);
