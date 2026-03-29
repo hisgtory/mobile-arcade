@@ -457,4 +457,12 @@ export class PlayScene extends Phaser.Scene {
     this.game.events.emit('moves-update', { moves: this.moves });
     this.game.events.emit('matches-left', { count: Math.floor(remaining / 2) });
   }
+
+  /* ────── Cleanup ────── */
+
+  shutdown(): void {
+    this.tileSprites.forEach((c) => c.destroy());
+    this.tileSprites.clear();
+    this.selectedTile = null;
+  }
 }
