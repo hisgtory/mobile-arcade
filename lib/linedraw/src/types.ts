@@ -62,10 +62,11 @@ export function getStageConfig(stage: number): StageConfig {
   // Beyond stage 10: 6×6 with scaling walls
   const wallCount = Math.min(5 + (stage - 10), 10);
   const walls: number[] = [];
+  const gridSize = 36; // 6×6
   // Deterministic wall placement for stages beyond 10
   for (let i = 0; i < wallCount; i++) {
-    const idx = ((i * 7 + stage * 3) % 34) + 1; // avoid 0 (start)
-    if (!walls.includes(idx) && idx < 36) walls.push(idx);
+    const idx = ((i * 7 + stage * 3) % (gridSize - 1)) + 1; // avoid 0 (start), range 1..35
+    if (!walls.includes(idx)) walls.push(idx);
   }
   return { stage, cols: 6, rows: 6, walls, start: 0 };
 }

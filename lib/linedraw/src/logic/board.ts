@@ -26,7 +26,7 @@ export function createBoard(config: StageConfig): BoardState {
   // Verify solvability — find a valid start that has a Hamiltonian path
   const validStart = findValidStart(cols, rows, grid, start);
   if (validStart !== start) {
-    // Move start
+    // Move start: restore original to CELL_EMPTY, set new start
     grid[start] = CELL_EMPTY;
     grid[validStart] = CELL_START;
   }
