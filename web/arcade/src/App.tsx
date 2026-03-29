@@ -28,6 +28,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── AllInHole ───
+import { ClearScreen as AllInHoleClear } from './games/allinhole/ClearScreen';
+import { HUD as AllInHoleHUD } from './games/allinhole/HUD';
+import { useGame as useAllInHoleGame, type GameResult as AllInHoleResult } from './games/allinhole/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
@@ -272,6 +277,63 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── AllInHole Routes ─────────────────────────────────
+
+function AllInHoleTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#1a1a2e' }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#eeeeff', letterSpacing: -1 }}>All in Hole</h1>
+      <p style={{ fontSize: 16, color: '#8888aa' }}>Swipe to slide all balls into holes!</p>
+      <button
+        onClick={() => navigate('/games/allinhole/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#3B82F6', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function AllInHoleStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<AllInHoleResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: AllInHoleResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: AllInHoleResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/allinhole/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/allinhole/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <AllInHoleClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <AllInHolePlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function AllInHolePlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: AllInHoleResult) => void; onGameOver: (r: AllInHoleResult) => void }) {
+  const { containerRef, movesLeft, remaining, total } = useAllInHoleGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <AllInHoleHUD stage={stage} movesLeft={movesLeft} remaining={remaining} total={total} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -326,6 +388,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* AllInHole */}
+      <Route path="/games/allinhole/v1" element={<AllInHoleTitleRoute />} />
+      <Route path="/games/allinhole/v1/stage/:stageId" element={<AllInHoleStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

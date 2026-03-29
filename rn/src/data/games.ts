@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'allinhole',
+    name: 'All in Hole',
+    description: 'Swipe to slide all balls into holes!',
+    icon: '🕳️',
+    category: 'puzzle',
+    color: '#3B82F6',
+    webPath: '/games/allinhole/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
