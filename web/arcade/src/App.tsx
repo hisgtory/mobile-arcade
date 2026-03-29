@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── BlockyQuest ───
+import { ClearScreen as BlockyQuestClear } from './games/blockyquest/ClearScreen';
+import { HUD as BlockyQuestHUD } from './games/blockyquest/HUD';
+import { useGame as useBlockyQuestGame, type GameResult as BlockyQuestResult } from './games/blockyquest/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -301,6 +306,63 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── BlockyQuest Routes ───────────────────────────────
+
+function BlockyQuestTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Blocky Quest</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Place blocks & clear lines to complete quests!</p>
+      <button
+        onClick={() => navigate('/games/blockyquest/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#3b82f6', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function BlockyQuestStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<BlockyQuestResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: BlockyQuestResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: BlockyQuestResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/blockyquest/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/blockyquest/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <BlockyQuestClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <BlockyQuestPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function BlockyQuestPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: BlockyQuestResult) => void; onGameOver: (r: BlockyQuestResult) => void }) {
+  const { containerRef, score, pieceSetsLeft, targetScore } = useBlockyQuestGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <BlockyQuestHUD stage={stage} score={score} targetScore={targetScore} pieceSetsLeft={pieceSetsLeft} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -326,6 +388,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* BlockyQuest */}
+      <Route path="/games/blockyquest/v1" element={<BlockyQuestTitleRoute />} />
+      <Route path="/games/blockyquest/v1/stage/:stageId" element={<BlockyQuestStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
