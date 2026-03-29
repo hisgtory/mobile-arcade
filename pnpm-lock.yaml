@@ -150,6 +150,9 @@ importers:
 
   web/arcade:
     dependencies:
+      '@arcade/lib-blockcrush':
+        specifier: workspace:*
+        version: link:../../lib/blockcrush
       '@arcade/lib-blockrush':
         specifier: workspace:*
         version: link:../../lib/blockrush

@@ -28,6 +28,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── BlockCrush ───
+import { HUD as BlockCrushHUD } from './games/blockcrush/HUD';
+import { useGame as useBlockCrushGame, type GameResult as BlockCrushResult } from './games/blockcrush/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
@@ -272,6 +276,70 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── BlockCrush Routes ─────────────────────────────────
+
+function BlockCrushTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Block Crush</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Tap groups to crush them!</p>
+      <button
+        onClick={() => navigate('/games/blockcrush/v1/play')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function BlockCrushPlayRoute() {
+  const navigate = useNavigate();
+  const [gameResult, setGameResult] = useState<BlockCrushResult | null>(null);
+
+  const handleGameOver = useCallback((r: BlockCrushResult) => {
+    setGameResult(r);
+  }, []);
+
+  if (gameResult) {
+    return (
+      <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 24, padding: 20 }}>
+        <h1 style={{ fontSize: 36, fontWeight: 800, color: '#DC2626' }}>Game Over</h1>
+        <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '85%', maxWidth: 320, textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+          <p style={{ fontSize: 14, color: '#6B7280' }}>Score</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: '#111827' }}>{gameResult.score.toLocaleString()}</p>
+        </div>
+        <button
+          onClick={() => { setGameResult(null); }}
+          style={{ backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 18, fontWeight: 700, cursor: 'pointer', width: '85%', maxWidth: 320 }}
+        >
+          Retry
+        </button>
+        <button
+          onClick={() => navigate('/games/blockcrush/v1')}
+          style={{ backgroundColor: '#fff', color: '#374151', border: '1px solid #D1D5DB', padding: '16px 48px', borderRadius: 16, fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '85%', maxWidth: 320 }}
+        >
+          Home
+        </button>
+      </PlayLayout>
+    );
+  }
+
+  return <BlockCrushPlaying onGameOver={handleGameOver} />;
+}
+
+function BlockCrushPlaying({ onGameOver }: { onGameOver: (r: BlockCrushResult) => void }) {
+  const { containerRef, score } = useBlockCrushGame({ onGameOver });
+  return (
+    <PlayLayout>
+      <BlockCrushHUD score={score} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -322,6 +390,10 @@ export function App() {
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
+
+      {/* BlockCrush */}
+      <Route path="/games/blockcrush/v1" element={<BlockCrushTitleRoute />} />
+      <Route path="/games/blockcrush/v1/play" element={<BlockCrushPlayRoute />} />
 
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
