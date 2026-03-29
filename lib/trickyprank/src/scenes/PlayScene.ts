@@ -173,6 +173,7 @@ export class PlayScene extends Phaser.Scene {
   private drawPuzzle() {
     this.puzzleContainer.removeAll(true);
     this.interactiveElements.clear();
+    this.puzzleState.sequenceProgress = [];
 
     const stage = ((this.stageConfig.stage - 1) % 10) + 1;
     switch (stage) {
@@ -486,7 +487,6 @@ export class PlayScene extends Phaser.Scene {
       { val: '8', x: 0.75, y: 0.44, size: 36 },
     ];
 
-    this.puzzleState.sequenceProgress = [];
     const correctOrder = ['1', '8', '10'];
 
     nums.forEach((n) => {
