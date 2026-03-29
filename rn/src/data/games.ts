@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'wordpuzzle',
+    name: 'Word Puzzle',
+    description: 'Find hidden Korean words!',
+    icon: '🔤',
+    category: 'puzzle',
+    color: '#8B5CF6',
+    webPath: '/games/wordpuzzle/v1',
+    stageCount: 10,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

@@ -92,6 +92,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/wordpuzzle:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   rn:
     dependencies:
       '@react-native-async-storage/async-storage':
@@ -155,6 +165,9 @@ importers:
       '@arcade/lib-watersort':
         specifier: workspace:*
         version: link:../../lib/watersort
+      '@arcade/lib-wordpuzzle':
+        specifier: workspace:*
+        version: link:../../lib/wordpuzzle
       '@stitches/react':
         specifier: ^1.2.8
         version: 1.2.8(react@18.3.1)

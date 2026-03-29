@@ -2,26 +2,17 @@ import Phaser from 'phaser';
 import {
   DEFAULT_WIDTH,
   DEFAULT_HEIGHT,
-  CELL_EMPTY,
-  CELL_SELECTED,
-  CELL_FOUND,
-  CELL_TEXT,
-  CELL_FOUND_TEXT,
-  getStageConfig,
+  CELL_COLORS,
+  FOUND_COLORS,
   type BoardState,
   type GameConfig,
-  type CellPos,
-  type WordEntry,
 } from '../types';
-import { getPuzzle, createBoard, checkSelectedWord, getWordCells, isComplete } from '../logic/board';
+import { createBoard, checkWord, isWon, getStageConfig } from '../logic/board';
 
-// ─── Visual Constants ────────────────────────────────────
-const CELL_SIZE = 48;
 const CELL_GAP = 4;
 const CELL_RADIUS = 8;
-const GRID_PADDING = 20;
 
-type GamePhase = 'idle' | 'celebrating';
+type GamePhase = 'idle' | 'selecting' | 'celebrating';
 
 export class PlayScene extends Phaser.Scene {
   private board!: BoardState;
@@ -29,14 +20,12 @@ export class PlayScene extends Phaser.Scene {
   private dpr = 1;
 
   // Visual
-  private gridContainer!: Phaser.GameObjects.Container;
-  private cellGraphics: Phaser.GameObjects.Graphics[][] = [];
-  private cellTexts: Phaser.GameObjects.Text[][] = [];
-  private selectedCells: CellPos[] = [];
+  private cellContainers: Phaser.GameObjects.Container[][] = [];
+  private selectedCells: { row: number; col: number }[] = [];
   private phase: GamePhase = 'idle';
   private score = 0;
-  private wordsFound = 0;
-  private foundWordSet = new Set<string>();
+  private foundCount = 0;
+  private wordListTexts: Phaser.GameObjects.Text[] = [];
 
   constructor() {
     super({ key: 'PlayScene' });
@@ -50,33 +39,40 @@ export class PlayScene extends Phaser.Scene {
   create() {
     const stage = this.config.stage ?? 1;
     const stageConfig = getStageConfig(stage);
-    const puzzle = getPuzzle(stageConfig.puzzleId);
-    this.board = createBoard(puzzle);
+    this.board = createBoard(stageConfig);
     this.selectedCells = [];
     this.phase = 'idle';
     this.score = 0;
-    this.wordsFound = 0;
-    this.foundWordSet = new Set();
+    this.foundCount = 0;
 
     this.drawBoard();
+    this.drawWordList();
     this.emitState();
   }
 
   // ─── Layout ───────────────────────────────────────────
 
-  private getGridOrigin(): { x: number; y: number } {
+  private getCellSize(): number {
+    const w = DEFAULT_WIDTH * this.dpr;
+    const gridSize = this.board.gridSize;
+    const totalGap = CELL_GAP * this.dpr * (gridSize + 1);
+    return (w - totalGap) / gridSize;
+  }
+
+  private getCellPosition(row: number, col: number): { x: number; y: number } {
     const w = DEFAULT_WIDTH * this.dpr;
     const h = DEFAULT_HEIGHT * this.dpr;
-    const scale = this.dpr;
-    const cellSize = CELL_SIZE * scale;
-    const gap = CELL_GAP * scale;
-
-    const gridW = this.board.puzzle.gridCols * cellSize + (this.board.puzzle.gridCols - 1) * gap;
-    const gridH = this.board.puzzle.gridRows * cellSize + (this.board.puzzle.gridRows - 1) * gap;
+    const cellSize = this.getCellSize();
+    const gap = CELL_GAP * this.dpr;
+    const gridSize = this.board.gridSize;
+    const totalW = gridSize * cellSize + (gridSize - 1) * gap;
+    const totalH = gridSize * cellSize + (gridSize - 1) * gap;
+    const startX = (w - totalW) / 2;
+    const startY = (h - totalH) / 2 - 40 * this.dpr; // offset up for word list
 
     return {
-      x: (w - gridW) / 2,
-      y: (h - gridH) / 2,
+      x: startX + col * (cellSize + gap) + cellSize / 2,
+      y: startY + row * (cellSize + gap) + cellSize / 2,
     };
   }
 
@@ -84,269 +80,286 @@ export class PlayScene extends Phaser.Scene {
 
   private drawBoard() {
     // Clear previous
-    if (this.gridContainer) {
-      this.gridContainer.destroy();
-    }
-    this.cellGraphics = [];
-    this.cellTexts = [];
+    this.cellContainers.forEach((row) => row.forEach((c) => c.destroy()));
+    this.cellContainers = [];
 
+    const cellSize = this.getCellSize();
+    const radius = CELL_RADIUS * this.dpr;
     const scale = this.dpr;
-    const cellSize = CELL_SIZE * scale;
-    const gap = CELL_GAP * scale;
-    const radius = CELL_RADIUS * scale;
-    const origin = this.getGridOrigin();
 
-    this.gridContainer = this.add.container(0, 0);
+    for (let r = 0; r < this.board.gridSize; r++) {
+      const rowContainers: Phaser.GameObjects.Container[] = [];
+      for (let c = 0; c < this.board.gridSize; c++) {
+        const pos = this.getCellPosition(r, c);
+        const container = this.add.container(pos.x, pos.y);
 
-    for (let r = 0; r < this.board.puzzle.gridRows; r++) {
-      this.cellGraphics[r] = [];
-      this.cellTexts[r] = [];
+        // Determine cell color
+        let bgColor: string = CELL_COLORS.normal;
+        const isSelected = this.selectedCells.some(
+          (s) => s.row === r && s.col === c,
+        );
 
-      for (let c = 0; c < this.board.puzzle.gridCols; c++) {
-        const letter = this.board.grid[r][c];
-        if (letter === null) continue; // Skip empty cells
-
-        const x = origin.x + c * (cellSize + gap);
-        const y = origin.y + r * (cellSize + gap);
-
-        // Cell background
-        const gfx = this.add.graphics();
-        const isFound = this.isCellInFoundWord(r, c);
-        const isSelected = this.isCellSelected(r, c);
-
-        let bgColor: number;
-        if (isFound) {
-          bgColor = parseInt(CELL_FOUND.replace('#', ''), 16);
-        } else if (isSelected) {
-          bgColor = parseInt(CELL_SELECTED.replace('#', ''), 16);
-        } else {
-          bgColor = parseInt(CELL_EMPTY.replace('#', ''), 16);
+        // Check if this cell belongs to a found word
+        let foundColorIdx = -1;
+        for (let i = 0; i < this.board.placements.length; i++) {
+          const p = this.board.placements[i];
+          if (p.found && p.cells.some((pc) => pc.row === r && pc.col === c)) {
+            foundColorIdx = i % FOUND_COLORS.length;
+            break;
+          }
         }
 
-        gfx.fillStyle(bgColor, 1);
-        gfx.fillRoundedRect(x, y, cellSize, cellSize, radius);
+        if (foundColorIdx >= 0) {
+          bgColor = FOUND_COLORS[foundColorIdx];
+        } else if (isSelected) {
+          bgColor = CELL_COLORS.selected;
+        }
 
-        // Cell border
-        gfx.lineStyle(1 * scale, 0xd1d5db, 0.5);
-        gfx.strokeRoundedRect(x, y, cellSize, cellSize, radius);
+        const hex = parseInt(bgColor.replace('#', ''), 16);
 
-        this.gridContainer.add(gfx);
-        this.cellGraphics[r][c] = gfx;
+        // Cell background
+        const bg = this.add.graphics();
+        bg.fillStyle(hex, foundColorIdx >= 0 ? 0.3 : 1);
+        bg.fillRoundedRect(-cellSize / 2, -cellSize / 2, cellSize, cellSize, radius);
+        bg.lineStyle(2 * scale, isSelected ? 0x3b82f6 : 0xd1d5db, 1);
+        bg.strokeRoundedRect(-cellSize / 2, -cellSize / 2, cellSize, cellSize, radius);
+        container.add(bg);
 
-        // Letter text
-        const textColor = isFound ? CELL_FOUND_TEXT : CELL_TEXT;
-        const fontSize = Math.round(20 * scale);
-        const txt = this.add.text(x + cellSize / 2, y + cellSize / 2, isFound ? letter : '?', {
+        // Character text
+        const char = this.board.grid[r][c];
+        const fontSize = Math.floor(cellSize * 0.5);
+        const text = this.add.text(0, 0, char, {
           fontSize: `${fontSize}px`,
-          fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-          color: textColor,
+          fontFamily: 'sans-serif',
+          color: foundColorIdx >= 0 ? '#166534' : '#111827',
           fontStyle: 'bold',
         });
-        txt.setOrigin(0.5, 0.5);
-        this.gridContainer.add(txt);
-        this.cellTexts[r][c] = txt;
+        text.setOrigin(0.5, 0.5);
+        container.add(text);
 
         // Hit area
         const hitArea = this.add
-          .rectangle(x + cellSize / 2, y + cellSize / 2, cellSize, cellSize)
+          .rectangle(0, 0, cellSize, cellSize)
           .setInteractive()
           .setAlpha(0.001);
         hitArea.on('pointerdown', () => this.onCellTap(r, c));
-        this.gridContainer.add(hitArea);
-      }
-    }
+        container.add(hitArea);
 
-    // Draw word list at bottom
-    this.drawWordList();
+        rowContainers.push(container);
+      }
+      this.cellContainers.push(rowContainers);
+    }
   }
 
   private drawWordList() {
-    const scale = this.dpr;
+    // Clear previous
+    this.wordListTexts.forEach((t) => t.destroy());
+    this.wordListTexts = [];
+
     const w = DEFAULT_WIDTH * this.dpr;
     const h = DEFAULT_HEIGHT * this.dpr;
-    const origin = this.getGridOrigin();
-    const cellSize = CELL_SIZE * scale;
-    const gap = CELL_GAP * scale;
-    const gridH = this.board.puzzle.gridRows * cellSize + (this.board.puzzle.gridRows - 1) * gap;
-    const startY = origin.y + gridH + 40 * scale;
+    const scale = this.dpr;
+    const startY = h - 60 * scale;
+    const gap = 16 * scale;
 
-    const words = this.board.puzzle.words;
-    const fontSize = Math.round(16 * scale);
-    const lineHeight = 28 * scale;
+    const words = this.board.placements;
+    const totalW = words.reduce((acc, p) => {
+      const chars = [...p.word];
+      return acc + chars.length * 18 * scale + gap;
+    }, -gap);
+    let x = (w - totalW) / 2;
 
     for (let i = 0; i < words.length; i++) {
-      const word = words[i];
-      const found = this.board.foundWords.includes(word.word);
-      const display = found ? word.word : word.word.split('').map(() => '○').join('');
-      const color = found ? '#059669' : '#9CA3AF';
+      const p = words[i];
+      const color = p.found
+        ? FOUND_COLORS[i % FOUND_COLORS.length]
+        : '#9CA3AF';
+      const displayText = p.found ? p.word : '?'.repeat([...p.word].length);
 
-      const txt = this.add.text(w / 2, startY + i * lineHeight, display, {
-        fontSize: `${fontSize}px`,
-        fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+      const text = this.add.text(x, startY, displayText, {
+        fontSize: `${16 * scale}px`,
+        fontFamily: 'sans-serif',
         color,
-        fontStyle: found ? 'bold' : 'normal',
+        fontStyle: p.found ? 'bold' : 'normal',
       });
-      txt.setOrigin(0.5, 0.5);
-      this.gridContainer.add(txt);
+      text.setOrigin(0, 0.5);
+      this.wordListTexts.push(text);
+
+      x += text.width + gap;
     }
-  }
-
-  // ─── Cell State Checks ────────────────────────────────
-
-  private isCellSelected(row: number, col: number): boolean {
-    return this.selectedCells.some((c) => c.row === row && c.col === col);
-  }
-
-  private isCellInFoundWord(row: number, col: number): boolean {
-    for (const w of this.board.puzzle.words) {
-      if (!this.board.foundWords.includes(w.word)) continue;
-      const cells = getWordCells(w);
-      if (cells.some((c) => c.row === row && c.col === col)) return true;
-    }
-    return false;
   }
 
   // ─── Interaction ──────────────────────────────────────
 
   private onCellTap(row: number, col: number) {
-    if (this.phase !== 'idle') return;
-    if (this.board.grid[row][col] === null) return;
+    if (this.phase === 'celebrating') return;
 
-    // Check if cell is already selected — if so, deselect
+    // Check if cell belongs to found word — ignore
+    for (const p of this.board.placements) {
+      if (p.found && p.cells.some((c) => c.row === row && c.col === col)) {
+        return;
+      }
+    }
+
+    // Check if already selected — deselect
     const existingIdx = this.selectedCells.findIndex(
-      (c) => c.row === row && c.col === col,
+      (s) => s.row === row && s.col === col,
     );
-
     if (existingIdx >= 0) {
-      // If tapping the last selected cell, try to submit the word
-      if (existingIdx === this.selectedCells.length - 1 && this.selectedCells.length >= 2) {
+      // If tapping last selected cell, try to submit
+      if (existingIdx === this.selectedCells.length - 1 && this.selectedCells.length > 1) {
         this.trySubmitWord();
         return;
       }
-      // Otherwise, truncate selection up to this cell
-      this.selectedCells = this.selectedCells.slice(0, existingIdx + 1);
+      // Otherwise deselect from this point
+      this.selectedCells = this.selectedCells.slice(0, existingIdx);
       this.drawBoard();
       return;
     }
 
-    // Check adjacency — new cell must be adjacent to last selected
+    // Validate adjacency (must be adjacent to last selected, same row or col)
     if (this.selectedCells.length > 0) {
       const last = this.selectedCells[this.selectedCells.length - 1];
-      const dr = Math.abs(row - last.row);
-      const dc = Math.abs(col - last.col);
+      const isAdjacent =
+        (Math.abs(last.row - row) === 1 && last.col === col) ||
+        (Math.abs(last.col - col) === 1 && last.row === row);
 
-      // Only allow horizontal or vertical adjacency (not diagonal)
-      if (!((dr === 1 && dc === 0) || (dr === 0 && dc === 1))) {
-        // Not adjacent — clear selection and start new
+      if (!isAdjacent) {
+        // Start new selection
         this.selectedCells = [{ row, col }];
         this.drawBoard();
         return;
       }
+
+      // Ensure all selected cells are in same row or same column
+      if (this.selectedCells.length >= 2) {
+        const isHorizontal = this.selectedCells.every(
+          (s) => s.row === this.selectedCells[0].row,
+        );
+        const isVertical = this.selectedCells.every(
+          (s) => s.col === this.selectedCells[0].col,
+        );
+
+        if (isHorizontal && row !== this.selectedCells[0].row) {
+          this.selectedCells = [{ row, col }];
+          this.drawBoard();
+          return;
+        }
+        if (isVertical && col !== this.selectedCells[0].col) {
+          this.selectedCells = [{ row, col }];
+          this.drawBoard();
+          return;
+        }
+      }
     }
 
-    // Add to selection
     this.selectedCells.push({ row, col });
-    this.drawBoard();
+    this.phase = 'selecting';
 
-    // Auto-check if selection could be a word
-    if (this.selectedCells.length >= 2) {
-      const matched = checkSelectedWord(this.selectedCells, this.board);
-      if (matched) {
-        this.onWordFound(matched);
-      }
+    // Auto-check after each selection
+    const matchIdx = checkWord(this.board, this.selectedCells);
+    if (matchIdx >= 0) {
+      this.onWordFound(matchIdx);
+    } else {
+      this.drawBoard();
     }
   }
 
   private trySubmitWord() {
-    if (this.selectedCells.length < 2) return;
-
-    const matched = checkSelectedWord(this.selectedCells, this.board);
-    if (matched) {
-      this.onWordFound(matched);
+    const matchIdx = checkWord(this.board, this.selectedCells);
+    if (matchIdx >= 0) {
+      this.onWordFound(matchIdx);
     } else {
-      // Shake selected cells
-      this.shakeSelection();
+      // Invalid — shake selected cells
+      this.shakeSelected();
       this.selectedCells = [];
       this.drawBoard();
     }
   }
 
-  private onWordFound(entry: WordEntry) {
-    if (this.board.foundWords.includes(entry.word)) return;
+  // ─── Word Found ───────────────────────────────────────
 
-    this.board.foundWords.push(entry.word);
-    this.foundWordSet.add(entry.word);
-    this.wordsFound++;
-    this.score += entry.word.length * 100;
+  private onWordFound(placementIdx: number) {
+    const placement = this.board.placements[placementIdx];
+    placement.found = true;
+    this.foundCount++;
+
+    const wordLen = [...placement.word].length;
+    this.score += wordLen * 100;
+
     this.selectedCells = [];
-
-    // Celebrate word
-    this.celebrateWord(entry);
-
+    this.celebrateWord(placementIdx);
     this.drawBoard();
+    this.drawWordList();
     this.emitState();
 
     // Check win
-    if (isComplete(this.board)) {
+    if (isWon(this.board)) {
       this.phase = 'celebrating';
       this.time.delayedCall(600, () => {
         this.celebrateWin();
       });
+    } else {
+      this.phase = 'idle';
     }
   }
 
   // ─── Animations ───────────────────────────────────────
 
-  private shakeSelection() {
-    const scale = this.dpr;
-    const cellSize = CELL_SIZE * scale;
-    const gap = CELL_GAP * scale;
-    const origin = this.getGridOrigin();
-
+  private shakeSelected() {
     for (const cell of this.selectedCells) {
-      const gfx = this.cellGraphics[cell.row]?.[cell.col];
-      if (!gfx) continue;
+      const container = this.cellContainers[cell.row]?.[cell.col];
+      if (!container) continue;
+      const origX = container.x;
 
-      const origX = origin.x + cell.col * (cellSize + gap);
       this.tweens.add({
-        targets: gfx,
-        x: origX + 6 * scale,
+        targets: container,
+        x: origX + 6 * this.dpr,
         duration: 50,
         yoyo: true,
         repeat: 2,
         onComplete: () => {
-          gfx.x = 0; // graphics are positioned via fillRoundedRect, not x
+          container.x = origX;
         },
       });
     }
   }
 
-  private celebrateWord(entry: WordEntry) {
+  private celebrateWord(placementIdx: number) {
+    const placement = this.board.placements[placementIdx];
     const scale = this.dpr;
-    const cellSize = CELL_SIZE * scale;
-    const gap = CELL_GAP * scale;
-    const origin = this.getGridOrigin();
-    const cells = getWordCells(entry);
 
-    // Bounce each cell
-    for (const cell of cells) {
-      const x = origin.x + cell.col * (cellSize + gap) + cellSize / 2;
-      const y = origin.y + cell.row * (cellSize + gap) + cellSize / 2;
+    for (const cell of placement.cells) {
+      const container = this.cellContainers[cell.row]?.[cell.col];
+      if (!container) continue;
 
-      // Particle burst
+      // Bounce
+      this.tweens.add({
+        targets: container,
+        scaleX: 1.15,
+        scaleY: 1.15,
+        duration: 200,
+        yoyo: true,
+        ease: 'Back.easeOut',
+      });
+
+      // Particles
+      const pos = this.getCellPosition(cell.row, cell.col);
       for (let i = 0; i < 6; i++) {
         const p = this.add.circle(
-          x, y,
+          pos.x,
+          pos.y,
           (2 + Math.random() * 2) * scale,
-          0x22c55e, 1,
+          0xfbbf24,
+          1,
         );
         p.setDepth(200);
         const angle = (Math.PI * 2 * i) / 6;
         const dist = (20 + Math.random() * 15) * scale;
         this.tweens.add({
           targets: p,
-          x: x + Math.cos(angle) * dist,
-          y: y + Math.sin(angle) * dist,
+          x: pos.x + Math.cos(angle) * dist,
+          y: pos.y + Math.sin(angle) * dist,
           alpha: 0,
           scale: 0,
           duration: 400,
@@ -392,45 +405,43 @@ export class PlayScene extends Phaser.Scene {
     this.time.delayedCall(1200, () => {
       this.game.events.emit('stage-clear', {
         score: this.score,
-        wordsFound: this.wordsFound,
-        totalWords: this.board.puzzle.words.length,
+        foundWords: this.foundCount,
+        totalWords: this.board.numWords,
         stage: this.config.stage ?? 1,
       });
     });
   }
 
-  // ─── Hint ─────────────────────────────────────────────
+  // ─── Public Methods ───────────────────────────────────
 
-  public hint() {
-    if (this.phase !== 'idle') return;
+  public useHint() {
+    if (this.phase !== 'idle' && this.phase !== 'selecting') return;
 
-    // Find first unfound word and reveal its first cell
-    for (const w of this.board.puzzle.words) {
-      if (this.board.foundWords.includes(w.word)) continue;
-      const cells = getWordCells(w);
-      if (cells.length > 0) {
-        // Flash the first cell of this word
-        const cell = cells[0];
-        const scale = this.dpr;
-        const cellSize = CELL_SIZE * scale;
-        const gap = CELL_GAP * scale;
-        const origin = this.getGridOrigin();
-        const x = origin.x + cell.col * (cellSize + gap) + cellSize / 2;
-        const y = origin.y + cell.row * (cellSize + gap) + cellSize / 2;
+    // Find first unfound word
+    const unfound = this.board.placements.find((p) => !p.found);
+    if (!unfound) return;
 
-        const flash = this.add.circle(x, y, cellSize * 0.6, 0xfbbf24, 0.5);
-        flash.setDepth(150);
-        this.tweens.add({
-          targets: flash,
-          alpha: 0,
-          scale: 1.5,
-          duration: 600,
-          ease: 'Cubic.easeOut',
-          onComplete: () => flash.destroy(),
-        });
-      }
-      break;
-    }
+    // Highlight first cell of the word
+    const firstCell = unfound.cells[0];
+    const container = this.cellContainers[firstCell.row]?.[firstCell.col];
+    if (!container) return;
+
+    const scale = this.dpr;
+    const cellSize = this.getCellSize();
+    const radius = CELL_RADIUS * scale;
+
+    const hint = this.add.graphics();
+    hint.fillStyle(0xfbbf24, 0.4);
+    hint.fillRoundedRect(-cellSize / 2, -cellSize / 2, cellSize, cellSize, radius);
+    container.add(hint);
+
+    this.tweens.add({
+      targets: hint,
+      alpha: 0,
+      duration: 1500,
+      ease: 'Cubic.easeOut',
+      onComplete: () => hint.destroy(),
+    });
   }
 
   public restart() {
@@ -442,8 +453,8 @@ export class PlayScene extends Phaser.Scene {
   private emitState() {
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('words-update', {
-      wordsFound: this.wordsFound,
-      totalWords: this.board.puzzle.words.length,
+      found: this.foundCount,
+      total: this.board.numWords,
     });
   }
 }

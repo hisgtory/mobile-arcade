@@ -78,12 +78,12 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
           <Value>{stage}</Value>
         </StatRow>
         <StatRow>
-          <Label>Score</Label>
-          <Value>{result.score.toLocaleString()}</Value>
+          <Label>Words Found</Label>
+          <Value>{result.foundWords}/{result.totalWords}</Value>
         </StatRow>
         <StatRow>
-          <Label>Words Found</Label>
-          <Value>{result.wordsFound}/{result.totalWords}</Value>
+          <Label>Score</Label>
+          <Value>{result.score.toLocaleString()}</Value>
         </StatRow>
       </Card>
       {result.cleared && (

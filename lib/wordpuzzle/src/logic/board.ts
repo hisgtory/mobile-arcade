@@ -1,385 +1,199 @@
-import type { PuzzleData, WordEntry, BoardState, CellPos } from '../types';
+import type { StageConfig, BoardState, WordPlacement } from '../types';
 
-// ─── Puzzle Database ─────────────────────────────────────
+// ─── Korean Word Database ─────────────────────────────────
 
-const PUZZLES: PuzzleData[] = [
-  // ─── Easy: 3 words, 5×5 ───────────────────────────────
-  {
-    id: 1, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '사과', direction: 'h', row: 0, col: 0 },
-      { word: '과일', direction: 'v', row: 0, col: 1 },
-      { word: '일기', direction: 'h', row: 1, col: 1 },
-    ],
-    letters: ['사', '과', '일', '기'],
-  },
-  {
-    id: 2, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '바다', direction: 'h', row: 0, col: 0 },
-      { word: '바람', direction: 'v', row: 0, col: 0 },
-      { word: '다리', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['바', '다', '람', '리'],
-  },
-  {
-    id: 3, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '하늘', direction: 'h', row: 0, col: 0 },
-      { word: '하루', direction: 'v', row: 0, col: 0 },
-      { word: '루비', direction: 'h', row: 1, col: 0 },
-    ],
-    letters: ['하', '늘', '루', '비'],
-  },
-  {
-    id: 4, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '나무', direction: 'h', row: 0, col: 0 },
-      { word: '나라', direction: 'v', row: 0, col: 0 },
-      { word: '무대', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['나', '무', '라', '대'],
-  },
-  {
-    id: 5, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '가족', direction: 'h', row: 0, col: 0 },
-      { word: '가수', direction: 'v', row: 0, col: 0 },
-      { word: '수박', direction: 'h', row: 1, col: 0 },
-    ],
-    letters: ['가', '족', '수', '박'],
-  },
-  {
-    id: 6, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '학교', direction: 'h', row: 0, col: 0 },
-      { word: '학생', direction: 'v', row: 0, col: 0 },
-      { word: '교실', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['학', '교', '생', '실'],
-  },
-  {
-    id: 7, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '친구', direction: 'h', row: 0, col: 0 },
-      { word: '친절', direction: 'v', row: 0, col: 0 },
-      { word: '구름', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['친', '구', '절', '름'],
-  },
-  {
-    id: 8, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '건강', direction: 'h', row: 0, col: 0 },
-      { word: '건물', direction: 'v', row: 0, col: 0 },
-      { word: '강물', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['건', '강', '물'],
-  },
-  {
-    id: 9, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '세계', direction: 'h', row: 0, col: 0 },
-      { word: '세상', direction: 'v', row: 0, col: 0 },
-      { word: '계단', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['세', '계', '상', '단'],
-  },
-  {
-    id: 10, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '동물', direction: 'h', row: 0, col: 0 },
-      { word: '동화', direction: 'v', row: 0, col: 0 },
-      { word: '물건', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['동', '물', '화', '건'],
-  },
-
-  // ─── Medium: 4 words, 5×5 ─────────────────────────────
-  {
-    id: 11, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '음악', direction: 'h', row: 0, col: 0 },
-      { word: '음식', direction: 'v', row: 0, col: 0 },
-      { word: '악기', direction: 'v', row: 0, col: 1 },
-      { word: '기차', direction: 'h', row: 1, col: 1 },
-    ],
-    letters: ['음', '악', '식', '기', '차'],
-  },
-  {
-    id: 12, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '영화', direction: 'h', row: 0, col: 0 },
-      { word: '영어', direction: 'v', row: 0, col: 0 },
-      { word: '화가', direction: 'v', row: 0, col: 1 },
-      { word: '가방', direction: 'h', row: 1, col: 1 },
-    ],
-    letters: ['영', '화', '어', '가', '방'],
-  },
-  {
-    id: 13, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '여행', direction: 'h', row: 0, col: 0 },
-      { word: '여우', direction: 'v', row: 0, col: 0 },
-      { word: '행복', direction: 'v', row: 0, col: 1 },
-      { word: '복도', direction: 'h', row: 1, col: 1 },
-    ],
-    letters: ['여', '행', '우', '복', '도'],
-  },
-  {
-    id: 14, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '도시', direction: 'h', row: 0, col: 0 },
-      { word: '도로', direction: 'v', row: 0, col: 0 },
-      { word: '시장', direction: 'v', row: 0, col: 1 },
-      { word: '장미', direction: 'h', row: 1, col: 1 },
-    ],
-    letters: ['도', '시', '로', '장', '미'],
-  },
-  {
-    id: 15, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '사진', direction: 'h', row: 0, col: 0 },
-      { word: '사자', direction: 'v', row: 0, col: 0 },
-      { word: '진실', direction: 'v', row: 0, col: 1 },
-      { word: '실수', direction: 'h', row: 1, col: 1 },
-    ],
-    letters: ['사', '진', '자', '실', '수'],
-  },
-  {
-    id: 16, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '시간', direction: 'h', row: 0, col: 0 },
-      { word: '시험', direction: 'v', row: 0, col: 0 },
-      { word: '간식', direction: 'v', row: 0, col: 1 },
-      { word: '식당', direction: 'h', row: 1, col: 1 },
-    ],
-    letters: ['시', '간', '험', '식', '당'],
-  },
-  {
-    id: 17, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '공원', direction: 'h', row: 0, col: 0 },
-      { word: '공부', direction: 'v', row: 0, col: 0 },
-      { word: '원인', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['공', '원', '부', '인'],
-  },
-  {
-    id: 18, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '주문', direction: 'h', row: 0, col: 0 },
-      { word: '주차', direction: 'v', row: 0, col: 0 },
-      { word: '문제', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['주', '문', '차', '제'],
-  },
-  {
-    id: 19, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '안경', direction: 'h', row: 0, col: 0 },
-      { word: '안전', direction: 'v', row: 0, col: 0 },
-      { word: '경기', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['안', '경', '전', '기'],
-  },
-  {
-    id: 20, gridRows: 5, gridCols: 5,
-    words: [
-      { word: '감사', direction: 'h', row: 0, col: 0 },
-      { word: '감동', direction: 'v', row: 0, col: 0 },
-      { word: '사고', direction: 'v', row: 0, col: 1 },
-    ],
-    letters: ['감', '사', '동', '고'],
-  },
-
-  // ─── Hard: 5 words, staircase, 6×6 ────────────────────
-  {
-    id: 21, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '사과', direction: 'h', row: 0, col: 0 },
-      { word: '사람', direction: 'v', row: 0, col: 0 },
-      { word: '과일', direction: 'v', row: 0, col: 1 },
-      { word: '일기', direction: 'h', row: 1, col: 1 },
-      { word: '기타', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['사', '과', '람', '일', '기', '타'],
-  },
-  {
-    id: 22, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '음악', direction: 'h', row: 0, col: 0 },
-      { word: '음식', direction: 'v', row: 0, col: 0 },
-      { word: '악기', direction: 'v', row: 0, col: 1 },
-      { word: '기차', direction: 'h', row: 1, col: 1 },
-      { word: '차별', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['음', '악', '식', '기', '차', '별'],
-  },
-  {
-    id: 23, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '영화', direction: 'h', row: 0, col: 0 },
-      { word: '영어', direction: 'v', row: 0, col: 0 },
-      { word: '화가', direction: 'v', row: 0, col: 1 },
-      { word: '가방', direction: 'h', row: 1, col: 1 },
-      { word: '방학', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['영', '화', '어', '가', '방', '학'],
-  },
-  {
-    id: 24, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '도시', direction: 'h', row: 0, col: 0 },
-      { word: '도로', direction: 'v', row: 0, col: 0 },
-      { word: '시장', direction: 'v', row: 0, col: 1 },
-      { word: '장미', direction: 'h', row: 1, col: 1 },
-      { word: '미래', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['도', '시', '로', '장', '미', '래'],
-  },
-  {
-    id: 25, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '여행', direction: 'h', row: 0, col: 0 },
-      { word: '여우', direction: 'v', row: 0, col: 0 },
-      { word: '행복', direction: 'v', row: 0, col: 1 },
-      { word: '복도', direction: 'h', row: 1, col: 1 },
-      { word: '도전', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['여', '행', '우', '복', '도', '전'],
-  },
-  {
-    id: 26, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '사진', direction: 'h', row: 0, col: 0 },
-      { word: '사자', direction: 'v', row: 0, col: 0 },
-      { word: '진실', direction: 'v', row: 0, col: 1 },
-      { word: '실수', direction: 'h', row: 1, col: 1 },
-      { word: '수학', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['사', '진', '자', '실', '수', '학'],
-  },
-  {
-    id: 27, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '건강', direction: 'h', row: 0, col: 0 },
-      { word: '건물', direction: 'v', row: 0, col: 0 },
-      { word: '강물', direction: 'v', row: 0, col: 1 },
-      { word: '물감', direction: 'h', row: 1, col: 1 },
-      { word: '감자', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['건', '강', '물', '감', '자'],
-  },
-  {
-    id: 28, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '시간', direction: 'h', row: 0, col: 0 },
-      { word: '시험', direction: 'v', row: 0, col: 0 },
-      { word: '간식', direction: 'v', row: 0, col: 1 },
-      { word: '식당', direction: 'h', row: 1, col: 1 },
-      { word: '당근', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['시', '간', '험', '식', '당', '근'],
-  },
-  {
-    id: 29, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '공원', direction: 'h', row: 0, col: 0 },
-      { word: '공부', direction: 'v', row: 0, col: 0 },
-      { word: '원인', direction: 'v', row: 0, col: 1 },
-      { word: '인기', direction: 'h', row: 1, col: 1 },
-      { word: '기차', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['공', '원', '부', '인', '기', '차'],
-  },
-  {
-    id: 30, gridRows: 6, gridCols: 6,
-    words: [
-      { word: '학교', direction: 'h', row: 0, col: 0 },
-      { word: '학생', direction: 'v', row: 0, col: 0 },
-      { word: '교실', direction: 'v', row: 0, col: 1 },
-      { word: '실내', direction: 'h', row: 1, col: 1 },
-      { word: '내용', direction: 'v', row: 1, col: 2 },
-    ],
-    letters: ['학', '교', '생', '실', '내', '용'],
-  },
+const WORD_POOL: string[][] = [
+  // 2-letter words
+  ['사과', '바다', '하늘', '나무', '구름', '별빛', '꽃잎', '새벽', '노래', '햇빛',
+   '소리', '마음', '바람', '지구', '달빛', '눈물', '시간', '세상', '우리', '가을',
+   '겨울', '봄날', '여름', '산책', '공원', '도시', '학교', '친구', '가족', '미래'],
+  // 3-letter words
+  ['사랑해', '고마워', '행복해', '아름다', '즐거운', '따뜻한', '나비야', '무지개',
+   '해바라', '초콜릿', '아이스', '캔디야', '피아노', '기타야', '드럼이', '음악이'],
 ];
 
-export function getPuzzle(puzzleId: number): PuzzleData {
-  const puzzle = PUZZLES.find((p) => p.id === puzzleId);
-  if (!puzzle) {
-    const cycled = ((puzzleId - 1) % PUZZLES.length) + 1;
-    return { ...PUZZLES[cycled - 1], id: puzzleId };
-  }
-  return puzzle;
-}
+// ─── Stage Definitions ────────────────────────────────────
 
-// ─── Board Creation ──────────────────────────────────────
+const STAGE_CONFIGS: StageConfig[] = [
+  // Easy (5×5, 3 words)
+  { stage: 1, gridSize: 5, words: ['사과', '바다', '하늘'] },
+  { stage: 2, gridSize: 5, words: ['나무', '구름', '별빛'] },
+  { stage: 3, gridSize: 5, words: ['꽃잎', '새벽', '노래'] },
+  { stage: 4, gridSize: 5, words: ['햇빛', '소리', '마음'] },
+  { stage: 5, gridSize: 5, words: ['바람', '지구', '달빛'] },
+  // Medium (5×5, 4 words)
+  { stage: 6, gridSize: 5, words: ['사과', '눈물', '시간', '세상'] },
+  { stage: 7, gridSize: 5, words: ['우리', '가을', '겨울', '봄날'] },
+  { stage: 8, gridSize: 5, words: ['여름', '산책', '공원', '도시'] },
+  { stage: 9, gridSize: 5, words: ['학교', '친구', '가족', '미래'] },
+  { stage: 10, gridSize: 5, words: ['하늘', '바다', '나무', '별빛'] },
+];
 
-export function createBoard(puzzle: PuzzleData): BoardState {
-  const grid: (string | null)[][] = [];
-  for (let r = 0; r < puzzle.gridRows; r++) {
-    grid[r] = [];
-    for (let c = 0; c < puzzle.gridCols; c++) {
-      grid[r][c] = null;
+export function getStageConfig(stage: number): StageConfig {
+  if (stage <= STAGE_CONFIGS.length) return STAGE_CONFIGS[stage - 1];
+  // Beyond defined stages: generate from pool
+  const gridSize = 5;
+  const numWords = Math.min(3 + Math.floor((stage - 1) / 5), 5);
+  const pool = WORD_POOL[0];
+  const words: string[] = [];
+  const used = new Set<number>();
+  while (words.length < numWords) {
+    const idx = Math.floor(Math.random() * pool.length);
+    if (!used.has(idx)) {
+      used.add(idx);
+      words.push(pool[idx]);
     }
   }
-
-  for (const w of puzzle.words) {
-    const chars = [...w.word];
-    for (let i = 0; i < chars.length; i++) {
-      const r = w.direction === 'h' ? w.row : w.row + i;
-      const c = w.direction === 'h' ? w.col + i : w.col;
-      grid[r][c] = chars[i];
-    }
-  }
-
-  return { puzzle, grid, foundWords: [] };
+  return { stage, gridSize, words };
 }
 
-// ─── Word Checking ───────────────────────────────────────
+// ─── Random Korean Characters ─────────────────────────────
 
-/** Get cells that make up a word entry */
-export function getWordCells(entry: WordEntry): CellPos[] {
-  const cells: CellPos[] = [];
-  const chars = [...entry.word];
+const KOREAN_CHARS = '가나다라마바사아자차카타파하고노도로모보소오조코토포호구누두루무부수우주쿠투푸후';
+
+function randomKoreanChar(): string {
+  return KOREAN_CHARS[Math.floor(Math.random() * KOREAN_CHARS.length)];
+}
+
+// ─── Board Creation ───────────────────────────────────────
+
+type Direction = 'horizontal' | 'vertical';
+
+interface PlacementAttempt {
+  word: string;
+  row: number;
+  col: number;
+  direction: Direction;
+}
+
+function canPlace(grid: string[][], attempt: PlacementAttempt, gridSize: number): boolean {
+  const chars = [...attempt.word];
   for (let i = 0; i < chars.length; i++) {
-    const r = entry.direction === 'h' ? entry.row : entry.row + i;
-    const c = entry.direction === 'h' ? entry.col + i : entry.col;
+    const r = attempt.direction === 'vertical' ? attempt.row + i : attempt.row;
+    const c = attempt.direction === 'horizontal' ? attempt.col + i : attempt.col;
+    if (r >= gridSize || c >= gridSize) return false;
+    if (grid[r][c] !== '' && grid[r][c] !== chars[i]) return false;
+  }
+  return true;
+}
+
+function placeWord(grid: string[][], attempt: PlacementAttempt): { row: number; col: number }[] {
+  const chars = [...attempt.word];
+  const cells: { row: number; col: number }[] = [];
+  for (let i = 0; i < chars.length; i++) {
+    const r = attempt.direction === 'vertical' ? attempt.row + i : attempt.row;
+    const c = attempt.direction === 'horizontal' ? attempt.col + i : attempt.col;
+    grid[r][c] = chars[i];
     cells.push({ row: r, col: c });
   }
   return cells;
 }
 
-/** Check if selected cells form any unfound word */
-export function checkSelectedWord(
-  selectedCells: CellPos[],
-  board: BoardState,
-): WordEntry | null {
-  for (const w of board.puzzle.words) {
-    if (board.foundWords.includes(w.word)) continue;
-    const wordCells = getWordCells(w);
-    if (wordCells.length !== selectedCells.length) continue;
+export function createBoard(config: StageConfig): BoardState {
+  const { gridSize, words } = config;
+  const maxAttempts = 200;
 
-    // Check forward match
-    const forward = wordCells.every(
-      (wc, i) => wc.row === selectedCells[i].row && wc.col === selectedCells[i].col,
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const grid: string[][] = Array.from({ length: gridSize }, () =>
+      Array.from({ length: gridSize }, () => ''),
     );
-    if (forward) return w;
+    const placements: WordPlacement[] = [];
+    let success = true;
 
-    // Check reverse match
-    const reverse = wordCells.every(
-      (wc, i) =>
-        wc.row === selectedCells[selectedCells.length - 1 - i].row &&
-        wc.col === selectedCells[selectedCells.length - 1 - i].col,
-    );
-    if (reverse) return w;
+    // Sort words by length (longest first for better placement)
+    const sortedWords = [...words].sort((a, b) => [...b].length - [...a].length);
+
+    for (const word of sortedWords) {
+      const chars = [...word];
+      let placed = false;
+      const directions: Direction[] = ['horizontal', 'vertical'];
+
+      // Shuffle directions
+      if (Math.random() > 0.5) directions.reverse();
+
+      for (const dir of directions) {
+        if (placed) break;
+        // Try random positions
+        const positions: { row: number; col: number }[] = [];
+        for (let r = 0; r < gridSize; r++) {
+          for (let c = 0; c < gridSize; c++) {
+            positions.push({ row: r, col: c });
+          }
+        }
+        // Fisher-Yates shuffle positions
+        for (let i = positions.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [positions[i], positions[j]] = [positions[j], positions[i]];
+        }
+
+        for (const pos of positions) {
+          const att: PlacementAttempt = {
+            word,
+            row: pos.row,
+            col: pos.col,
+            direction: dir,
+          };
+          if (canPlace(grid, att, gridSize)) {
+            const cells = placeWord(grid, att);
+            placements.push({ word, cells, found: false });
+            placed = true;
+            break;
+          }
+        }
+      }
+
+      if (!placed) {
+        success = false;
+        break;
+      }
+    }
+
+    if (success) {
+      // Fill empty cells with random Korean characters
+      for (let r = 0; r < gridSize; r++) {
+        for (let c = 0; c < gridSize; c++) {
+          if (grid[r][c] === '') {
+            grid[r][c] = randomKoreanChar();
+          }
+        }
+      }
+      return { grid, gridSize, placements, numWords: words.length };
+    }
   }
-  return null;
+
+  throw new Error(`Failed to create board after ${maxAttempts} attempts`);
 }
 
-/** Check if all words found */
-export function isComplete(board: BoardState): boolean {
-  return board.puzzle.words.every((w) => board.foundWords.includes(w.word));
+// ─── Word Check ──────────────────────────────────────────
+
+export function checkWord(
+  board: BoardState,
+  selectedCells: { row: number; col: number }[],
+): number {
+  // Check if the selected cells match any unfound word
+  for (let i = 0; i < board.placements.length; i++) {
+    const placement = board.placements[i];
+    if (placement.found) continue;
+
+    if (placement.cells.length !== selectedCells.length) continue;
+
+    // Check forward match
+    const forwardMatch = placement.cells.every(
+      (c, idx) => c.row === selectedCells[idx].row && c.col === selectedCells[idx].col,
+    );
+    // Check reverse match
+    const reverseCells = [...selectedCells].reverse();
+    const reverseMatch = placement.cells.every(
+      (c, idx) => c.row === reverseCells[idx].row && c.col === reverseCells[idx].col,
+    );
+
+    if (forwardMatch || reverseMatch) return i;
+  }
+  return -1;
+}
+
+// ─── Win Check ───────────────────────────────────────────
+
+export function isWon(board: BoardState): boolean {
+  return board.placements.every((p) => p.found);
 }

@@ -32,5 +32,5 @@ export function destroyGame(game: Phaser.Game) {
 }
 
 export function getPlayScene(game: Phaser.Game): PlayScene | null {
-  return (game.scene.getScene('PlayScene') as PlayScene) ?? null;
+  return game.scene.getScene('PlayScene') as PlayScene | null;
 }

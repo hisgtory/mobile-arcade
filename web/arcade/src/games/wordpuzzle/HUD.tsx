@@ -33,9 +33,9 @@ const StatValue = styled('span', {
 
 interface HUDProps {
   stage: number;
-  score: number;
-  wordsFound: number;
+  foundWords: number;
   totalWords: number;
+  score: number;
   onHint?: () => void;
   onRestart?: () => void;
 }
@@ -52,7 +52,7 @@ const ActionBtn = styled('button', {
   '&:active': { opacity: 0.7 },
 });
 
-export function HUD({ stage, score, wordsFound, totalWords, onHint, onRestart }: HUDProps) {
+export function HUD({ stage, foundWords, totalWords, score, onHint, onRestart }: HUDProps) {
   return (
     <Container>
       <StatBlock>
@@ -61,7 +61,7 @@ export function HUD({ stage, score, wordsFound, totalWords, onHint, onRestart }:
       </StatBlock>
       <StatBlock>
         <StatLabel>Words</StatLabel>
-        <StatValue>{wordsFound}/{totalWords}</StatValue>
+        <StatValue>{foundWords}/{totalWords}</StatValue>
       </StatBlock>
       <StatBlock>
         <StatLabel>Score</StatLabel>

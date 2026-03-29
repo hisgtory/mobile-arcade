@@ -4,7 +4,7 @@ import { stageComplete } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
-  wordsFound: number;
+  foundWords: number;
   totalWords: number;
   stage: number;
   cleared: boolean;
@@ -18,7 +18,7 @@ interface UseGameOptions {
 export function useGame({ stage, onClear }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(0);
-  const [wordsFound, setWordsFound] = useState(0);
+  const [foundWords, setFoundWords] = useState(0);
   const [totalWords, setTotalWords] = useState(0);
 
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
@@ -35,13 +35,13 @@ export function useGame({ stage, onClear }: UseGameOptions) {
       setScore(data.score);
     });
 
-    game.events.on('words-update', (data: { wordsFound: number; totalWords: number }) => {
-      setWordsFound(data.wordsFound);
-      setTotalWords(data.totalWords);
+    game.events.on('words-update', (data: { found: number; total: number }) => {
+      setFoundWords(data.found);
+      setTotalWords(data.total);
     });
 
-    game.events.on('stage-clear', (data: { score: number; wordsFound: number; totalWords: number; stage: number }) => {
-      const result = { score: data.score, wordsFound: data.wordsFound, totalWords: data.totalWords, stage: data.stage, cleared: true };
+    game.events.on('stage-clear', (data: { score: number; foundWords: number; totalWords: number; stage: number }) => {
+      const result = { score: data.score, foundWords: data.foundWords, totalWords: data.totalWords, stage: data.stage, cleared: true };
       stageComplete({ stage: data.stage, score: data.score, cleared: true });
       onClear?.(result);
     });
@@ -55,7 +55,7 @@ export function useGame({ stage, onClear }: UseGameOptions) {
   const doHint = useCallback(() => {
     if (!gameRef.current) return;
     const scene = getPlayScene(gameRef.current);
-    scene?.hint();
+    scene?.useHint();
   }, []);
 
   const doRestart = useCallback(() => {
@@ -64,5 +64,5 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     scene?.restart();
   }, []);
 
-  return { containerRef, score, wordsFound, totalWords, doHint, doRestart };
+  return { containerRef, score, foundWords, totalWords, doHint, doRestart };
 }
