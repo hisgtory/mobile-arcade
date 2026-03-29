@@ -308,7 +308,7 @@ export class PlayScene extends Phaser.Scene {
         this.playerScore++;
         this.winStreak++;
       } else {
-        // draw doesn't reset streak
+        this.winStreak = 0;
       }
       this.drawBoard(index);
       this.onGameEnd();
@@ -337,8 +337,8 @@ export class PlayScene extends Phaser.Scene {
     if (this.board.winner) {
       if (this.board.winner === 'O') {
         this.aiScore++;
-        // On AI win, streak stays (don't downgrade)
       }
+      this.winStreak = 0; // AI win or draw resets streak
       this.drawBoard(aiIndex);
       this.onGameEnd();
       return;
