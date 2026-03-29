@@ -28,6 +28,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── Screwdom ───
+import { ClearScreen as ScrewdomClear } from './games/screwdom/ClearScreen';
+import { HUD as ScrewdomHUD } from './games/screwdom/HUD';
+import { useGame as useScrewdomGame, type GameResult as ScrewdomResult } from './games/screwdom/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
@@ -272,6 +277,63 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── Screwdom Routes ──────────────────────────────────
+
+function ScrewdomTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#f5f0e8' }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#4A3520', letterSpacing: -1 }}>Screwdom</h1>
+      <p style={{ fontSize: 16, color: '#8B7355' }}>Unscrew the planks!</p>
+      <button
+        onClick={() => navigate('/games/screwdom/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#A0522D', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function ScrewdomStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<ScrewdomResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: ScrewdomResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: ScrewdomResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/screwdom/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/screwdom/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <ScrewdomClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <ScrewdomPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function ScrewdomPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: ScrewdomResult) => void; onGameOver: (r: ScrewdomResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useScrewdomGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout css={{ backgroundColor: '#f5f0e8' }}>
+      <ScrewdomHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -326,6 +388,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* Screwdom */}
+      <Route path="/games/screwdom/v1" element={<ScrewdomTitleRoute />} />
+      <Route path="/games/screwdom/v1/stage/:stageId" element={<ScrewdomStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
