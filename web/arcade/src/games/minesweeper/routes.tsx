@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { globalStyles } from '../../styles/global';
 import { GameCanvas } from '../../components/GameCanvas';
 import { PlayLayout } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
@@ -10,7 +9,6 @@ import { type Difficulty as MSDifficulty, DIFFICULTIES as MS_DIFFICULTIES } from
 
 function MinesweeperTitleRoute() {
   const navigate = useNavigate();
-  globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 16 }}>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>💣 Minesweeper</h1>

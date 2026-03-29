@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { globalStyles } from '../../styles/global';
 import { GameCanvas } from '../../components/GameCanvas';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
@@ -13,7 +12,6 @@ import { useGame as useFound3Game, type GameResult as Found3Result } from './use
 
 function Found3TitleRoute() {
   const navigate = useNavigate();
-  globalStyles();
   return (
     <Found3Title
       stage={1}
@@ -25,7 +23,8 @@ function Found3TitleRoute() {
 function Found3StageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
-  const stage = parseInt(stageId || '1', 10);
+  const parsed = parseInt(stageId || '1', 10);
+  const stage = Number.isNaN(parsed) ? 1 : parsed;
   const [playKey, setPlayKey] = useState(0);
   const [gameResult, setGameResult] = useState<Found3Result | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');

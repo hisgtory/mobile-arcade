@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { globalStyles } from '../../styles/global';
 import { GameCanvas } from '../../components/GameCanvas';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
@@ -11,7 +10,6 @@ import { useGame as useSudokuGame, type GameResult as SudokuResult } from './use
 
 function SudokuTitleRoute() {
   const navigate = useNavigate();
-  globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Sudoku</h1>
@@ -29,7 +27,8 @@ function SudokuTitleRoute() {
 function SudokuStageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
-  const stage = parseInt(stageId || '1', 10);
+  const parsed = parseInt(stageId || '1', 10);
+  const stage = Number.isNaN(parsed) ? 1 : parsed;
   const [playKey, setPlayKey] = useState(0);
   const [gameResult, setGameResult] = useState<SudokuResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');

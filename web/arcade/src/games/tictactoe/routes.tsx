@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { globalStyles } from '../../styles/global';
 import { GameCanvas } from '../../components/GameCanvas';
 import { PlayLayout } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
@@ -8,7 +7,6 @@ import { useGame as useTicTacToeGame } from './useGame';
 
 function TicTacToeTitleRoute() {
   const navigate = useNavigate();
-  globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tic Tac Toe</h1>
