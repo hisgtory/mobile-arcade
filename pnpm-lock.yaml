@@ -38,6 +38,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/minesweeper:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/number10:
     dependencies:
       phaser:
@@ -125,6 +135,9 @@ importers:
       '@arcade/lib-found3':
         specifier: workspace:*
         version: link:../../lib/found3
+      '@arcade/lib-minesweeper':
+        specifier: workspace:*
+        version: link:../../lib/minesweeper
       '@arcade/lib-number10':
         specifier: workspace:*
         version: link:../../lib/number10

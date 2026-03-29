@@ -87,6 +87,16 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/number10/v1/play',
     isNew: true,
   },
+  {
+    id: 'minesweeper',
+    name: 'Minesweeper',
+    description: 'Classic mine-sweeping puzzle!',
+    icon: '💣',
+    category: 'puzzle',
+    color: '#374151',
+    webPath: '/games/minesweeper/v1',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
