@@ -22,7 +22,6 @@ export function createGame(
     scene: [PlayScene],
   });
 
-  (game as any).__dpr = dpr;
   game.scene.start('PlayScene', { config, dpr });
 
   return game;

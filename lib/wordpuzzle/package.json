@@ -17,7 +17,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "phaser": "^3.88.2"
+    "phaser": "^3.80.0"
   },
   "devDependencies": {
     "typescript": "^5.5.0"

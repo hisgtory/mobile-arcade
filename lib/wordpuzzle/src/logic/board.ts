@@ -1,4 +1,6 @@
-import type { PuzzleData } from '../types';
+import type { PuzzleData, WordEntry, BoardState, CellPos } from '../types';
+
+// ─── Puzzle Database ─────────────────────────────────────
 
 const PUZZLES: PuzzleData[] = [
   // ─── Easy: 3 words, 5×5 ───────────────────────────────
@@ -307,13 +309,77 @@ const PUZZLES: PuzzleData[] = [
 export function getPuzzle(puzzleId: number): PuzzleData {
   const puzzle = PUZZLES.find((p) => p.id === puzzleId);
   if (!puzzle) {
-    // Cycle back for IDs beyond 30
     const cycled = ((puzzleId - 1) % PUZZLES.length) + 1;
     return { ...PUZZLES[cycled - 1], id: puzzleId };
   }
   return puzzle;
 }
 
-export function getTotalPuzzles(): number {
-  return PUZZLES.length;
+// ─── Board Creation ──────────────────────────────────────
+
+export function createBoard(puzzle: PuzzleData): BoardState {
+  const grid: (string | null)[][] = [];
+  for (let r = 0; r < puzzle.gridRows; r++) {
+    grid[r] = [];
+    for (let c = 0; c < puzzle.gridCols; c++) {
+      grid[r][c] = null;
+    }
+  }
+
+  for (const w of puzzle.words) {
+    const chars = [...w.word];
+    for (let i = 0; i < chars.length; i++) {
+      const r = w.direction === 'h' ? w.row : w.row + i;
+      const c = w.direction === 'h' ? w.col + i : w.col;
+      grid[r][c] = chars[i];
+    }
+  }
+
+  return { puzzle, grid, foundWords: [] };
+}
+
+// ─── Word Checking ───────────────────────────────────────
+
+/** Get cells that make up a word entry */
+export function getWordCells(entry: WordEntry): CellPos[] {
+  const cells: CellPos[] = [];
+  const chars = [...entry.word];
+  for (let i = 0; i < chars.length; i++) {
+    const r = entry.direction === 'h' ? entry.row : entry.row + i;
+    const c = entry.direction === 'h' ? entry.col + i : entry.col;
+    cells.push({ row: r, col: c });
+  }
+  return cells;
+}
+
+/** Check if selected cells form any unfound word */
+export function checkSelectedWord(
+  selectedCells: CellPos[],
+  board: BoardState,
+): WordEntry | null {
+  for (const w of board.puzzle.words) {
+    if (board.foundWords.includes(w.word)) continue;
+    const wordCells = getWordCells(w);
+    if (wordCells.length !== selectedCells.length) continue;
+
+    // Check forward match
+    const forward = wordCells.every(
+      (wc, i) => wc.row === selectedCells[i].row && wc.col === selectedCells[i].col,
+    );
+    if (forward) return w;
+
+    // Check reverse match
+    const reverse = wordCells.every(
+      (wc, i) =>
+        wc.row === selectedCells[selectedCells.length - 1 - i].row &&
+        wc.col === selectedCells[selectedCells.length - 1 - i].col,
+    );
+    if (reverse) return w;
+  }
+  return null;
+}
+
+/** Check if all words found */
+export function isComplete(board: BoardState): boolean {
+  return board.puzzle.words.every((w) => board.foundWords.includes(w.word));
 }
