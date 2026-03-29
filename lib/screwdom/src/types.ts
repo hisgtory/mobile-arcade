@@ -65,6 +65,7 @@ export interface StageConfig {
 }
 
 export function getStageConfig(stage: number): StageConfig {
+  if (stage < 1) stage = 1;
   const configs: StageConfig[] = [
     { stage: 1, numPlanks: 2, numColors: 2, screwsPerColor: 2 },
     { stage: 2, numPlanks: 3, numColors: 2, screwsPerColor: 3 },

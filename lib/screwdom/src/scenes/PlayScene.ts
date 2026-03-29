@@ -32,7 +32,7 @@ export class PlayScene extends Phaser.Scene {
   private dpr = 1;
 
   private phase: GamePhase = 'idle';
-  private moveHistory: BoardState[] = [];
+  private moveHistory: { board: BoardState; score: number }[] = [];
   private score = 0;
   private moves = 0;
 
@@ -315,11 +315,17 @@ export class PlayScene extends Phaser.Scene {
 
     // Save history for undo
     this.moveHistory.push({
-      screws: this.board.screws.map((s) => ({ ...s })),
-      planks: this.board.planks.map((p) => ({ ...p, screwSlots: [...p.screwSlots] })),
-      holes: this.board.holes.map((h) => ({ ...h })),
-      numColors: this.board.numColors,
+      board: {
+        screws: this.board.screws.map((s) => ({ ...s })),
+        planks: this.board.planks.map((p) => ({ ...p, screwSlots: [...p.screwSlots] })),
+        holes: this.board.holes.map((h) => ({ ...h })),
+        numColors: this.board.numColors,
+      },
+      score: this.score,
     });
+
+    // Capture screw color before applying the move
+    const screwColor = this.board.screws[screwId].color;
 
     // Apply the move
     this.board = result.newBoard;
@@ -327,7 +333,6 @@ export class PlayScene extends Phaser.Scene {
     this.score += 50;
 
     // Check if a color group is complete
-    const screwColor = this.board.screws[screwId].color;
     if (isColorComplete(this.board, screwColor)) {
       this.score += 200;
     }
@@ -409,7 +414,9 @@ export class PlayScene extends Phaser.Scene {
 
   public undo() {
     if (this.phase !== 'idle' || this.moveHistory.length === 0) return;
-    this.board = this.moveHistory.pop()!;
+    const prev = this.moveHistory.pop()!;
+    this.board = prev.board;
+    this.score = prev.score;
     this.moves = Math.max(0, this.moves - 1);
     this.drawAll();
     this.emitState();

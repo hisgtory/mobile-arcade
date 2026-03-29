@@ -216,9 +216,9 @@ export function isWon(board: BoardState): boolean {
 
 /** Check if a color group is complete (all holes filled) */
 export function isColorComplete(board: BoardState, color: number): boolean {
-  return board.holes
-    .filter((h) => h.color === color)
-    .every((h) => h.filled);
+  const colorHoles = board.holes.filter((h) => h.color === color);
+  if (colorHoles.length === 0) return false;
+  return colorHoles.every((h) => h.filled);
 }
 
 /** Check if the game is stuck (no screw can be removed and placed) */
