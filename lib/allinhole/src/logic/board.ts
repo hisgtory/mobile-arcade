@@ -11,10 +11,11 @@ import { CellType, type CellPos, type BallData, type Direction, type StageConfig
 
 export type Grid = CellType[][];
 
-/** Seeded pseudo-random generator for reproducible puzzles */
+/** Seeded pseudo-random generator (Park-Miller LCG) for reproducible puzzles */
 function seededRandom(seed: number): () => number {
   let s = seed;
   return () => {
+    // Park-Miller LCG: multiplier=16807, modulus=2^31-1
     s = (s * 16807 + 0) % 2147483647;
     return (s - 1) / 2147483646;
   };
