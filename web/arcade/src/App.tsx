@@ -32,6 +32,11 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── TrickyTwist ───
+import { ClearScreen as TrickyTwistClear } from './games/trickytwist/ClearScreen';
+import { HUD as TrickyTwistHUD } from './games/trickytwist/HUD';
+import { useGame as useTrickyTwistGame, type GameResult as TrickyTwistResult } from './games/trickytwist/useGame';
+
 const PlayLayout = styled('div', {
   width: '100%',
   height: '100vh',
@@ -301,6 +306,63 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── TrickyTwist Routes ───────────────────────────────
+
+function TrickyTwistTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🧩 Tricky Twist</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Brain-twisting logic puzzles!</p>
+      <button
+        onClick={() => navigate('/games/trickytwist/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function TrickyTwistStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<TrickyTwistResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: TrickyTwistResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: TrickyTwistResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/trickytwist/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/trickytwist/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <TrickyTwistClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <TrickyTwistPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function TrickyTwistPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: TrickyTwistResult) => void; onGameOver: (r: TrickyTwistResult) => void }) {
+  const { containerRef, score, streak, current, total, timeRemaining } = useTrickyTwistGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <TrickyTwistHUD stage={stage} score={score} streak={streak} current={current} total={total} timeRemaining={timeRemaining} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -326,6 +388,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* TrickyTwist */}
+      <Route path="/games/trickytwist/v1" element={<TrickyTwistTitleRoute />} />
+      <Route path="/games/trickytwist/v1/stage/:stageId" element={<TrickyTwistStageRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

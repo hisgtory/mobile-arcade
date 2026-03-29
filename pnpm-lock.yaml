@@ -82,6 +82,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/trickytwist:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/watersort:
     dependencies:
       phaser:
@@ -152,6 +162,9 @@ importers:
       '@arcade/lib-tictactoe':
         specifier: workspace:*
         version: link:../../lib/tictactoe
+      '@arcade/lib-trickytwist':
+        specifier: workspace:*
+        version: link:../../lib/trickytwist
       '@arcade/lib-watersort':
         specifier: workspace:*
         version: link:../../lib/watersort
