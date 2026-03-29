@@ -2,14 +2,14 @@ import Phaser from 'phaser';
 import {
   DEFAULT_WIDTH,
   DEFAULT_HEIGHT,
-  GRID_SIZE,
   type BoardState,
   type GameConfig,
   type Player,
+  getGridConfig,
 } from '../types';
 import { createBoard, makeMove, getAIMove } from '../logic/board';
 
-const CELL_SIZE = 100;
+const BASE_CELL_SIZE = 100;
 const LINE_WIDTH = 4;
 const GRID_COLOR = 0xd1d5db;
 const X_COLOR = 0xef4444;
@@ -29,6 +29,9 @@ export class PlayScene extends Phaser.Scene {
   private roundsPlayed = 0;
   private playerScore = 0;
   private aiScore = 0;
+  private winStreak = 0;
+  private currentGridSize = 3;
+  private currentMatchLength = 3;
 
   constructor() {
     super({ key: 'PlayScene' });
@@ -44,25 +47,84 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private startNewRound() {
-    this.board = createBoard();
+    const prev = this.currentGridSize;
+    const gridConfig = getGridConfig(this.winStreak);
+    this.currentGridSize = gridConfig.gridSize;
+    this.currentMatchLength = gridConfig.matchLength;
+
+    // Emit grid-upgrade if grid grew
+    if (this.currentGridSize > prev) {
+      this.game.events.emit('grid-upgrade', {
+        gridSize: this.currentGridSize,
+        matchLength: this.currentMatchLength,
+      });
+      // Show upgrade text briefly before starting
+      this.showUpgradeText(`${this.currentGridSize}x${this.currentGridSize}!`, () => {
+        this.board = createBoard(this.currentGridSize, this.currentMatchLength);
+        this.phase = 'player_turn';
+        this.drawBoard();
+        this.emitState();
+      });
+      return;
+    }
+
+    this.board = createBoard(this.currentGridSize, this.currentMatchLength);
     this.phase = 'player_turn';
     this.drawBoard();
     this.emitState();
   }
 
+  private showUpgradeText(text: string, onComplete: () => void) {
+    this.children.removeAll(true);
+    const scale = this.dpr;
+    const w = DEFAULT_WIDTH * scale;
+    const h = DEFAULT_HEIGHT * scale;
+
+    this.add.rectangle(w / 2, h / 2, w, h, 0xf0f2f5);
+
+    const upgradeText = this.add.text(w / 2, h / 2, text, {
+      fontSize: `${48 * scale}px`,
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      color: '#2563EB',
+      fontStyle: 'bold',
+    });
+    upgradeText.setOrigin(0.5);
+    upgradeText.setScale(0);
+
+    this.tweens.add({
+      targets: upgradeText,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 400,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.time.delayedCall(600, () => {
+          this.tweens.add({
+            targets: upgradeText,
+            alpha: 0,
+            duration: 200,
+            onComplete: () => onComplete(),
+          });
+        });
+      },
+    });
+  }
+
   // ─── Drawing ──────────────────────────────────────────
 
   private drawBoard(animateIndex?: number) {
-    // Clear everything
     this.children.removeAll(true);
 
     const scale = this.dpr;
     const w = DEFAULT_WIDTH * scale;
     const h = DEFAULT_HEIGHT * scale;
-    this.cellSize = CELL_SIZE * scale;
-    const gridSize = this.cellSize * GRID_SIZE;
-    this.gridOriginX = (w - gridSize) / 2;
-    this.gridOriginY = (h - gridSize) / 2 - 20 * scale;
+    const gs = this.currentGridSize;
+
+    // Scale cell size down for bigger grids
+    this.cellSize = (BASE_CELL_SIZE * (3 / gs)) * scale;
+    const gridPixelSize = this.cellSize * gs;
+    this.gridOriginX = (w - gridPixelSize) / 2;
+    this.gridOriginY = (h - gridPixelSize) / 2 - 20 * scale;
 
     // Background
     this.add.rectangle(w / 2, h / 2, w, h, 0xf0f2f5);
@@ -71,20 +133,19 @@ export class PlayScene extends Phaser.Scene {
     const g = this.add.graphics();
     g.lineStyle(LINE_WIDTH * scale, GRID_COLOR, 1);
 
-    for (let i = 1; i < GRID_SIZE; i++) {
-      // Vertical
+    for (let i = 1; i < gs; i++) {
       const vx = this.gridOriginX + i * this.cellSize;
       g.moveTo(vx, this.gridOriginY);
-      g.lineTo(vx, this.gridOriginY + gridSize);
-      // Horizontal
+      g.lineTo(vx, this.gridOriginY + gridPixelSize);
       const hy = this.gridOriginY + i * this.cellSize;
       g.moveTo(this.gridOriginX, hy);
-      g.lineTo(this.gridOriginX + gridSize, hy);
+      g.lineTo(this.gridOriginX + gridPixelSize, hy);
     }
     g.strokePath();
 
-    // Draw marks (animate the latest move)
-    for (let i = 0; i < 9; i++) {
+    // Draw marks
+    const totalCells = gs * gs;
+    for (let i = 0; i < totalCells; i++) {
       const cell = this.board.cells[i];
       if (cell) {
         const { cx, cy } = this.cellCenter(i);
@@ -97,9 +158,9 @@ export class PlayScene extends Phaser.Scene {
       this.drawWinLine(this.board.winLine);
     }
 
-    // Hit areas (only if game not over)
+    // Hit areas
     if (!this.board.winner && this.phase === 'player_turn') {
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < totalCells; i++) {
         if (this.board.cells[i] !== null) continue;
         const { cx, cy } = this.cellCenter(i);
         const hit = this.add
@@ -115,8 +176,9 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private cellCenter(index: number): { cx: number; cy: number } {
-    const row = Math.floor(index / GRID_SIZE);
-    const col = index % GRID_SIZE;
+    const gs = this.currentGridSize;
+    const row = Math.floor(index / gs);
+    const col = index % gs;
     return {
       cx: this.gridOriginX + col * this.cellSize + this.cellSize / 2,
       cy: this.gridOriginY + row * this.cellSize + this.cellSize / 2,
@@ -155,7 +217,7 @@ export class PlayScene extends Phaser.Scene {
   private drawWinLine(line: number[]) {
     const scale = this.dpr;
     const start = this.cellCenter(line[0]);
-    const end = this.cellCenter(line[2]);
+    const end = this.cellCenter(line[line.length - 1]);
 
     const g = this.add.graphics();
     g.lineStyle(8 * scale, WIN_LINE_COLOR, 0.8);
@@ -164,7 +226,6 @@ export class PlayScene extends Phaser.Scene {
     g.strokePath();
     g.setDepth(100);
 
-    // Animate
     g.setAlpha(0);
     this.tweens.add({ targets: g, alpha: 1, duration: 300, ease: 'Cubic.easeIn' });
   }
@@ -172,7 +233,8 @@ export class PlayScene extends Phaser.Scene {
   private drawStatus() {
     const scale = this.dpr;
     const w = DEFAULT_WIDTH * scale;
-    const gridBottom = this.gridOriginY + GRID_SIZE * this.cellSize;
+    const gs = this.currentGridSize;
+    const gridBottom = this.gridOriginY + gs * this.cellSize;
 
     let text = '';
     let color = '#6B7280';
@@ -190,6 +252,11 @@ export class PlayScene extends Phaser.Scene {
       text = 'Your turn (X)';
     } else {
       text = 'AI thinking...';
+    }
+
+    // Show grid size indicator if not 3x3
+    if (gs > 3 && !this.board.winner) {
+      text += ` [${gs}x${gs}]`;
     }
 
     const statusText = this.add.text(w / 2, gridBottom + 30 * scale, text, {
@@ -237,7 +304,12 @@ export class PlayScene extends Phaser.Scene {
     this.board = next;
 
     if (this.board.winner) {
-      if (this.board.winner === 'X') this.playerScore++;
+      if (this.board.winner === 'X') {
+        this.playerScore++;
+        this.winStreak++;
+      } else {
+        // draw doesn't reset streak
+      }
       this.drawBoard(index);
       this.onGameEnd();
       return;
@@ -263,7 +335,10 @@ export class PlayScene extends Phaser.Scene {
     this.board = next;
 
     if (this.board.winner) {
-      if (this.board.winner === 'O') this.aiScore++;
+      if (this.board.winner === 'O') {
+        this.aiScore++;
+        // On AI win, streak stays (don't downgrade)
+      }
       this.drawBoard(aiIndex);
       this.onGameEnd();
       return;
@@ -279,7 +354,6 @@ export class PlayScene extends Phaser.Scene {
     this.roundsPlayed++;
     this.emitState();
 
-    // Emit game result
     this.time.delayedCall(800, () => {
       this.game.events.emit('round-end', {
         winner: this.board.winner,
