@@ -389,6 +389,10 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* ToonBlast */}
+      <Route path="/games/toonblast/v1" element={<ToonBlastTitleRoute />} />
+      <Route path="/games/toonblast/v1/stage/:stageId" element={<ToonBlastStageRoute />} />
+
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
     </Routes>
