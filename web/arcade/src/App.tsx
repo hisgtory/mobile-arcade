@@ -28,6 +28,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── YarnFever ───
+import { ClearScreen as YarnFeverClear } from './games/yarnfever/ClearScreen';
+import { HUD as YarnFeverHUD } from './games/yarnfever/HUD';
+import { useGame as useYarnFeverGame, type GameResult as YarnFeverResult } from './games/yarnfever/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
@@ -272,6 +277,60 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── YarnFever Routes ──────────────────────────────────
+
+function YarnFeverTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Yarn Fever</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Untangle the yarn!</p>
+      <button
+        onClick={() => navigate('/games/yarnfever/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function YarnFeverStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<YarnFeverResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: YarnFeverResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/yarnfever/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/yarnfever/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <YarnFeverClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <YarnFeverPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function YarnFeverPlaying({ stage, onClear }: { stage: number; onClear: (r: YarnFeverResult) => void }) {
+  const { containerRef, crossings, moves, doRestart } = useYarnFeverGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <YarnFeverHUD stage={stage} crossings={crossings} moves={moves} onRestart={doRestart} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -322,6 +381,10 @@ export function App() {
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
+
+      {/* YarnFever */}
+      <Route path="/games/yarnfever/v1" element={<YarnFeverTitleRoute />} />
+      <Route path="/games/yarnfever/v1/stage/:stageId" element={<YarnFeverStageRoute />} />
 
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
