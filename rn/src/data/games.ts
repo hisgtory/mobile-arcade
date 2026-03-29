@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'fishdom',
+    name: 'Fishdom',
+    description: 'Match 3 to build your aquarium!',
+    icon: '🐠',
+    category: 'puzzle',
+    color: '#0ea5e9',
+    webPath: '/games/fishdom/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

@@ -1,7 +1,6 @@
 /**
  * PlayScene for Fishdom
  *
- * Match-3 puzzle with aquarium theme.
  * Phaser handles the tile board. HUD is handled by React.
  *
  * Events emitted:
@@ -24,7 +23,7 @@ import {
   type Board,
 } from '../logic/board';
 import { Tile } from '../objects/Tile';
-import { GamePhase, TILE_IMAGES, type GameConfig, type StageConfig, type CellPos } from '../types';
+import { GamePhase, type GameConfig, type StageConfig, type CellPos } from '../types';
 
 export class PlayScene extends Phaser.Scene {
   private stageNum: number = 1;
@@ -50,9 +49,6 @@ export class PlayScene extends Phaser.Scene {
   private dragStartX: number = 0;
   private dragStartY: number = 0;
 
-  // BGM
-  private bgm?: Phaser.Sound.BaseSound;
-
   constructor() {
     super({ key: 'PlayScene' });
   }
@@ -60,14 +56,6 @@ export class PlayScene extends Phaser.Scene {
   init(data: { stage?: number; gameConfig?: GameConfig }): void {
     this.stageNum = data?.stage ?? 1;
     this.gameConfig = data?.gameConfig ?? (this.game as any).__fishdomConfig;
-  }
-
-  preload(): void {
-    const base = '/assets/';
-    for (const key of TILE_IMAGES) {
-      this.load.image(key, `${base}tiles/${key}.png`);
-    }
-    this.load.audio('bgm1', `${base}audio/Spring_Loaded_Scoundrel.mp3`);
   }
 
   create(): void {
@@ -85,7 +73,7 @@ export class PlayScene extends Phaser.Scene {
     this.stageConfig = getStageConfig(this.stageNum);
     this.movesLeft = this.stageConfig.maxMoves;
 
-    // Background — aquarium blue
+    // Background — ocean blue
     this.cameras.main.setBackgroundColor('#e0f2fe');
 
     // Calculate tile size to fit board
@@ -124,16 +112,6 @@ export class PlayScene extends Phaser.Scene {
     // Emit initial state
     this.emitMoves();
     this.emitScore();
-
-    // BGM
-    this.bgm = this.sound.add('bgm1', { loop: true, volume: 0.25 });
-    this.bgm.play();
-
-    this.input.once('pointerdown', () => {
-      if ((this.sound as Phaser.Sound.WebAudioSoundManager).context?.state === 'suspended') {
-        (this.sound as Phaser.Sound.WebAudioSoundManager).context.resume();
-      }
-    });
   }
 
   // ─── COORDINATE HELPERS ──────────────────────────────
@@ -380,11 +358,6 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown(): void {
-    if (this.bgm) {
-      this.bgm.stop();
-      this.bgm.destroy();
-      this.bgm = undefined;
-    }
     this.tileGrid = [];
   }
 }

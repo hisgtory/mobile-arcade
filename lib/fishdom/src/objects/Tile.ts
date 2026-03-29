@@ -1,18 +1,18 @@
 /**
  * Tile game object for Fishdom
  *
- * Phaser Container with background + pixel art icon.
+ * Phaser Container with background + emoji text.
  */
 
 import Phaser from 'phaser';
-import { TILE_IMAGES, type TileType } from '../types';
+import { TILE_EMOJIS, type TileType } from '../types';
 
 export class Tile extends Phaser.GameObjects.Container {
   public tileType: TileType;
   public gridRow: number;
   public gridCol: number;
   private bg: Phaser.GameObjects.Rectangle;
-  private icon: Phaser.GameObjects.Image;
+  private icon: Phaser.GameObjects.Text;
   private tileSize: number;
 
   constructor(
@@ -31,16 +31,18 @@ export class Tile extends Phaser.GameObjects.Container {
     this.gridCol = col;
     this.tileSize = size;
 
-    // Background — aquarium-themed light blue tint
+    // Background
     this.bg = scene.add.rectangle(0, 0, size - 2, size - 2, 0xe8f4fd, 1);
-    this.bg.setStrokeStyle(1, 0xb0d4f1, 0.8);
+    this.bg.setStrokeStyle(1, 0xb3d9f2, 0.8);
     this.add(this.bg);
 
-    // Icon
-    const imageKey = TILE_IMAGES[type % TILE_IMAGES.length];
-    this.icon = scene.add.image(0, 0, imageKey);
-    const iconSize = Math.min(size * 0.75, 40);
-    this.icon.setDisplaySize(iconSize, iconSize);
+    // Emoji icon
+    const emoji = TILE_EMOJIS[type % TILE_EMOJIS.length];
+    const fontSize = Math.floor(size * 0.55);
+    this.icon = scene.add.text(0, 0, emoji, {
+      fontSize: `${fontSize}px`,
+    });
+    this.icon.setOrigin(0.5, 0.5);
     this.add(this.icon);
 
     this.setSize(size, size);
@@ -50,8 +52,8 @@ export class Tile extends Phaser.GameObjects.Container {
 
   updateType(type: TileType): void {
     this.tileType = type;
-    const imageKey = TILE_IMAGES[type % TILE_IMAGES.length];
-    this.icon.setTexture(imageKey);
+    const emoji = TILE_EMOJIS[type % TILE_EMOJIS.length];
+    this.icon.setText(emoji);
   }
 
   animateDestroy(onComplete: () => void): void {

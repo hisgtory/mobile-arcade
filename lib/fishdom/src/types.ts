@@ -1,7 +1,5 @@
 /**
  * Fishdom game type definitions
- *
- * Match-3 core + aquarium meta-game types.
  */
 
 export type TileType = number;
@@ -15,14 +13,10 @@ export interface TileData {
   type: TileType;
   row: number;
   col: number;
-  /** Special tile created by 4+ matches */
-  special?: 'line_h' | 'line_v' | 'bomb';
 }
 
 export interface MatchResult {
   cells: CellPos[];
-  /** If 4+, indicates special tile to create */
-  special?: 'line_h' | 'line_v' | 'bomb';
 }
 
 export interface SwapResult {
@@ -34,7 +28,7 @@ export interface SwapResult {
 
 export interface StageConfig {
   stage: number;
-  /** Number of distinct tile types (6-10) */
+  /** Number of distinct tile types (6-8) */
   typeCount: number;
   /** Grid rows */
   rows: number;
@@ -61,16 +55,14 @@ export enum GamePhase {
   GAME_OVER = 'game_over',
 }
 
-// Sea-themed food tile images for Fishdom
-export const TILE_IMAGES: string[] = [
-  'soda_coke',
-  'boba_strawberry',
-  'fruit_orange',
-  'icecream_3scoops',
-  'cake_cheese',
-  'coffee_greentea',
-  'popsicle_pink',
-  'eggs_fried',
-  'cheese_gouda',
-  'jam_strawberry',
+// Aquatic-themed tile emojis for Fishdom
+export const TILE_EMOJIS: string[] = [
+  '🐠', // tropical fish
+  '🐟', // fish
+  '🦀', // crab
+  '🐚', // shell
+  '🌊', // wave
+  '⭐', // starfish
+  '🐙', // octopus
+  '🦑', // squid
 ];
