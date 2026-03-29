@@ -11,6 +11,8 @@ import {
 
 // ─── Board Creation ──────────────────────────────────────
 
+const MAX_PLACEMENT_ATTEMPTS = 100;
+
 export function createBoard(config: StageConfig, dpr: number): BoardState {
   const { objectCount, shapeTypes, holeRadius } = config;
   const w = DEFAULT_WIDTH * dpr;
@@ -37,7 +39,7 @@ export function createBoard(config: StageConfig, dpr: number): BoardState {
       attempts++;
     } while (
       Math.hypot(x - holeX, y - holeY) < safeRadius &&
-      attempts < 100
+      attempts < MAX_PLACEMENT_ATTEMPTS
     );
 
     objects.push({ id: i, shape, x, y, absorbed: false });

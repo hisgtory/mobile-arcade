@@ -61,8 +61,6 @@ function formatTime(ms: number): string {
 }
 
 export function HUD({ stage, score, absorbed, total, elapsedMs, timeLimit, onRestart }: HUDProps) {
-  const remaining = timeLimit > 0 ? Math.max(0, timeLimit - elapsedMs) : 0;
-
   return (
     <Container>
       <StatBlock>
@@ -76,8 +74,8 @@ export function HUD({ stage, score, absorbed, total, elapsedMs, timeLimit, onRes
       {timeLimit > 0 && (
         <StatBlock>
           <StatLabel>Time</StatLabel>
-          <StatValue css={remaining < 10000 ? { color: '#EF4444' } : undefined}>
-            {formatTime(remaining)}
+          <StatValue css={timeLimit - elapsedMs < 10000 ? { color: '#EF4444' } : undefined}>
+            {formatTime(Math.max(0, timeLimit - elapsedMs))}
           </StatValue>
         </StatBlock>
       )}

@@ -252,32 +252,18 @@ export class PlayScene extends Phaser.Scene {
           duration: 100,
         });
 
-        // Check if object is in hole
-        const objData = this.board.objects.find((o) => o.id === obj.id);
-        if (objData && !objData.absorbed) {
-          objData.x = container.x;
-          objData.y = container.y;
+        // Check if object is in hole (use direct reference from closure)
+        if (!obj.absorbed) {
+          obj.x = container.x;
+          obj.y = container.y;
 
-          if (isInHole(objData, this.board.holeX, this.board.holeY, this.board.holeRadius, this.dpr)) {
-            this.absorbObject(objData, container);
+          if (isInHole(obj, this.board.holeX, this.board.holeY, this.board.holeRadius, this.dpr)) {
+            this.absorbObject(obj, container);
           }
         }
 
         this.dragTarget = null;
       });
-    });
-
-    // Enable drag input
-    this.input.on('drag', (_pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject, dragX: number, dragY: number) => {
-      gameObject.emit('drag', _pointer, dragX, dragY);
-    });
-
-    this.input.on('dragstart', (_pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) => {
-      gameObject.emit('dragstart');
-    });
-
-    this.input.on('dragend', (_pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.GameObject) => {
-      gameObject.emit('dragend');
     });
   }
 
