@@ -161,3 +161,20 @@
 - **Decision**: 현재 PR에 넣지 않고 별도 이슈 등록 후 처리
 - **Examples**: TicTacToe 5x5 (#136), Make 10 Flow (#137)
 - **Reason**: 스코프 크리프 방지, 빠른 머지 우선
+
+## Haptic Architecture (2026-03-29)
+
+### 웹이 햅틱 결정 → RN이 햅틱 결정
+- **Before**: 웹 useGame 훅이 `bridge.haptic('heavy', 6)` 처럼 스타일+횟수를 직접 지정
+- **After**: 웹은 게임 이벤트명만 전달 (`bridge.haptic('tile-tapped')`), RN `HAPTIC_PATTERNS` 맵이 이벤트 → 패턴 결정
+- **Reason**: "웹뷰가 결정하면 응집도가 내려가고 결합도가 높아진다" — 네이티브 동작은 네이티브가 소유해야
+
+### 햅틱 강도 조정
+- **Before**: `light` (타일 탭), `heavy` × 1 (3매치 클리어)
+- **After**: `heavy` (타일 탭), `heavy` × 6 (3매치 클리어)
+- **Reason**: "햅틱이 약해. 6번으로 늘려줘. tap도 heavy로"
+
+### 햅틱 즉시 반응
+- **Before**: `tile-selected` 이벤트 (애니메이션 200ms 후) 에서 햅틱 발생 → 체감 0.5~1초 딜레이
+- **After**: `tile-tapped` 이벤트 (탭 즉시) 에서 햅틱 발생 → 즉시 피드백
+- **Reason**: "아이템 선택하면 약간 딜레이 후에 진동이 와. 이 딜레이가 해소돼야"
