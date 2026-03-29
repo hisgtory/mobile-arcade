@@ -52,16 +52,14 @@ export interface StageConfig {
 }
 
 export function getStageConfig(stage: number): StageConfig {
-  const stages = getStages();
-  if (stage >= 1 && stage <= stages.length) {
-    return stages[stage - 1];
+  if (stage >= 1 && stage <= STAGES.length) {
+    return STAGES[stage - 1];
   }
   // Beyond defined stages, cycle
-  return stages[(stage - 1) % stages.length];
+  return STAGES[(stage - 1) % STAGES.length];
 }
 
-function getStages(): StageConfig[] {
-  return [
+const STAGES: StageConfig[] = [
     // Stage 1: Simple intro — 3 cars, straight exits
     {
       stage: 1,
@@ -196,8 +194,7 @@ function getStages(): StageConfig[] {
         { id: 7, row: 4, col: 1, length: 2, direction: 'down', colorIndex: 6 },
         { id: 8, row: 5, col: 3, length: 2, direction: 'left', colorIndex: 7 },
         { id: 9, row: 5, col: 0, length: 1, direction: 'up', colorIndex: 8 },
-        { id: 10, row: 2, col: 4, length: 1, direction: 'up', colorIndex: 9 },
+                { id: 10, row: 2, col: 4, length: 1, direction: 'up', colorIndex: 9 },
       ],
     },
   ];
-}
