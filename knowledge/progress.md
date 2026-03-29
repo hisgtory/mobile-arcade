@@ -183,6 +183,18 @@
 ### Tooling
 - `/takeover-pr` 글로벌 스킬 생성 — idle 팀원 깨워서 PR 이어받기 워크플로우
 
+### Phase 1 완료
+- **8개 게임 모두 main 머지**: Found3, Crunch3, BlockRush, WaterSort, TicTacToe, Number10, Minesweeper, Sudoku
+
+---
+
+## 2026-03-29 — Phase 2 시작
+
+### Block Puzzle (#89) — PR #200 (리뷰 중)
+- PR #172 (Copilot WIP) 닫음 — plan만 있고 구현 없어서 팀 직접 구현으로 전환
+- lib + web + rn + prd 전체 구현 완료
+- Phase 2 첫 번째 게임
+
 ### Roadmap Updated
 - `prd/game-priority.md` — Block Rush, Water Sort, Tic Tac Toe 완료 표시
 - #136 추가 (3.5순위)

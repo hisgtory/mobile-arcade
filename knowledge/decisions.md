@@ -201,3 +201,10 @@
 ### web/found3, web/crunch3 레거시 확인
 - **Status**: web/arcade가 통합 웹서버 (ADR-010) 역할. web/found3과 web/crunch3는 초기 프로토타입으로 역할 종료
 - **Decision**: 삭제 후보
+
+## Development Process (2026-03-29)
+
+### 빈 Copilot PR → 팀 직접 구현 전환
+- **Before**: Copilot이 plan만 작성하고 구현하지 않은 WIP PR 존재 (PR #172 Block Puzzle)
+- **After**: 코드 없는 PR 닫고, 팀이 직접 구현 (PR #200)
+- **Reason**: 코드 없는 PR을 takeover할 수 없음. plan만 있는 PR은 닫고 새로 시작하는 것이 효율적

@@ -122,6 +122,4 @@ export const JEWEL_COLORS: number[] = [
 
 export type GamePhase = 'playing' | 'over';
 
-export interface GameConfig {
-  onGameOver?: () => void;
-}
+export interface GameConfig {}

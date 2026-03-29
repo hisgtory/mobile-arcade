@@ -54,6 +54,7 @@ export class PlayScene extends Phaser.Scene {
   private board!: Board;
   private phase: GamePhase = 'playing';
   private score = 0;
+  private bestScore = 0;
   private combo = 0;
 
   // Candidate pieces
@@ -425,8 +426,11 @@ export class PlayScene extends Phaser.Scene {
   // ─── Events ───────────────────────────────────────────
 
   private emitState() {
+    if (this.score > this.bestScore) this.bestScore = this.score;
+
     this.game.events.emit('state-update', {
       score: this.score,
+      bestScore: this.bestScore,
       combo: this.combo,
       phase: this.phase,
     });
