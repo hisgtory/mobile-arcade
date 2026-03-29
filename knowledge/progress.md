@@ -161,6 +161,28 @@
 - 루트 CLAUDE.md 팀 테이블 `found3/rn/` → `rn/` 업데이트 완료
 - pnpm-workspace.yaml에서 `found3/rn` 항목 제거 완료
 
+### Minesweeper (#115) ✅ — PR #154 머지
+- `lib/minesweeper/` — 9x9/16x16/30x16 지뢰찾기 (탭 공개, 롱프레스 깃발)
+- First-click-safe, flood-fill reveal, 3단계 난이도 (Easy/Medium/Expert)
+- 햅틱/overlay 제거/Expert 조정/RN 카탈로그 등록/기획서 포함
+- 8번째 게임, Copilot 에이전트 구현
+
+### Sudoku (#49) ✅ — PR #182 머지
+- `lib/sudoku/` — 9x9 스도쿠 (Easy/Medium/Hard/Expert)
+- 퍼즐 생성 (backtracking + unique solution 보장), 노트/힌트/지우기
+- 미스테이크 3회 게임오버, 스테이지 진행 (난이도 점진 상승)
+- NumberPad + HUD + ClearScreen 모두 React (ADR-002 준수)
+- 햅틱/phase/emit딜레이/콘페티 제거/removeCells 재시도/icon 충돌/기획서 포함
+- Copilot 에이전트 구현, `rn/src/data/games.ts` 카탈로그 등록 포함
+
+### Web Route Refactoring — PR #199 머지
+- App.tsx 540줄 → ~25줄, Express 스타일 게임별 라우트 자체 등록
+- 각 게임이 `games/{game}/routes.tsx`에서 `registerRoutes()` 호출
+- ADR-016 신설
+
+### Tooling
+- `/takeover-pr` 글로벌 스킬 생성 — idle 팀원 깨워서 PR 이어받기 워크플로우
+
 ### Roadmap Updated
 - `prd/game-priority.md` — Block Rush, Water Sort, Tic Tac Toe 완료 표시
 - #136 추가 (3.5순위)

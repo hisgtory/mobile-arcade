@@ -10,6 +10,7 @@ import './games/tictactoe/routes';
 import './games/minesweeper/routes';
 import './games/number10/routes';
 import './games/sudoku/routes';
+import './games/blockpuzzle/routes';
 
 import { getRegisteredRoutes } from './router';
 

@@ -185,3 +185,19 @@
 - **Before**: `found3/rn/` (싱글 게임 전용 RN 앱) + `rn/` (슈퍼앱) 공존
 - **After**: `found3/rn/` 삭제, `rn/` 단일 슈퍼앱으로 통합
 - **Reason**: `rn/`이 실제 프로덕션 앱 (com.hisgtory.arcade)이며 모든 게임을 포함하는 슈퍼앱 구조. `found3/rn/`은 초기 프로토타입으로 역할 종료
+
+## Web Architecture (2026-03-29)
+
+### App.tsx 직접 라우트 → 게임별 자체 등록 패턴
+- **Before**: App.tsx에 모든 게임 라우트를 직접 작성 (540줄, 게임 추가마다 수정 필요)
+- **After**: 각 게임이 `games/{game}/routes.tsx`에서 `registerRoutes()`로 자체 등록. App.tsx는 수집된 라우트만 렌더링 (~25줄)
+- **Reason**: "스케일 안 됨, 잘못된 매핑 위험"
+
+### React.lazy() 자동 매핑 거부
+- **Proposed**: `import.meta.glob`이나 `React.lazy(() => import(...))` 자동 매핑
+- **Rejected**: 유저가 명시적으로 거부 — "잘못된 매핑이 십상"
+- **Reason**: 라우트는 각 게임이 직접 명시적으로 등록해야 함
+
+### web/found3, web/crunch3 레거시 확인
+- **Status**: web/arcade가 통합 웹서버 (ADR-010) 역할. web/found3과 web/crunch3는 초기 프로토타입으로 역할 종료
+- **Decision**: 삭제 후보
