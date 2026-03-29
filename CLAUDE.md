@@ -32,17 +32,17 @@
 
 ## Project Overview
 
-모바일 미니게임 모노레포. `lib/{game}` → `web/{game}` → `{game}/rn` 파이프라인 구조.
+모바일 미니게임 모노레포. `lib/{game}` → `web/{game}` → `rn` 파이프라인 구조.
 
 - `lib/{game}`: Phaser.io 기반 게임 코어 로직
 - `web/{game}`: React + TypeScript + Stitches로 웹 게임 빌드 (lib 사용)
-- `{game}/rn`: React Native 앱에서 WebView로 웹 게임 래핑
+- `rn`: React Native 슈퍼앱에서 WebView로 웹 게임 래핑 (단일 앱)
 
 ## Architecture
 
 ```
-lib/{game}  →  web/{game}  →  {game}/rn
-(Phaser.io)   (React+Stitches) (RN WebView)
+lib/{game}  →  web/{game}  →  rn
+(Phaser.io)   (React+Stitches) (RN WebView 슈퍼앱)
 ```
 
 의존성 방향: `lib` ← `web` ← `rn`
@@ -54,7 +54,7 @@ lib/{game}  →  web/{game}  →  {game}/rn
 | PRD | `prd/` | 게임 기획, 요구사항, 게임 디자인 |
 | Game Core | `lib/{game}/` | Phaser.io 씬, 게임 로직, 타입 |
 | Web Frontend | `web/{game}/` | React + Stitches UI, Phaser 통합 |
-| RN App | `{game}/rn/` | React Native, WebView 브릿지 |
+| RN App | `rn/` | React Native, WebView 브릿지 |
 | Knowledge | `knowledge/` | 요구사항, 결정, 유저 bias, 진행 상황 기록 |
 
 각 teammate는 자신의 `CLAUDE.md`와 `TASKS.md`를 따릅니다.
@@ -111,7 +111,7 @@ lib/{game}  →  web/{game}  →  {game}/rn
 1. `prd/{name}.md` 기획서 작성 (PRD 팀)
 2. `lib/{name}/` 게임 코어 구현 (Game Core 팀)
 3. `web/{name}/` 웹 게임 빌드 (Web Frontend 팀)
-4. `{name}/rn/` RN 앱 래핑 (RN App 팀)
+4. `rn/`에 게임 WebView 연동 (RN App 팀 — 단일 슈퍼앱)
 5. 루트 `pnpm-workspace.yaml`에 패키지 등록
 6. **햅틱 이벤트 필수 추가** (아래 Haptic 가이드 참고)
 

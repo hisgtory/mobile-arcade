@@ -178,3 +178,10 @@
 - **Before**: `tile-selected` 이벤트 (애니메이션 200ms 후) 에서 햅틱 발생 → 체감 0.5~1초 딜레이
 - **After**: `tile-tapped` 이벤트 (탭 즉시) 에서 햅틱 발생 → 즉시 피드백
 - **Reason**: "아이템 선택하면 약간 딜레이 후에 진동이 와. 이 딜레이가 해소돼야"
+
+## RN App Structure (2026-03-29)
+
+### found3/rn/ 레거시 삭제 → rn/ 슈퍼앱으로 통합
+- **Before**: `found3/rn/` (싱글 게임 전용 RN 앱) + `rn/` (슈퍼앱) 공존
+- **After**: `found3/rn/` 삭제, `rn/` 단일 슈퍼앱으로 통합
+- **Reason**: `rn/`이 실제 프로덕션 앱 (com.hisgtory.arcade)이며 모든 게임을 포함하는 슈퍼앱 구조. `found3/rn/`은 초기 프로토타입으로 역할 종료

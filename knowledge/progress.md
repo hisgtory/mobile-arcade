@@ -155,6 +155,12 @@
 - 패배/무승부 시 연승 리셋 (다운그레이드)
 - game-core 팀원이 구현 (첫 팀원 위임 작업)
 
+### RN 앱 폴더 구조 정리
+- `found3/rn/` 레거시 삭제 결정 (초기 프로토타입, 역할 종료)
+- `rn/`에 CLAUDE.md + TASKS.md 생성 진행 중
+- 루트 CLAUDE.md 팀 테이블 `found3/rn/` → `rn/` 업데이트 완료
+- pnpm-workspace.yaml에서 `found3/rn` 항목 제거 진행 중
+
 ### Roadmap Updated
 - `prd/game-priority.md` — Block Rush, Water Sort, Tic Tac Toe 완료 표시
 - #136 추가 (3.5순위)
