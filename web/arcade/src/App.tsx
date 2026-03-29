@@ -306,20 +306,18 @@ function TicTacToePlayRoute() {
   );
 }
 
-// ─── Root ──────────────────────────────────────────────
-
 // ─── BrainOut Routes ──────────────────────────────────
 
 function BrainOutTitleRoute() {
   const navigate = useNavigate();
   globalStyles();
   return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#FFF8F0' }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#78350F', letterSpacing: -1 }}>🧠 Brain Out</h1>
-      <p style={{ fontSize: 16, color: '#92400E' }}>넌센스 퀴즈에 도전하세요!</p>
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🧠 Brain Out</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>넌센스 퀴즈에 도전하세요!</p>
       <button
         onClick={() => navigate('/games/brainout/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#F59E0B', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
       >
         Play
       </button>
@@ -358,7 +356,7 @@ function BrainOutStageRoute() {
 function BrainOutPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: BrainOutResult) => void; onGameOver: (r: BrainOutResult) => void }) {
   const { containerRef, score, hintsLeft, puzzleIndex, totalPuzzles, doHint } = useBrainOutGame({ stage, onClear, onGameOver });
   return (
-    <PlayLayout css={{ backgroundColor: '#FFF8F0' }}>
+    <PlayLayout>
       <BrainOutHUD stage={stage} score={score} puzzleIndex={puzzleIndex} totalPuzzles={totalPuzzles} hintsLeft={hintsLeft} onHint={doHint} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>

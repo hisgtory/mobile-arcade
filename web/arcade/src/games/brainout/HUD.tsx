@@ -5,8 +5,8 @@ const Container = styled('div', {
   justifyContent: 'space-between',
   alignItems: 'center',
   padding: '12px 16px',
-  backgroundColor: '#FFF8F0',
-  borderBottom: '1px solid #FDE68A',
+  backgroundColor: '$surface',
+  borderBottom: '1px solid $gray100',
 });
 
 const StatBlock = styled('div', {
@@ -19,7 +19,7 @@ const StatBlock = styled('div', {
 const StatLabel = styled('span', {
   fontSize: 11,
   fontWeight: 500,
-  color: '#92400E',
+  color: '$textMuted',
   textTransform: 'uppercase',
   letterSpacing: '0.5px',
 });
@@ -27,21 +27,19 @@ const StatLabel = styled('span', {
 const StatValue = styled('span', {
   fontSize: 18,
   fontWeight: 700,
-  color: '#78350F',
+  color: '$text',
 });
 
-const HintButton = styled('button', {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 4,
-  padding: '8px 12px',
-  borderRadius: 12,
-  border: '2px solid #F59E0B',
-  backgroundColor: '#FEF3C7',
-  color: '#92400E',
-  fontSize: 14,
-  fontWeight: 700,
+const ActionBtn = styled('button', {
+  fontSize: 13,
+  fontWeight: 600,
+  color: '$primary',
+  backgroundColor: 'transparent',
+  border: '1px solid $gray200',
+  borderRadius: 8,
+  padding: '6px 14px',
   cursor: 'pointer',
+  '&:active': { opacity: 0.7 },
   '&:disabled': {
     opacity: 0.4,
     cursor: 'not-allowed',
@@ -72,9 +70,9 @@ export function HUD({ stage, score, puzzleIndex, totalPuzzles, hintsLeft, onHint
         <StatLabel>Score</StatLabel>
         <StatValue>{score.toLocaleString()}</StatValue>
       </StatBlock>
-      <HintButton onClick={onHint} disabled={hintsLeft <= 0}>
+      <ActionBtn onClick={onHint} disabled={hintsLeft <= 0}>
         💡 {hintsLeft}
-      </HintButton>
+      </ActionBtn>
     </Container>
   );
 }

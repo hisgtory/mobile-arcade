@@ -8,7 +8,7 @@ const Container = styled('div', {
   flexDirection: 'column',
   justifyContent: 'center',
   alignItems: 'center',
-  backgroundColor: '#FFF8F0',
+  backgroundColor: '$bg',
   gap: 24,
   padding: 20,
 });
@@ -18,20 +18,14 @@ const Title = styled('h1', {
   fontWeight: 800,
   variants: {
     cleared: {
-      true: { color: '#059669' },
-      false: { color: '#DC2626' },
+      true: { color: '$emerald500' },
+      false: { color: '$rose500' },
     },
   },
 });
 
-const Subtitle = styled('p', {
-  fontSize: 16,
-  color: '#92400E',
-  textAlign: 'center',
-});
-
 const StatsCard = styled('div', {
-  backgroundColor: '#FFFFFF',
+  backgroundColor: '$surface',
   borderRadius: 16,
   padding: 20,
   width: '85%',
@@ -48,8 +42,8 @@ const StatRow = styled('div', {
   alignItems: 'center',
 });
 
-const StatLabel = styled('span', { fontSize: 16, color: '#92400E' });
-const StatValue = styled('span', { fontSize: 20, fontWeight: 700, color: '#78350F' });
+const StatLabel = styled('span', { fontSize: 16, color: '$textMuted' });
+const StatValue = styled('span', { fontSize: 20, fontWeight: 700, color: '$text' });
 
 const ButtonGroup = styled('div', {
   display: 'flex',
@@ -70,13 +64,13 @@ const Button = styled('button', {
   variants: {
     variant: {
       primary: {
-        backgroundColor: '#F59E0B',
-        color: '#FFFFFF',
+        backgroundColor: '#2563EB',
+        color: '#fff',
       },
       secondary: {
-        backgroundColor: '#FFFFFF',
-        color: '#78350F',
-        border: '1px solid #FDE68A',
+        backgroundColor: '$surface',
+        color: '$text',
+        border: '1px solid $gray200',
       },
     },
   },
@@ -94,13 +88,8 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
   return (
     <Container>
       <Title cleared={result.cleared}>
-        {result.cleared ? '🧠 Stage Clear!' : '😵 Game Over'}
+        {result.cleared ? 'Stage Clear!' : 'Game Over'}
       </Title>
-      <Subtitle>
-        {result.cleared
-          ? '모든 넌센스 퍼즐을 풀었습니다!'
-          : '다시 도전해보세요!'}
-      </Subtitle>
       <StatsCard>
         <StatRow>
           <StatLabel>Stage</StatLabel>
@@ -113,9 +102,9 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
       </StatsCard>
       <ButtonGroup>
         {result.cleared ? (
-          <Button variant="primary" onClick={onNext}>Next Stage →</Button>
+          <Button variant="primary" onClick={onNext}>Next Stage</Button>
         ) : (
-          <Button variant="primary" onClick={onRetry}>Retry 🔄</Button>
+          <Button variant="primary" onClick={onRetry}>Retry</Button>
         )}
         <Button variant="secondary" onClick={onHome}>Home</Button>
       </ButtonGroup>

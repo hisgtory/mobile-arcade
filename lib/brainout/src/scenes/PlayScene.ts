@@ -27,7 +27,8 @@ interface ChoiceButton {
 export class PlayScene extends Phaser.Scene {
   private stageNum: number = 1;
   private stageConfig!: StageConfig;
-  private gameConfig?: GameConfig;
+  private config?: GameConfig;
+  private dpr = 1;
 
   // Game state
   private phase: GamePhase = GamePhase.IDLE;
@@ -49,9 +50,10 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { stage?: number; gameConfig?: GameConfig }): void {
-    this.stageNum = data?.stage ?? 1;
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__brainoutConfig;
+  init(data: { config?: GameConfig; dpr?: number }): void {
+    this.config = data.config ?? {};
+    this.dpr = data.dpr ?? 1;
+    this.stageNum = this.config.stage ?? 1;
   }
 
   preload(): void {
@@ -59,8 +61,6 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
-
     // Reset state
     this.phase = GamePhase.PLAYING;
     this.score = 0;
@@ -74,7 +74,7 @@ export class PlayScene extends Phaser.Scene {
     this.puzzles = getPuzzlesForStage(this.stageNum);
 
     // Background
-    this.cameras.main.setBackgroundColor('#FFF8F0');
+    this.cameras.main.setBackgroundColor('#f0f2f5');
 
     // Show first puzzle
     this.showPuzzle();
@@ -88,7 +88,7 @@ export class PlayScene extends Phaser.Scene {
     this.clearPuzzleVisuals();
     this.tapCounts.clear();
 
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr = this.dpr;
     const { width, height } = this.scale;
     const puzzle = this.puzzles[this.currentPuzzleIdx];
 
@@ -317,7 +317,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private showFeedback(correct: boolean, text: string): void {
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr = this.dpr;
     const { width, height } = this.scale;
 
     // Explanation text at bottom
@@ -368,7 +368,7 @@ export class PlayScene extends Phaser.Scene {
     this.emitScore();
 
     // Show hint text
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr = this.dpr;
     const { width, height } = this.scale;
 
     const hintText = this.add.text(
@@ -408,7 +408,7 @@ export class PlayScene extends Phaser.Scene {
 
   private stageClear(): void {
     this.phase = GamePhase.CLEAR;
-    this.gameConfig?.onClear?.();
+    this.config?.onClear?.();
     this.game.events.emit('stage-clear', {
       score: this.score,
       puzzlesSolved: this.puzzles.length,
@@ -417,7 +417,7 @@ export class PlayScene extends Phaser.Scene {
 
   private gameOver(): void {
     this.phase = GamePhase.GAME_OVER;
-    this.gameConfig?.onGameOver?.();
+    this.config?.onGameOver?.();
     this.game.events.emit('game-over', {
       score: this.score,
     });

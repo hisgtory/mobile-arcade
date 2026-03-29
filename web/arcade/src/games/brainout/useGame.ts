@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { createGame, destroyGame, getPlayScene, getStageConfig } from '@arcade/lib-brainout';
 import { stageComplete } from '../../utils/bridge';
 
@@ -16,7 +16,7 @@ interface UseGameOptions {
 
 export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const gameRef = useRef<Phaser.Game | null>(null);
+  const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
 
   const stageConfig = getStageConfig(stage);
   const [score, setScore] = useState(0);
@@ -28,11 +28,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const game = createGame(containerRef.current, {
-      stage,
-      onClear: () => {},
-      onGameOver: () => {},
-    });
+    const game = createGame(containerRef.current, { stage });
     gameRef.current = game;
 
     game.events.on('score-update', (data: { score: number; hintsLeft: number }) => {
@@ -57,15 +53,16 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     });
 
     return () => {
-      destroyGame(game);
       gameRef.current = null;
+      destroyGame(game);
     };
   }, [stage, onClear, onGameOver]);
 
-  const doHint = () => {
-    const scene = gameRef.current ? getPlayScene(gameRef.current) : null;
-    if (scene) scene.useHint();
-  };
+  const doHint = useCallback(() => {
+    if (!gameRef.current) return;
+    const scene = getPlayScene(gameRef.current);
+    scene?.useHint();
+  }, []);
 
   return {
     containerRef,
