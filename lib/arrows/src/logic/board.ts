@@ -93,11 +93,12 @@ function dirFromDelta(dr: number, dc: number): Dir {
 
 // ─── Board Creation ──────────────────────────────────────
 
+const MAX_BOARD_GENERATION_ATTEMPTS = 50;
+
 export function createBoard(config: StageConfig): BoardState {
   const { rows, cols, fixedRatio } = config;
-  const maxAttempts = 50;
 
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  for (let attempt = 0; attempt < MAX_BOARD_GENERATION_ATTEMPTS; attempt++) {
     const path = generateHamiltonianPath(rows, cols);
     if (!path) continue;
 
@@ -169,7 +170,7 @@ export function createBoard(config: StageConfig): BoardState {
     return { rows, cols, cells, startRow, startCol };
   }
 
-  throw new Error(`Failed to create board after 50 attempts`);
+  throw new Error(`Failed to create board after ${MAX_BOARD_GENERATION_ATTEMPTS} attempts`);
 }
 
 // ─── Path Tracing ────────────────────────────────────────
