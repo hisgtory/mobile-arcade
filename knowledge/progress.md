@@ -94,3 +94,45 @@
 ### Merged
 - PR #126 (Arcade 홈) 머지
 - PR #132 (Crunch3 + 통합 웹) 머지
+
+---
+
+## 2026-03-29 (Day 3~4)
+
+### Block Rush (#119) ✅
+- `lib/blockrush/` — 10x10 블록 퍼즐 (1010!/Woodoku 스타일)
+- 드래그 앤 드롭 피스 배치, 라인 클리어
+- Juice: screen shake, particle burst, combo text, placement pop
+- PR #133 머지
+
+### Water Sort (#58) ✅
+- `lib/watersort/` — 물 분류 퍼즐 (탭으로 튜브 선택/붓기)
+- BFS 솔버로 풀 수 있는 레벨만 생성 (Fisher-Yates + 검증)
+- 5단계 난이도 (3색 → 7색), Undo/Restart 지원
+- Juice: tube lift, pour arc animation, tube completion particles, confetti
+- PR #134 머지
+
+### Tic Tac Toe (#118) ✅
+- `lib/tictactoe/` — vs AI (minimax, easy/medium/hard)
+- X/O 마크 애니메이션, 승리 라인 하이라이트
+- 라운드 스코어 추적, Play Again 인게임 버튼
+- PR #135 머지
+
+### Make 10 (#99) — In Progress
+- `lib/number10/` — 사과게임 (17x10 → 10x17 portrait 그리드)
+- 드래그 사각형 선택, 합 10 검증, 클리어 애니메이션
+- 타이머 없음 (유저 요청으로 제거), "no more moves" 감지 → 게임 오버
+- Play Again → 새 보드 생성
+
+### Shared Bridge Utility
+- `web/arcade/src/utils/bridge.ts` — 공유 브릿지
+- watersort, crunch3, blockrush 모두 연동
+- Found3만 자체 BridgeClient 사용 (기존 유지)
+
+### Issues Created
+- #136 — Tic Tac Toe 5x5 그리드 스케일링 (연승 시 3→4→5)
+- #137 — Make 10 Flow (중력 + 리필 endless 변형)
+
+### Roadmap Updated
+- `prd/game-priority.md` — Block Rush, Water Sort, Tic Tac Toe 완료 표시
+- #136 추가 (3.5순위)

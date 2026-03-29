@@ -189,3 +189,40 @@ web/arcade/
 - WiFi/장소 변경 시 IP 수동 변경 불필요
 - Apple 기기 간 자동 해석 (mDNS)
 - `vite.config.ts`에 `allowedHosts: true` 필요
+
+---
+
+## ADR-012: Shared Bridge Utility
+
+### Decision
+`web/arcade/src/utils/bridge.ts` — 모든 게임이 공유하는 경량 브릿지 유틸.
+
+### Structure
+```typescript
+stageComplete({ stage, score, cleared }) → postMessage('STAGE_CLEAR' | 'GAME_OVER')
+```
+
+### Context
+- Found3는 자체 BridgeClient (lib/found3/src/bridge/) 보유 — 기존 유지
+- Crunch3, BlockRush, WaterSort, TicTacToe, Make10은 공유 브릿지 사용
+- 웹 환경(`isRN=false`)에서는 no-op
+
+### Rationale
+- 새 게임 추가 시 브릿지 연동 누락 방지
+- Found3의 풀 BridgeClient는 과도 — 대부분 게임은 stageComplete만 필요
+- 단순 postMessage 래퍼로 충분
+
+---
+
+## ADR-013: Endless Game Convention (stage: 0)
+
+### Decision
+스테이지 없는 endless 게임은 브릿지 메시지에서 `stage: 0`으로 전송.
+
+### Applies To
+- Block Rush, Tic Tac Toe, Make 10
+
+### Rationale
+- RN GameScreen이 `hasStages` 플래그로 분기
+- `stage: 0`은 "스테이지 없음"을 명시적으로 표현
+- Found3/Crunch3/WaterSort는 실제 stage 번호 전송
