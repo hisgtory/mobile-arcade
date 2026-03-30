@@ -8,6 +8,7 @@ import {
   type BoardState,
   type PourMove,
   type GameConfig,
+  type TimerConfig,
 } from '../types';
 import { createBoard, canPour, executePour, isWon, isTubeSolved } from '../logic/board';
 
@@ -19,7 +20,7 @@ const TUBE_WALL = 3;
 const TUBE_RADIUS = 8;
 const LIFT_Y = -20;
 
-type GamePhase = 'idle' | 'pouring' | 'celebrating';
+type GamePhase = 'idle' | 'pouring' | 'celebrating' | 'timeout';
 
 export class PlayScene extends Phaser.Scene {
   private board!: BoardState;
@@ -34,6 +35,12 @@ export class PlayScene extends Phaser.Scene {
   private score = 0;
   private moves = 0;
   private solvedTubes = new Set<number>();
+
+  // Timer challenge
+  private timerConfig!: TimerConfig;
+  private remainingSec = 0;
+  private timerText!: Phaser.GameObjects.Text;
+  private timerEvent: Phaser.Time.TimerEvent | null = null;
 
   constructor() {
     super({ key: 'PlayScene' });
@@ -55,8 +62,97 @@ export class PlayScene extends Phaser.Scene {
     this.moves = 0;
     this.solvedTubes = new Set();
 
+    // Timer setup
+    this.timerConfig = stageConfig.timer;
+    this.remainingSec = this.timerConfig.timeLimitSec;
+
     this.drawBoard();
+    this.drawTimer();
+    this.startTimer();
     this.emitState();
+  }
+
+  // ─── Timer ────────────────────────────────────────────
+
+  private drawTimer() {
+    const w = DEFAULT_WIDTH * this.dpr;
+    const scale = this.dpr;
+
+    if (this.timerText) this.timerText.destroy();
+
+    this.timerText = this.add.text(w / 2, 18 * scale, this.formatTime(this.remainingSec), {
+      fontSize: `${16 * scale}px`,
+      fontFamily: 'monospace',
+      color: this.remainingSec <= 10 ? '#FF6B6B' : '#FFFFFF',
+      fontStyle: 'bold',
+    });
+    this.timerText.setOrigin(0.5, 0);
+    this.timerText.setDepth(500);
+  }
+
+  private formatTime(sec: number): string {
+    const m = Math.floor(sec / 60);
+    const s = sec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  private startTimer() {
+    if (this.timerEvent) this.timerEvent.destroy();
+    this.timerEvent = this.time.addEvent({
+      delay: 1000,
+      callback: () => {
+        this.remainingSec--;
+        this.updateTimerDisplay();
+        this.game.events.emit('timer-update', { remaining: this.remainingSec, total: this.timerConfig.timeLimitSec });
+
+        if (this.remainingSec <= 0) {
+          this.onTimeout();
+        }
+      },
+      loop: true,
+    });
+  }
+
+  private updateTimerDisplay() {
+    if (!this.timerText) return;
+    this.timerText.setText(this.formatTime(this.remainingSec));
+    this.timerText.setColor(this.remainingSec <= 10 ? '#FF6B6B' : '#FFFFFF');
+
+    // Pulse effect when low
+    if (this.remainingSec <= 10 && this.remainingSec > 0) {
+      this.tweens.add({
+        targets: this.timerText,
+        scaleX: 1.2,
+        scaleY: 1.2,
+        duration: 150,
+        yoyo: true,
+        ease: 'Cubic.easeOut',
+      });
+    }
+  }
+
+  private onTimeout() {
+    this.phase = 'timeout';
+    if (this.timerEvent) this.timerEvent.destroy();
+    this.timerEvent = null;
+
+    // Flash timer red
+    this.tweens.add({
+      targets: this.timerText,
+      alpha: 0,
+      duration: 300,
+      yoyo: true,
+      repeat: 3,
+    });
+
+    // Emit timeout (game over)
+    this.time.delayedCall(800, () => {
+      this.game.events.emit('stage-timeout', {
+        score: this.score,
+        moves: this.moves,
+        stage: this.config.stage ?? 1,
+      });
+    });
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -73,6 +169,9 @@ export class PlayScene extends Phaser.Scene {
     const tubeW = TUBE_WIDTH * scale;
     const gap = TUBE_GAP * scale;
 
+    // Offset down to make room for timer
+    const timerOffset = 30 * scale;
+
     for (let row = 0; row < rows; row++) {
       const startIdx = row * maxPerRow;
       const rowCount = Math.min(maxPerRow, count - startIdx);
@@ -80,7 +179,7 @@ export class PlayScene extends Phaser.Scene {
       const startX = (w - totalRowW) / 2 + tubeW / 2;
       const rowH = TUBE_HEIGHT * scale;
       const totalH = rows * rowH + (rows - 1) * 40 * scale;
-      const startY = (h - totalH) / 2 + rowH / 2 + row * (rowH + 40 * scale);
+      const startY = timerOffset + (h - timerOffset - totalH) / 2 + rowH / 2 + row * (rowH + 40 * scale);
 
       for (let col = 0; col < rowCount; col++) {
         positions.push({
@@ -315,6 +414,13 @@ export class PlayScene extends Phaser.Scene {
     // Check win
     if (isWon(this.board.tubes)) {
       this.phase = 'celebrating';
+      // Stop timer and add time bonus
+      if (this.timerEvent) this.timerEvent.destroy();
+      this.timerEvent = null;
+      const timeBonus = this.remainingSec * this.timerConfig.bonusPerSecLeft;
+      this.score += timeBonus;
+      this.emitState();
+
       this.time.delayedCall(600, () => {
         this.celebrateWin();
       });
@@ -397,12 +503,14 @@ export class PlayScene extends Phaser.Scene {
       });
     }
 
-    // Emit stage clear
+    // Emit stage clear with time bonus info
     this.time.delayedCall(1200, () => {
       this.game.events.emit('stage-clear', {
         score: this.score,
         moves: this.moves,
         stage: this.config.stage ?? 1,
+        timeBonus: this.remainingSec * this.timerConfig.bonusPerSecLeft,
+        secondsLeft: this.remainingSec,
       });
     });
   }

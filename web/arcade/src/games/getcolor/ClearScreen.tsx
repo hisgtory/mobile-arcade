@@ -19,6 +19,12 @@ const Title = styled('h1', {
   color: '#FFFFFF',
 });
 
+const Subtitle = styled('p', {
+  fontSize: 14,
+  color: '#9CA3AF',
+  marginTop: -16,
+});
+
 const Card = styled('div', {
   backgroundColor: '#2a2a4a',
   borderRadius: 16,
@@ -49,6 +55,12 @@ const Value = styled('span', {
   color: '#FFFFFF',
 });
 
+const BonusValue = styled('span', {
+  fontSize: 16,
+  fontWeight: 600,
+  color: '#4ECDC4',
+});
+
 const Button = styled('button', {
   border: 'none',
   padding: '16px 48px',
@@ -71,7 +83,8 @@ interface ClearScreenProps {
 export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScreenProps) {
   return (
     <Overlay>
-      <Title>{result.cleared ? 'Stage Clear!' : 'Game Over'}</Title>
+      <Title>{result.cleared ? 'Stage Clear!' : 'Time\'s Up!'}</Title>
+      {!result.cleared && <Subtitle>You ran out of time</Subtitle>}
       <Card>
         <StatRow>
           <Label>Stage</Label>
@@ -85,6 +98,18 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
           <Label>Moves</Label>
           <Value>{result.moves}</Value>
         </StatRow>
+        {result.cleared && result.timeBonus != null && result.timeBonus > 0 && (
+          <>
+            <StatRow>
+              <Label>Time Left</Label>
+              <BonusValue>{result.secondsLeft}s</BonusValue>
+            </StatRow>
+            <StatRow>
+              <Label>Time Bonus</Label>
+              <BonusValue>+{result.timeBonus.toLocaleString()}</BonusValue>
+            </StatRow>
+          </>
+        )}
       </Card>
       {result.cleared && (
         <Button
@@ -98,7 +123,7 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
         css={{ backgroundColor: '#2a2a4a', color: '#FFFFFF', border: '1px solid #4a4a6a' }}
         onClick={onRetry}
       >
-        Retry
+        {result.cleared ? 'Retry' : 'Try Again'}
       </Button>
       <Button
         css={{ backgroundColor: 'transparent', color: '#9CA3AF', fontSize: 16 }}

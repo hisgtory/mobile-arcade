@@ -314,7 +314,7 @@ function GetColorTitleRoute() {
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#1a1a2e' }}>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#FFFFFF', letterSpacing: -1 }}>Get Color</h1>
-      <p style={{ fontSize: 16, color: '#9CA3AF' }}>Sort the colors into tubes!</p>
+      <p style={{ fontSize: 16, color: '#9CA3AF' }}>Sort colors before time runs out!</p>
       <button
         onClick={() => navigate('/games/getcolor/v1/stage/1')}
         style={{ marginTop: 32, backgroundColor: '#4ECDC4', color: '#1a1a2e', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
@@ -336,6 +336,9 @@ function GetColorStageRoute() {
   const handleClear = useCallback((r: GetColorResult) => {
     if (!isRN) { setGameResult(r); setScreen('clear'); }
   }, []);
+  const handleTimeout = useCallback((r: GetColorResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
   const handleNext = useCallback(() => {
     navigate(`/games/getcolor/v1/stage/${stage + 1}`, { replace: true });
     setPlayKey((k) => k + 1); setScreen('playing');
@@ -347,14 +350,14 @@ function GetColorStageRoute() {
     return <GetColorClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
   }
 
-  return <GetColorPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+  return <GetColorPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onTimeout={handleTimeout} />;
 }
 
-function GetColorPlaying({ stage, onClear }: { stage: number; onClear: (r: GetColorResult) => void }) {
-  const { containerRef, score, moves, doUndo, doRestart } = useGetColorGame({ stage, onClear });
+function GetColorPlaying({ stage, onClear, onTimeout }: { stage: number; onClear: (r: GetColorResult) => void; onTimeout: (r: GetColorResult) => void }) {
+  const { containerRef, score, moves, timerSec, doUndo, doRestart } = useGetColorGame({ stage, onClear, onTimeout });
   return (
     <PlayLayout css={{ backgroundColor: '#1a1a2e' }}>
-      <GetColorHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
+      <GetColorHUD stage={stage} score={score} moves={moves} timerSec={timerSec} onUndo={doUndo} onRestart={doRestart} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>
   );

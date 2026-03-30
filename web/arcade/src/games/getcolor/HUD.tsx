@@ -31,10 +31,24 @@ const StatValue = styled('span', {
   color: '#FFFFFF',
 });
 
+const TimerValue = styled('span', {
+  fontSize: 22,
+  fontWeight: 700,
+  fontFamily: 'monospace',
+  variants: {
+    urgent: {
+      true: { color: '#FF6B6B' },
+      false: { color: '#4ECDC4' },
+    },
+  },
+  defaultVariants: { urgent: false },
+});
+
 interface HUDProps {
   stage: number;
   score: number;
   moves: number;
+  timerSec: number;
   onUndo?: () => void;
   onRestart?: () => void;
 }
@@ -51,12 +65,22 @@ const ActionBtn = styled('button', {
   '&:active': { opacity: 0.7 },
 });
 
-export function HUD({ stage, score, moves, onUndo, onRestart }: HUDProps) {
+function formatTime(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+export function HUD({ stage, score, moves, timerSec, onUndo, onRestart }: HUDProps) {
   return (
     <Container>
       <StatBlock>
         <StatLabel>Stage</StatLabel>
         <StatValue>{stage}</StatValue>
+      </StatBlock>
+      <StatBlock>
+        <StatLabel>Time</StatLabel>
+        <TimerValue urgent={timerSec <= 10}>{formatTime(timerSec)}</TimerValue>
       </StatBlock>
       <StatBlock>
         <StatLabel>Moves</StatLabel>

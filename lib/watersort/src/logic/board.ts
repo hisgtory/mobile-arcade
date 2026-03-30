@@ -113,6 +113,14 @@ function boardKey(tubes: Tube[]): string {
 }
 
 export function isSolvable(tubes: Tube[], _numColors: number): boolean {
+  // For large boards (10+ tubes), use DFS with depth limit to avoid memory explosion
+  if (tubes.length >= 10) {
+    return isSolvableDFS(tubes, 60);
+  }
+  return isSolvableBFS(tubes);
+}
+
+function isSolvableBFS(tubes: Tube[]): boolean {
   const visited = new Set<string>();
   const queue: Tube[][] = [tubes];
   visited.add(boardKey(tubes));
@@ -143,4 +151,37 @@ export function isSolvable(tubes: Tube[], _numColors: number): boolean {
   }
 
   return false; // Not solvable within iteration limit
+}
+
+function isSolvableDFS(tubes: Tube[], maxDepth: number): boolean {
+  const visited = new Set<string>();
+  visited.add(boardKey(tubes));
+  let iterations = 0;
+  const MAX_ITERATIONS = 30000;
+
+  function dfs(current: Tube[], depth: number): boolean {
+    if (iterations >= MAX_ITERATIONS) return false;
+    if (isWon(current)) return true;
+    if (depth >= maxDepth) return false;
+
+    for (let from = 0; from < current.length; from++) {
+      if (current[from].length === 0) continue;
+      for (let to = 0; to < current.length; to++) {
+        const move = canPour(current, from, to);
+        if (!move) continue;
+        const next = executePour(current, move);
+        const key = boardKey(next);
+        if (!visited.has(key)) {
+          iterations++;
+          visited.add(key);
+          if (dfs(next, depth + 1)) return true;
+          visited.delete(key); // Backtrack for DFS
+        }
+      }
+    }
+
+    return false;
+  }
+
+  return dfs(tubes, 0);
 }
