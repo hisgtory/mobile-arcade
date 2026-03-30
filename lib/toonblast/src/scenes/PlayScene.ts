@@ -318,14 +318,13 @@ export class PlayScene extends Phaser.Scene {
     // Consume a move
     this.movesLeft--;
     this.movesUsed++;
-    this.combo = 0;
+    this.combo = 1;
     this.emitMoves();
 
     // Determine special block
     const specialType = getSpecialForGroup(group.length);
 
     // Score
-    this.combo++;
     const groupScore = calcGroupScore(group.length);
     this.score += groupScore;
     this.emitScore();
@@ -490,8 +489,14 @@ export class PlayScene extends Phaser.Scene {
     }
 
     if (cellsToDestroy.length > 0) {
+      // Skip cells where the visual block was already destroyed by the main crush
+      const cellsWithBlocks = cellsToDestroy.filter(
+        ({ row, col }) => this.blockGrid[row]?.[col] != null,
+      );
+      if (cellsWithBlocks.length === 0) return;
+
       // Score bonus from special
-      const bonus = calcGroupScore(cellsToDestroy.length);
+      const bonus = calcGroupScore(cellsWithBlocks.length);
       this.score += bonus;
       this.combo++;
       this.emitScore();
@@ -499,8 +504,8 @@ export class PlayScene extends Phaser.Scene {
       // Screen shake for special activation
       this.cameras.main.shake(250, 0.008);
 
-      await this.animateCrush(cellsToDestroy);
-      crushGroup(this.board, cellsToDestroy);
+      await this.animateCrush(cellsWithBlocks);
+      crushGroup(this.board, cellsWithBlocks);
     }
   }
 
