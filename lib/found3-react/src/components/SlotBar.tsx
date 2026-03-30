@@ -1,10 +1,11 @@
 /**
  * Slot bar — holds tiles waiting for 3-match
+ * Uses pixel-art PNG icons to match Phaser visual parity
  */
 
 import React from 'react';
 import { styled, keyframes } from '@stitches/react';
-import { MAX_SLOT, TILE_EMOJIS, TILE_COLORS, type SlotItem } from '../types';
+import { MAX_SLOT, TILE_IMAGES, TILE_COLORS, type SlotItem } from '../types';
 
 const slideIn = keyframes({
   '0%': { transform: 'translateY(-20px) scale(0.5)', opacity: 0 },
@@ -39,7 +40,6 @@ const Slot = styled('div', {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontSize: '20px',
   transition: 'all 0.2s ease',
 
   variants: {
@@ -68,7 +68,7 @@ export const SlotBar: React.FC<SlotBarProps> = ({ items, removingType }) => {
     const item = items[i];
     if (!item) return <Slot key={`empty-${i}`} filled={false} removing={false} />;
 
-    const emoji = TILE_EMOJIS[item.type % TILE_EMOJIS.length];
+    const imageKey = TILE_IMAGES[item.type % TILE_IMAGES.length];
     const bgColor = TILE_COLORS[item.type % TILE_COLORS.length];
     const isRemoving = removingType != null && item.type === removingType;
 
@@ -79,7 +79,17 @@ export const SlotBar: React.FC<SlotBarProps> = ({ items, removingType }) => {
         removing={isRemoving}
         css={{ backgroundColor: bgColor }}
       >
-        {emoji}
+        <img
+          src={`/assets/tiles/${imageKey}.png`}
+          alt=""
+          draggable={false}
+          style={{
+            width: 28,
+            height: 28,
+            imageRendering: 'pixelated',
+            pointerEvents: 'none',
+          }}
+        />
       </Slot>
     );
   });

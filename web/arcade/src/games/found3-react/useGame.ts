@@ -7,11 +7,17 @@ export interface GameResult {
   cleared: boolean;
 }
 
+export interface SlotItem {
+  type: number;
+  color: string;
+}
+
 interface GameState {
   score: number;
   elapsedMs: number;
   remainingTiles: number;
   totalTiles: number;
+  slotItems: SlotItem[];
 }
 
 interface UseGameOptions {
@@ -31,6 +37,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     elapsedMs: 0,
     remainingTiles: 0,
     totalTiles: 0,
+    slotItems: [],
   });
 
   const handleTileSelect = useCallback(() => {
@@ -42,7 +49,13 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   }, []);
 
   const handleStateUpdate = useCallback((state: GameState) => {
-    setGameState(state);
+    setGameState({
+      score: state.score ?? 0,
+      elapsedMs: state.elapsedMs ?? 0,
+      remainingTiles: state.remainingTiles ?? 0,
+      totalTiles: state.totalTiles ?? 0,
+      slotItems: state.slotItems ?? [],
+    });
   }, []);
 
   const handleClear = useCallback((result: { score: number; elapsedMs: number }) => {
@@ -56,6 +69,18 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     onGameOverRef.current?.({ ...result, cleared: false });
   }, [stage]);
 
+  const doShuffle = useCallback(() => {
+    haptic('tile-tapped');
+  }, []);
+
+  const doUndo = useCallback(() => {
+    haptic('tile-tapped');
+  }, []);
+
+  const doHint = useCallback(() => {
+    haptic('tile-tapped');
+  }, []);
+
   return {
     gameState,
     onTileSelect: handleTileSelect,
@@ -63,5 +88,8 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     onStateUpdate: handleStateUpdate,
     onClear: handleClear,
     onGameOver: handleGameOver,
+    doShuffle,
+    doUndo,
+    doHint,
   };
 }

@@ -1,10 +1,15 @@
 /**
  * Individual tile component — styled with Stitches
+ * Visual parity with lib/found3/src/objects/Tile.ts:
+ *   - Pastel bg rectangle with 2px #cccccc border (0.6 opacity)
+ *   - Pixel-art PNG icon (not emoji)
+ *   - Shadow for upper layers (layer >= 1)
+ *   - Blocked tiles stay fully visible (only interaction blocked)
  */
 
 import React from 'react';
 import { styled, keyframes } from '@stitches/react';
-import { TILE_EMOJIS, TILE_COLORS } from '../types';
+import { TILE_IMAGES, TILE_COLORS } from '../types';
 
 const popIn = keyframes({
   '0%': { transform: 'scale(0)', opacity: 0 },
@@ -13,45 +18,35 @@ const popIn = keyframes({
 });
 
 const StyledTile = styled('button', {
+  position: 'relative',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  border: 'none',
-  borderRadius: '10px',
+  border: '2px solid rgba(204, 204, 204, 0.6)',
+  borderRadius: '6px',
   cursor: 'pointer',
-  fontSize: '24px',
-  transition: 'transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease',
+  transition: 'transform 0.15s ease',
   userSelect: 'none',
   WebkitTapHighlightColor: 'transparent',
   animation: `${popIn} 0.25s ease-out`,
-  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
   padding: 0,
+  outline: 'none',
 
   '&:active': {
     transform: 'scale(0.92)',
   },
 
-  '&:disabled': {
-    opacity: 0.4,
-    cursor: 'default',
-    filter: 'grayscale(0.3)',
-    pointerEvents: 'none',
-  },
-
   variants: {
     state: {
       active: {
-        opacity: 1,
         cursor: 'pointer',
       },
       blocked: {
-        opacity: 0.4,
+        // Phaser: no dimming — tiles stay fully visible, only interaction blocked
         cursor: 'default',
-        filter: 'grayscale(0.3)',
         pointerEvents: 'none',
       },
       selected: {
-        opacity: 1,
         transform: 'scale(0.9)',
         boxShadow: '0 0 0 3px #3b82f6',
       },
@@ -63,17 +58,33 @@ const StyledTile = styled('button', {
   },
 });
 
+const Shadow = styled('div', {
+  position: 'absolute',
+  borderRadius: '6px',
+  backgroundColor: 'rgba(170, 170, 170, 0.25)',
+});
+
 interface TileProps {
   tileType: number;
   state: 'active' | 'blocked' | 'selected';
   size: number;
+  layer?: number;
   onClick?: () => void;
 }
 
-export const Tile: React.FC<TileProps> = ({ tileType, state, size, onClick }) => {
-  const emoji = TILE_EMOJIS[tileType % TILE_EMOJIS.length];
+export const Tile: React.FC<TileProps> = ({ tileType, state, size, layer = 0, onClick }) => {
+  const imageKey = TILE_IMAGES[tileType % TILE_IMAGES.length];
   const bgColor = TILE_COLORS[tileType % TILE_COLORS.length];
   const isBlocked = state === 'blocked';
+
+  // Match Phaser: icon size = min(40, size * 0.75)
+  const iconSize = Math.min(40, size * 0.75);
+
+  // Match Phaser: inner size = size - 4 (due to 2px border on each side)
+  const innerSize = size - 4;
+
+  // Shadow offset for upper layers (Phaser: 3 * layer)
+  const shadowOffset = layer > 0 ? 3 * layer : 0;
 
   return (
     <StyledTile
@@ -82,13 +93,33 @@ export const Tile: React.FC<TileProps> = ({ tileType, state, size, onClick }) =>
       aria-disabled={isBlocked}
       onClick={!isBlocked ? onClick : undefined}
       css={{
-        width: size,
-        height: size,
+        width: innerSize,
+        height: innerSize,
         backgroundColor: bgColor,
-        fontSize: Math.max(14, size * 0.5),
       }}
     >
-      {emoji}
+      {shadowOffset > 0 && (
+        <Shadow
+          css={{
+            width: innerSize,
+            height: innerSize,
+            top: shadowOffset,
+            left: shadowOffset,
+            zIndex: -1,
+          }}
+        />
+      )}
+      <img
+        src={`/assets/tiles/${imageKey}.png`}
+        alt=""
+        draggable={false}
+        style={{
+          width: iconSize,
+          height: iconSize,
+          imageRendering: 'pixelated',
+          pointerEvents: 'none',
+        }}
+      />
     </StyledTile>
   );
 };

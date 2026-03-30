@@ -38,7 +38,8 @@ const ProgressText = styled('span', {
 });
 
 function formatTime(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
+  const safe = Number.isFinite(ms) ? ms : 0;
+  const totalSec = Math.floor(safe / 1000);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;

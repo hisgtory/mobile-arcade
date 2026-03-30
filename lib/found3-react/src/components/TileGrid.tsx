@@ -1,6 +1,8 @@
 /**
  * Tile grid — renders tiles using absolute positioning
  * Supports multi-layer overlapping (upper layers offset by 0.5 cells)
+ *
+ * Visual parity: dark board background (#f0f2f5) matching Phaser PlayScene
  */
 
 import React from 'react';
@@ -12,6 +14,9 @@ import { Tile } from './Tile';
 const GridContainer = styled('div', {
   position: 'relative',
   margin: '0 auto',
+  backgroundColor: '#e8eaed',
+  borderRadius: '12px',
+  boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.08)',
 });
 
 interface TileGridProps {
@@ -39,11 +44,20 @@ export const TileGrid: React.FC<TileGridProps> = ({
   const gridWidth = effectiveCols * (tileSize + gap) - gap;
   const gridHeight = effectiveRows * (tileSize + gap) - gap;
 
+  // Padding inside the board background
+  const boardPad = 8;
+
   // Sort tiles: lower layers first so upper layers render on top
   const sorted = [...tiles].sort((a, b) => a.layer - b.layer);
 
   return (
-    <GridContainer css={{ width: gridWidth, height: gridHeight }}>
+    <GridContainer
+      css={{
+        width: gridWidth + boardPad * 2,
+        height: gridHeight + boardPad * 2,
+        padding: boardPad,
+      }}
+    >
       {sorted.map((tile) => {
         const blocked = isTileBlocked(tile, tiles);
         const left = tile.col * (tileSize + gap);
@@ -54,16 +68,16 @@ export const TileGrid: React.FC<TileGridProps> = ({
             key={tile.id}
             style={{
               position: 'absolute',
-              left,
-              top,
+              left: left + boardPad,
+              top: top + boardPad,
               zIndex: tile.layer * 10,
-              transition: 'opacity 0.2s ease',
             }}
           >
             <Tile
               tileType={tile.type}
               state={blocked ? 'blocked' : 'active'}
               size={tileSize}
+              layer={tile.layer}
               onClick={() => onTileTap(tile)}
             />
           </div>
