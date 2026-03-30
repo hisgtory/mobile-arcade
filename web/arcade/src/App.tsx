@@ -303,13 +303,13 @@ function SlideMatchStageRoute() {
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
   const [gameResult, setGameResult] = useState<SlideMatchResult | null>(null);
-  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+  const [screen, setScreen] = useState<'playing' | 'result'>('playing');
 
   const handleClear = useCallback((r: SlideMatchResult) => {
-    if (!isRN) { setGameResult(r); setScreen('clear'); }
+    if (!isRN) { setGameResult(r); setScreen('result'); }
   }, []);
   const handleGameOver = useCallback((r: SlideMatchResult) => {
-    if (!isRN) { setGameResult(r); setScreen('clear'); }
+    if (!isRN) { setGameResult(r); setScreen('result'); }
   }, []);
   const handleNext = useCallback(() => {
     navigate(`/games/slidematch/v1/stage/${stage + 1}`, { replace: true });
@@ -318,7 +318,7 @@ function SlideMatchStageRoute() {
   const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
   const handleHome = useCallback(() => navigate('/games/slidematch/v1', { replace: true }), [navigate]);
 
-  if (screen === 'clear' && gameResult) {
+  if (screen === 'result' && gameResult) {
     return <SlideMatchClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
   }
 

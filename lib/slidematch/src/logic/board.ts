@@ -26,10 +26,59 @@ export function createBoard(config: StageConfig): Board {
       Array.from({ length: cols }, () => Math.floor(Math.random() * typeCount)),
     );
     attempts++;
-    if (attempts > MAX_BOARD_GENERATION_ATTEMPTS) break; // safety valve
+    if (attempts > MAX_BOARD_GENERATION_ATTEMPTS) break;
   } while (findAllMatches(board).length > 0);
 
+  // If we still have matches after max attempts, repair individual cells
+  repairMatches(board, typeCount);
+
   return board;
+}
+
+/** Replace cells involved in matches until no matches remain */
+function repairMatches(board: Board, typeCount: number): void {
+  const maxRepairPasses = 50;
+  for (let pass = 0; pass < maxRepairPasses; pass++) {
+    const matches = findAllMatches(board);
+    if (matches.length === 0) return;
+
+    for (const group of matches) {
+      // Replace just one cell from each match group to break it
+      const cell = group[Math.floor(Math.random() * group.length)];
+      const original = board[cell.row][cell.col];
+      // Try each type until the cell no longer creates a match
+      for (let t = 0; t < typeCount; t++) {
+        const candidate = (original + 1 + t) % typeCount;
+        board[cell.row][cell.col] = candidate;
+        // Quick check: does this cell still form a match?
+        if (!cellFormsMatch(board, cell.row, cell.col)) break;
+      }
+    }
+  }
+}
+
+/** Check if a single cell is part of a 3+ horizontal or vertical run */
+function cellFormsMatch(board: Board, row: number, col: number): boolean {
+  const rows = board.length;
+  const cols = board[0].length;
+  const t = board[row][col];
+  if (t === EMPTY) return false;
+
+  // Horizontal run
+  let hStart = col;
+  while (hStart > 0 && board[row][hStart - 1] === t) hStart--;
+  let hEnd = col;
+  while (hEnd < cols - 1 && board[row][hEnd + 1] === t) hEnd++;
+  if (hEnd - hStart + 1 >= 3) return true;
+
+  // Vertical run
+  let vStart = row;
+  while (vStart > 0 && board[vStart - 1][col] === t) vStart--;
+  let vEnd = row;
+  while (vEnd < rows - 1 && board[vEnd + 1][col] === t) vEnd++;
+  if (vEnd - vStart + 1 >= 3) return true;
+
+  return false;
 }
 
 /** Slide a row left: all tiles shift left by 1, leftmost wraps to right */

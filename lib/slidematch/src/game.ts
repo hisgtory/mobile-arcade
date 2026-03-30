@@ -33,8 +33,8 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
     scene: [PlayScene],
   });
 
-  (game as any).__slidematchConfig = config;
-  (game as any).__dpr = dpr;
+  game.registry.set('slidematchConfig', config);
+  game.registry.set('dpr', dpr);
 
   game.scene.start('PlayScene', { stage: startStage });
 

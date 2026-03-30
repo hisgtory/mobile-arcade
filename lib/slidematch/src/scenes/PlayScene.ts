@@ -63,7 +63,7 @@ export class PlayScene extends Phaser.Scene {
 
   init(data: { stage?: number; gameConfig?: GameConfig }): void {
     this.stageNum = data?.stage ?? 1;
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__slidematchConfig;
+    this.gameConfig = data?.gameConfig ?? this.game.registry.get('slidematchConfig');
   }
 
   preload(): void {
@@ -75,7 +75,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr = this.game.registry.get('dpr') || 1;
     const { width, height } = this.scale;
 
     // Reset state
@@ -166,7 +166,11 @@ export class PlayScene extends Phaser.Scene {
     this.emitMoves();
     this.emitScore();
 
-    // BGM
+    // BGM — stop any existing instance before creating new one
+    if (this.bgm) {
+      this.bgm.stop();
+      this.bgm.destroy();
+    }
     this.bgm = this.sound.add('bgm1', { loop: true, volume: 0.25 });
     this.bgm.play();
 
@@ -352,7 +356,9 @@ export class PlayScene extends Phaser.Scene {
 
   // ─── MATCH PROCESSING ─────────────────────────────────
 
-  private async processMatches(matches: CellPos[][]): Promise<void> {
+  private static readonly MAX_CASCADE_DEPTH = 10;
+
+  private async processMatches(matches: CellPos[][], depth: number = 0): Promise<void> {
     const allCells: CellPos[] = [];
     for (const group of matches) {
       this.combo++;
@@ -368,15 +374,15 @@ export class PlayScene extends Phaser.Scene {
 
     this.emitScore();
 
-    // Animate destroy
+    // Animate destroy — set tileGrid to null first, then animate
     const destroyPromises = allCells.map(
       ({ row, col }) =>
         new Promise<void>((res) => {
           const tile = this.tileGrid[row][col];
+          this.tileGrid[row][col] = null;
           if (tile) {
             tile.animateDestroy(() => {
               tile.destroy();
-              this.tileGrid[row][col] = null;
               res();
             });
           } else {
@@ -389,7 +395,7 @@ export class PlayScene extends Phaser.Scene {
     // Remove from data
     removeCells(this.board, allCells);
 
-    // Gravity
+    // Gravity — process moves bottom-to-top per column to avoid overwriting
     const gravityMoves = applyGravity(this.board);
 
     // Animate gravity
@@ -419,10 +425,12 @@ export class PlayScene extends Phaser.Scene {
     // Wait for spawn animation
     await this.delay(300);
 
-    // Check for cascade
-    const newMatches = findAllMatches(this.board);
-    if (newMatches.length > 0) {
-      await this.processMatches(newMatches);
+    // Check for cascade (with depth limit to prevent infinite loops)
+    if (depth < PlayScene.MAX_CASCADE_DEPTH) {
+      const newMatches = findAllMatches(this.board);
+      if (newMatches.length > 0) {
+        await this.processMatches(newMatches, depth + 1);
+      }
     }
   }
 
