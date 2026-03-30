@@ -597,11 +597,12 @@ export class PlayScene extends Phaser.Scene {
   private endSimulation() {
     this.phase = 'result';
 
-    // Destroy remaining hazards
+    // Destroy remaining hazards and active particles
     for (const h of this.hazardObjects) {
       if (h.active) h.destroy();
     }
     this.hazardObjects = [];
+    this.activeParticles = [];
 
     if (!this.dogeHit) {
       // Doge survived!
@@ -743,7 +744,7 @@ export class PlayScene extends Phaser.Scene {
       this.hazardTimer = undefined;
     }
     for (const t of this.particleTimers) {
-      if (t.getOverallProgress() < 1) t.destroy();
+      t.destroy();
     }
     this.particleTimers = [];
     for (const h of this.hazardObjects) {
