@@ -195,6 +195,18 @@
 - lib + web + rn + prd 전체 구현 완료
 - Phase 2 첫 번째 게임
 
+---
+
+## 2026-03-30 — Phaser→React 비교 실험
+
+### React 전환 비교 이슈 발행
+- #203~#211 발행 (9개 게임 × React 클론)
+
+### Found3-React (#203) — PR #212 (머지 대기)
+- `lib/found3-react/` — 순수 React+Stitches 게임 컴포넌트 (Phaser 의존성 zero)
+- Arcade Home에서 Found 3 (Phaser) + Found 3 (React) 두 버전 비교 가능
+- 리뷰 11건 반영 완료
+
 ### Roadmap Updated
 - `prd/game-priority.md` — Block Rush, Water Sort, Tic Tac Toe 완료 표시
 - #136 추가 (3.5순위)

@@ -289,3 +289,26 @@ Express 스타일 `registerRoutes(basePath, routes)` 레지스트리. 각 게임
 - 새 게임 추가 시 `routes.tsx` 생성 + App.tsx에 side-effect import 한 줄만 추가
 - App.tsx가 게임 수에 관계없이 일정 크기 유지
 - 각 게임이 자기 라우트의 소유권을 가짐 (응집도↑)
+
+---
+
+## ADR-017: Phaser→React 전환 비교 실험
+
+### Context
+Phaser canvas에서 디자인 반영 공수가 CSS 대비 3~5배. 디자인 외주 후 반영 용이성이 핵심 요구사항으로 부상. 폰트, 그라데이션, border-radius, 반응형 등 CSS에서 자연스러운 것들이 Phaser에서는 수작업 필요.
+
+### Decision
+기존 게임의 React+Stitches 클론을 `{game}-react` 패턴으로 만들어 성능/스타일링 비교. 완전 격리 원칙: 별도 패키지, 별도 라우트, 별도 rn 등록. 공유되는 것은 순수 로직의 물리적 복사본뿐 (import가 아닌 복사).
+
+### 비교 포인트
+- FPS, 번들 크기, 애니메이션 부드러움
+- 스타일링 유연성, 코드량, 터치 반응성
+- Figma→코드 반영 용이성
+
+### Rejected
+Phaser + CSS overlay 하이브리드 — 복잡도만 증가, 근본적 해결 아님.
+
+### Consequences
+- 결과에 따라 전체 게임 React 전환 or Phaser 유지 결정
+- 비교 완료 전까지 두 버전 공존 (Arcade Home에서 나란히 표시)
+- 9개 이슈 (#203~#211) 병렬 진행

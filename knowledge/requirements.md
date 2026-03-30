@@ -194,3 +194,13 @@
 - 브랜치: `feat/issue-{N}-description` or `fix/issue-{N}-description`
 - 커밋: `feat: description (#N)` + PR에 `Closes #N`
 - 변경 시 이슈에 댓글 먼저 → 그 다음 코드 수정
+
+---
+
+# Requirements — Phaser→React 비교 실험 (2026-03-30)
+
+## 목적
+기존 9개 게임을 각각 `{game}-react` 버전으로 클론하여 Phaser vs React+Stitches 성능/스타일링 유연성 비교. 디자인 외주 후 반영 용이성 평가.
+
+## 이슈
+- #203~#211 발행 (게임별 React 클론 이슈)

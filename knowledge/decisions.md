@@ -208,3 +208,15 @@
 - **Before**: Copilot이 plan만 작성하고 구현하지 않은 WIP PR 존재 (PR #172 Block Puzzle)
 - **After**: 코드 없는 PR 닫고, 팀이 직접 구현 (PR #200)
 - **Reason**: 코드 없는 PR을 takeover할 수 없음. plan만 있는 PR은 닫고 새로 시작하는 것이 효율적
+
+## Rendering Strategy (2026-03-30)
+
+### Phaser 스타일링 한계 인식 → React 전환 검토 시작
+- **Issue**: Phaser canvas에서 디자인 반영이 어려움 (폰트, 그라데이션, border-radius, 반응형 등 CSS 대비 3~5배 공수)
+- **Decision**: 비교 실험으로 시작, 결과에 따라 전체 전환 여부 결정
+- **Reason**: 디자인 외주를 받아 반영하려면 React+CSS가 유리. Figma→CSS 반영이 직관적인 구조 필요
+
+### {game}-react 100% 격리 원칙
+- **Rule**: React 클론은 기존 Phaser 버전과 완전 격리 — 별도 패키지, 별도 라우트, 별도 rn 등록
+- **Shared**: 순수 로직 파일의 물리적 복사본뿐 (import가 아닌 복사)
+- **Reason**: 두 버전이 Arcade Home에서 나란히 표시되어 비교 가능해야 함. 상호 의존 시 비교 무의미
