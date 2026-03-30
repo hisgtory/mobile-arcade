@@ -74,12 +74,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const onGameOverRef = useRef(onGameOver);
   onGameOverRef.current = onGameOver;
 
-  // Calculate tile size based on config
-  const gap = 4;
+  // Tile size calculation — matches Phaser PlayScene exactly
+  // BASE_TILE_GAP_RATIO = 0.08, maxCap = 70 (CSS px, no dpr)
+  const BASE_TILE_GAP_RATIO = 0.08;
   const extraOffset = (config.layers - 1) * 0.5;
   const effectiveCols = config.cols + extraOffset;
-  const maxWidth = 360;
-  const tileSize = Math.floor((maxWidth - (effectiveCols - 1) * gap) / effectiveCols);
+  const effectiveRows = config.rows + extraOffset;
+  const maxBoardWidth = 360;
+  const maxTileW = maxBoardWidth / (effectiveCols + (effectiveCols - 1) * BASE_TILE_GAP_RATIO);
+  const maxTileH = 480 / (effectiveRows + (effectiveRows - 1) * BASE_TILE_GAP_RATIO);
+  const maxCap = 70;
+  const tileSize = Math.floor(Math.min(maxTileW, maxTileH, maxCap));
+  const gap = Math.floor(tileSize * BASE_TILE_GAP_RATIO);
 
   const getElapsedMs = useCallback(() => {
     if (startTimeRef.current === 0) return 0;
@@ -131,10 +137,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       score,
       combo,
       remainingTiles: tiles.length,
+      totalTiles: config.tileCount,
       timeLeft,
+      elapsedMs: getElapsedMs(),
       slotItems,
     });
-  }, [phase, score, combo, tiles.length, timeLeft, slotItems, stage]);
+  }, [phase, score, combo, tiles.length, timeLeft, slotItems, stage, config.tileCount, getElapsedMs]);
 
   // Game over callback
   useEffect(() => {

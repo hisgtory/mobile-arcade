@@ -60,7 +60,9 @@ export interface GameState {
   score: number;
   combo: number;
   remainingTiles: number;
+  totalTiles: number;
   timeLeft: number;
+  elapsedMs: number;
   slotItems: SlotItem[];
 }
 
@@ -87,7 +89,7 @@ export interface UndoEntry {
 /** Max slot capacity */
 export const MAX_SLOT = 7;
 
-/** Tile emojis for rendering */
+/** @deprecated Use TILE_IMAGES instead */
 export const TILE_EMOJIS: string[] = [
   '\u{1F33B}', // sunflower
   '\u{1F338}', // cherry blossom
@@ -101,6 +103,25 @@ export const TILE_EMOJIS: string[] = [
   '\u{1F349}', // watermelon
   '\u{1F351}', // peach
   '\u{1F350}', // pear
+];
+
+/** Tile image asset keys — pixel-art PNGs at /assets/tiles/{key}.png */
+export const TILE_IMAGES: string[] = [
+  'fruit_apple',
+  'fruit_watermelon',
+  'fruit_grape_red',
+  'fruit_strawberry',
+  'fruit_banana',
+  'fruit_orange',
+  'cake_chocolate',
+  'cake_strawberry',
+  'pastry_croissant',
+  'onigiri_1',
+  'icecream_3scoops',
+  'soda_coke',
+  'coffee_espresso',
+  'popsicle_red',
+  'eggs_fried',
 ];
 
 /** Pastel background colors corresponding to tile types */

@@ -14,7 +14,7 @@ export type {
   UndoEntry,
   HapticFn,
 } from './types';
-export { GamePhase, MAX_SLOT, TILE_EMOJIS, TILE_COLORS } from './types';
+export { GamePhase, MAX_SLOT, TILE_EMOJIS, TILE_IMAGES, TILE_COLORS } from './types';
 
 export { generateBoard, resetIdCounter, isTileBlocked } from './logic/board';
 export { addToSlotAndMatch, undoLastSlotItem } from './logic/matcher';
