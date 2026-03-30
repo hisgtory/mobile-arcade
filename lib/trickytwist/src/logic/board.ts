@@ -1,6 +1,11 @@
 import type { Puzzle, PuzzleType, StageConfig } from '../types';
 import { TILE_EMOJIS } from '../types';
 
+// ─── Constants ────────────────────────────────────────────
+
+const MAX_CHOICE_GENERATION_ATTEMPTS = 100;
+const MIN_MIRROR_GRID_SIZE = 4;
+
 // ─── Random helpers ──────────────────────────────────────
 
 function randInt(min: number, max: number): number {
@@ -97,7 +102,7 @@ function generateCount(gridSize: number): Puzzle {
   // Generate choices (one correct, others wrong)
   const wrongChoices = new Set<number>();
   let guard = 0;
-  while (wrongChoices.size < 3 && guard < 100) {
+  while (wrongChoices.size < 3 && guard < MAX_CHOICE_GENERATION_ATTEMPTS) {
     guard++;
     const w = targetCount + randInt(-5, 5);
     if (w !== targetCount && w > 0) wrongChoices.add(w);
@@ -189,7 +194,7 @@ function generateSequence(_gridSize: number): Puzzle {
   // Generate wrong choices
   const wrongChoices = new Set<number>();
   let guard = 0;
-  while (wrongChoices.size < 3 && guard < 100) {
+  while (wrongChoices.size < 3 && guard < MAX_CHOICE_GENERATION_ATTEMPTS) {
     guard++;
     const w = seq.next + randInt(-10, 10);
     if (w !== seq.next && w > 0) wrongChoices.add(w);
@@ -218,7 +223,7 @@ function generateSequence(_gridSize: number): Puzzle {
  */
 function generateMirror(gridSize: number): Puzzle {
   // Mirror requires gridSize >= 4 to have meaningful puzzles
-  const safeGridSize = Math.max(gridSize, 4);
+  const safeGridSize = Math.max(gridSize, MIN_MIRROR_GRID_SIZE);
   const grid: number[][] = [];
   const half = Math.ceil(safeGridSize / 2);
 
