@@ -11,7 +11,7 @@ const STAGES: StageConfig[] = [
 export function getStageConfig(stageNum: number): StageConfig {
   const n = Number.isFinite(stageNum) ? stageNum : 1;
   const idx = Math.max(0, Math.min(n - 1, STAGES.length - 1));
-  if (idx < STAGES.length) return { ...STAGES[idx] };
+  if (n <= STAGES.length) return { ...STAGES[idx] };
 
   // Dynamic stages beyond defined ones
   const puzzleCount = Math.min(8 + Math.floor((n - 5) / 2), 15);
