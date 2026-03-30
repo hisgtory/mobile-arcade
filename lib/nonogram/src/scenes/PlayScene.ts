@@ -170,7 +170,7 @@ export class PlayScene extends Phaser.Scene {
     const gx = this.gridOffsetX;
     const gy = this.gridOffsetY;
     const cs = this.cellSize;
-    const fontSize = Math.max(10, Math.min(14, cs * 0.4));
+    const fontSize = Math.max(10, Math.min(14, cs * 0.4)); // min 10px for mobile readability
 
     // Row clues (left of grid)
     for (let r = 0; r < rows; r++) {
@@ -370,7 +370,7 @@ export class PlayScene extends Phaser.Scene {
         }
       }
     }
-    const progress = Math.max(0, Math.floor(((correctFilled - errorCount) / totalFilled) * 100));
+    const progress = Math.min(100, Math.max(0, Math.floor(((correctFilled - errorCount) / totalFilled) * 100)));
 
     this.game.events.emit('moves-update', { moves: this.moves });
     this.game.events.emit('progress-update', { progress });

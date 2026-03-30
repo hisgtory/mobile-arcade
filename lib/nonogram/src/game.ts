@@ -21,12 +21,12 @@ export function createGame(
       height: DEFAULT_HEIGHT * dpr,
     },
     render: { antialias: true, roundPixels: true },
-    scene: [],
+    scene: [], // Empty: add manually below to avoid double scene.start
   });
 
   game.registry.set('config', config);
   game.registry.set('dpr', dpr);
-  game.scene.add('PlayScene', PlayScene, true);
+  game.scene.add('PlayScene', PlayScene, true); // true = auto-start
 
   return game;
 }
