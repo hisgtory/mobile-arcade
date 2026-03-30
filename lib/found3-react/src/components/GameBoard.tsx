@@ -13,7 +13,6 @@ import {
   type GameState,
   type HapticFn,
   GamePhase,
-  MAX_SLOT,
 } from '../types';
 import { generateBoard, resetIdCounter } from '../logic/board';
 import { addToSlotAndMatch } from '../logic/matcher';
@@ -33,22 +32,28 @@ const Container = styled('div', {
   userSelect: 'none',
 });
 
+interface GameResult {
+  score: number;
+  elapsedMs: number;
+  cleared: boolean;
+}
+
 interface GameBoardProps {
-  stageId: number;
-  onClear?: (score: number) => void;
-  onGameOver?: (score: number) => void;
+  stage: number;
+  onClear?: (result: GameResult) => void;
+  onGameOver?: (result: GameResult) => void;
   onStateUpdate?: (state: GameState) => void;
   haptic?: HapticFn;
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({
-  stageId,
+  stage,
   onClear,
   onGameOver,
   onStateUpdate,
   haptic,
 }) => {
-  const config = getStageConfig(stageId);
+  const config = getStageConfig(stage);
 
   const [tiles, setTiles] = useState<TileData[]>([]);
   const [slotItems, setSlotItems] = useState<SlotItem[]>([]);
@@ -57,7 +62,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
   const [timeLeft, setTimeLeft] = useState(config.timeLimit);
+  const [isAnimating, setIsAnimating] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef(0);
+
+  // Stable callback refs (avoids stale closures in effects)
+  const onStateUpdateRef = useRef(onStateUpdate);
+  onStateUpdateRef.current = onStateUpdate;
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
 
   // Calculate tile size based on config
   const gap = 4;
@@ -65,6 +80,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const effectiveCols = config.cols + extraOffset;
   const maxWidth = 360;
   const tileSize = Math.floor((maxWidth - (effectiveCols - 1) * gap) / effectiveCols);
+
+  const getElapsedMs = useCallback(() => {
+    if (startTimeRef.current === 0) return 0;
+    return Date.now() - startTimeRef.current;
+  }, []);
 
   // Initialize board
   useEffect(() => {
@@ -77,7 +97,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     setTimeLeft(config.timeLimit);
     setPhase(GamePhase.PLAYING);
     setRemovingType(null);
-  }, [stageId]);
+    setIsAnimating(false);
+    startTimeRef.current = Date.now();
+  }, [stage]);
 
   // Timer
   useEffect(() => {
@@ -103,35 +125,34 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   // Notify state changes
   useEffect(() => {
-    if (!onStateUpdate) return;
-    onStateUpdate({
+    onStateUpdateRef.current?.({
       phase,
-      stage: stageId,
+      stage,
       score,
       combo,
       remainingTiles: tiles.length,
       timeLeft,
       slotItems,
     });
-  }, [phase, score, combo, tiles.length, timeLeft, slotItems]);
+  }, [phase, score, combo, tiles.length, timeLeft, slotItems, stage]);
 
   // Game over callback
   useEffect(() => {
     if (phase === GamePhase.GAME_OVER) {
-      onGameOver?.(score);
+      onGameOverRef.current?.({ score, elapsedMs: getElapsedMs(), cleared: false });
     }
-  }, [phase]);
+  }, [phase, score, getElapsedMs]);
 
   // Clear callback
   useEffect(() => {
     if (phase === GamePhase.CLEAR) {
-      onClear?.(score);
+      onClearRef.current?.({ score, elapsedMs: getElapsedMs(), cleared: true });
     }
-  }, [phase]);
+  }, [phase, score, getElapsedMs]);
 
   const handleTileTap = useCallback(
     (tile: TileData) => {
-      if (phase !== GamePhase.PLAYING) return;
+      if (isAnimating || phase !== GamePhase.PLAYING) return;
 
       // Haptic: tile tap (immediate, before any state change)
       haptic?.('tile-tapped');
@@ -146,6 +167,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         // Haptic: slot matched
         haptic?.('slot-matched');
 
+        setIsAnimating(true);
         setRemovingType(result.matchedType ?? null);
         setCombo((prev) => prev + 1);
         setScore((prev) => prev + 100 * (combo + 1));
@@ -154,12 +176,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         setTimeout(() => {
           setSlotItems(result.slotItems);
           setRemovingType(null);
+          setIsAnimating(false);
         }, 250);
 
         // Check if all tiles cleared
         setTiles((prev) => {
           if (prev.length === 0) {
-            // Haptic: stage clear
             haptic?.('stage-clear');
             setPhase(GamePhase.CLEAR);
           }
@@ -176,7 +198,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         }
       }
     },
-    [phase, slotItems, combo, haptic],
+    [isAnimating, phase, slotItems, combo, haptic],
   );
 
   return (

@@ -35,6 +35,9 @@ function Found3ReactStageRoute() {
   const handleClear = useCallback((r: GameResult) => {
     if (!isRN) { setGameResult(r); setScreen('clear'); }
   }, []);
+  const handleGameOver = useCallback((r: GameResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
   const handleNext = useCallback(() => {
     navigate(`/games/found3-react/v1/stage/${stage + 1}`, { replace: true });
     setPlayKey((k) => k + 1); setScreen('playing');
@@ -72,11 +75,11 @@ function Found3ReactStageRoute() {
     );
   }
 
-  return <Found3ReactPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+  return <Found3ReactPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
 }
 
-function Found3ReactPlaying({ stage, onClear }: { stage: number; onClear: (r: GameResult) => void }) {
-  const { gameState, onTileSelect, onMatch, onStateUpdate, onClear: handleClear } = useGame({ stage, onClear });
+function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: GameResult) => void; onGameOver: (r: GameResult) => void }) {
+  const { gameState, onTileSelect, onMatch, onStateUpdate, onClear: handleClear, onGameOver: handleGameOver } = useGame({ stage, onClear, onGameOver });
 
   return (
     <PlayLayout>
@@ -94,6 +97,7 @@ function Found3ReactPlaying({ stage, onClear }: { stage: number; onClear: (r: Ga
           onMatch={onMatch}
           onStateUpdate={onStateUpdate}
           onClear={handleClear}
+          onGameOver={handleGameOver}
         />
       </div>
     </PlayLayout>

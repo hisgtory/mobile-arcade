@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
@@ -17,11 +17,14 @@ interface GameState {
 interface UseGameOptions {
   stage: number;
   onClear?: (result: GameResult) => void;
+  onGameOver?: (result: GameResult) => void;
 }
 
-export function useGame({ stage, onClear }: UseGameOptions) {
+export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const onClearRef = useRef(onClear);
   onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
 
   const [gameState, setGameState] = useState<GameState>({
     score: 0,
@@ -31,11 +34,11 @@ export function useGame({ stage, onClear }: UseGameOptions) {
   });
 
   const handleTileSelect = useCallback(() => {
-    haptic('tile-selected');
+    haptic('tile-tapped');
   }, []);
 
   const handleMatch = useCallback(() => {
-    haptic('match-found');
+    haptic('slot-matched');
   }, []);
 
   const handleStateUpdate = useCallback((state: GameState) => {
@@ -44,8 +47,13 @@ export function useGame({ stage, onClear }: UseGameOptions) {
 
   const handleClear = useCallback((result: { score: number; elapsedMs: number }) => {
     haptic('game-clear');
-    stageComplete({ stage, score: result.score, cleared: true });
+    stageComplete({ stage, score: result.score, elapsedMs: result.elapsedMs, cleared: true });
     onClearRef.current?.({ ...result, cleared: true });
+  }, [stage]);
+
+  const handleGameOver = useCallback((result: { score: number; elapsedMs: number }) => {
+    stageComplete({ stage, score: result.score, elapsedMs: result.elapsedMs, cleared: false });
+    onGameOverRef.current?.({ ...result, cleared: false });
   }, [stage]);
 
   return {
@@ -54,5 +62,6 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     onMatch: handleMatch,
     onStateUpdate: handleStateUpdate,
     onClear: handleClear,
+    onGameOver: handleGameOver,
   };
 }

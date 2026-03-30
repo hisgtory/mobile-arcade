@@ -31,6 +31,13 @@ const StyledTile = styled('button', {
     transform: 'scale(0.92)',
   },
 
+  '&:disabled': {
+    opacity: 0.4,
+    cursor: 'default',
+    filter: 'grayscale(0.3)',
+    pointerEvents: 'none',
+  },
+
   variants: {
     state: {
       active: {
@@ -66,11 +73,14 @@ interface TileProps {
 export const Tile: React.FC<TileProps> = ({ tileType, state, size, onClick }) => {
   const emoji = TILE_EMOJIS[tileType % TILE_EMOJIS.length];
   const bgColor = TILE_COLORS[tileType % TILE_COLORS.length];
+  const isBlocked = state === 'blocked';
 
   return (
     <StyledTile
       state={state}
-      onClick={state === 'active' ? onClick : undefined}
+      disabled={isBlocked}
+      aria-disabled={isBlocked}
+      onClick={!isBlocked ? onClick : undefined}
       css={{
         width: size,
         height: size,
