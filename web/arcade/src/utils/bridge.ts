@@ -25,6 +25,14 @@ export function haptic(event: string): void {
   sendToRN('HAPTIC', { style: event });
 }
 
+export function navigateToArcade(): void {
+  if (isRN) {
+    sendToRN('NAVIGATE', { target: 'arcade' });
+  } else {
+    window.location.href = '/';
+  }
+}
+
 export function stageComplete(data: {
   stage: number;
   score: number;

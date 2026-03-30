@@ -1,39 +1,56 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GameCanvas } from '../../components/GameCanvas';
+import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { PlayLayout } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
 import { HUD as MinesweeperHUD } from './HUD';
 import { useGame as useMinesweeperGame, type GameResult as MinesweeperResult } from './useGame';
 import { type Difficulty as MSDifficulty, DIFFICULTIES as MS_DIFFICULTIES } from '@arcade/lib-minesweeper';
 
-function MinesweeperTitleRoute() {
+const DIFF_OPTIONS: { key: MSDifficulty; color: string; detail: string }[] = [
+  { key: 'easy', color: '#059669', detail: '9×9 · 10 mines' },
+  { key: 'medium', color: '#2563EB', detail: '16×16 · 40 mines' },
+  { key: 'expert', color: '#DC2626', detail: '16×16 · 56 mines' },
+];
+
+function MinesweeperHomeRoute() {
   const navigate = useNavigate();
+  const [selected, setSelected] = useState<MSDifficulty>('easy');
   return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 16 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>💣 Minesweeper</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Classic mine-sweeping puzzle!</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 24, width: '80%', maxWidth: 320 }}>
+    <GameHomeLayout title="Minesweeper" icon="💣">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 20px', gap: 16 }}>
+        <p style={{ fontSize: 14, color: '#6B7280', fontWeight: 600, alignSelf: 'flex-start' }}>Difficulty</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 340 }}>
+          {DIFF_OPTIONS.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => setSelected(opt.key)}
+              style={{
+                padding: '14px 16px',
+                borderRadius: 16,
+                border: selected === opt.key ? `2px solid ${opt.color}` : '2px solid #E5E7EB',
+                backgroundColor: selected === opt.key ? `${opt.color}10` : '#fff',
+                cursor: 'pointer',
+                textAlign: 'left',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span style={{ fontSize: 18, fontWeight: 700, color: '#111827', textTransform: 'capitalize' }}>{opt.key}</span>
+              <span style={{ fontSize: 13, color: '#6B7280' }}>{opt.detail}</span>
+            </button>
+          ))}
+        </div>
         <button
-          onClick={() => navigate('/games/minesweeper/v1/play/easy')}
-          style={{ backgroundColor: '#059669', color: '#fff', border: 'none', padding: '16px', borderRadius: 16, fontSize: 18, fontWeight: 700, cursor: 'pointer' }}
+          onClick={() => navigate(`/games/minesweeper/v1/play/${selected}`)}
+          style={{ marginTop: 16, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '18px 56px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
         >
-          Easy (9×9)
-        </button>
-        <button
-          onClick={() => navigate('/games/minesweeper/v1/play/medium')}
-          style={{ backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px', borderRadius: 16, fontSize: 18, fontWeight: 700, cursor: 'pointer' }}
-        >
-          Medium (16×16)
-        </button>
-        <button
-          onClick={() => navigate('/games/minesweeper/v1/play/expert')}
-          style={{ backgroundColor: '#DC2626', color: '#fff', border: 'none', padding: '16px', borderRadius: 16, fontSize: 18, fontWeight: 700, cursor: 'pointer' }}
-        >
-          Expert (16×16)
+          Play
         </button>
       </div>
-    </PlayLayout>
+    </GameHomeLayout>
   );
 }
 
@@ -88,6 +105,6 @@ function MinesweeperPlaying({ difficulty, onGameOver }: { difficulty: MSDifficul
 }
 
 registerRoutes('/games/minesweeper/v1', [
-  { path: '', element: <MinesweeperTitleRoute /> },
+  { path: '', element: <MinesweeperHomeRoute /> },
   { path: 'play/:difficulty', element: <MinesweeperPlayRoute /> },
 ]);

@@ -1,22 +1,28 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GameCanvas } from '../../components/GameCanvas';
+import { GameHomeLayout } from '../../components/GameHomeLayout';
+import { StageMap, type StageInfo } from '../../components/StageMap';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
-import { TitleScreen as Found3Title } from './TitleScreen';
 import { ClearScreen as Found3Clear } from './ClearScreen';
 import { HUD as Found3HUD } from './HUD';
 import { SlotBar } from './SlotBar';
 import { ItemBar } from './ItemBar';
 import { useGame as useFound3Game, type GameResult as Found3Result } from './useGame';
 
-function Found3TitleRoute() {
+const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, cleared: false }));
+
+function Found3HomeRoute() {
   const navigate = useNavigate();
   return (
-    <Found3Title
-      stage={1}
-      onPlay={() => navigate('/games/found3/v1/stage/1')}
-    />
+    <GameHomeLayout title="Found 3" icon="🔍">
+      <StageMap
+        stages={STAGES}
+        currentStage={1}
+        onStageSelect={(stage) => navigate(`/games/found3/v1/stage/${stage}`)}
+      />
+    </GameHomeLayout>
   );
 }
 
@@ -62,6 +68,6 @@ function Found3Playing({ stage, onClear, onGameOver }: { stage: number; onClear:
 }
 
 registerRoutes('/games/found3/v1', [
-  { path: '', element: <Found3TitleRoute /> },
+  { path: '', element: <Found3HomeRoute /> },
   { path: 'stage/:stageId', element: <Found3StageRoute /> },
 ]);

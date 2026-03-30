@@ -1,24 +1,26 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GameCanvas } from '../../components/GameCanvas';
+import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { PlayLayout } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
 import { HUD as BlockRushHUD } from './HUD';
 import { useGame as useBlockRushGame, type GameResult as BlockRushResult } from './useGame';
 
-function BlockRushTitleRoute() {
+function BlockRushHomeRoute() {
   const navigate = useNavigate();
   return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Block Rush</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Fill lines to clear the board!</p>
-      <button
-        onClick={() => navigate('/games/blockrush/v1/play')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
-        Play
-      </button>
-    </PlayLayout>
+    <GameHomeLayout title="Block Rush" icon="🧱">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: 16 }}>
+        <p style={{ fontSize: 16, color: '#6B7280' }}>Fill lines to clear the board!</p>
+        <button
+          onClick={() => navigate('/games/blockrush/v1/play')}
+          style={{ marginTop: 16, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '18px 56px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+        >
+          Play
+        </button>
+      </div>
+    </GameHomeLayout>
   );
 }
 
@@ -68,6 +70,6 @@ function BlockRushPlaying({ onGameOver }: { onGameOver: (r: BlockRushResult) => 
 }
 
 registerRoutes('/games/blockrush/v1', [
-  { path: '', element: <BlockRushTitleRoute /> },
+  { path: '', element: <BlockRushHomeRoute /> },
   { path: 'play', element: <BlockRushPlayRoute /> },
 ]);

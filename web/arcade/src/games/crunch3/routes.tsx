@@ -1,26 +1,27 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GameCanvas } from '../../components/GameCanvas';
+import { GameHomeLayout } from '../../components/GameHomeLayout';
+import { StageMap, type StageInfo } from '../../components/StageMap';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
 import { ClearScreen as Crunch3Clear } from './ClearScreen';
 import { HUD as Crunch3HUD } from './HUD';
 import { useGame as useCrunch3Game, type GameResult as Crunch3Result } from './useGame';
 
-function Crunch3TitleRoute() {
+const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, cleared: false }));
+
+function Crunch3HomeRoute() {
   const navigate = useNavigate();
   return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Crunch 3</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Swipe & match 3 to crush!</p>
-      <button
-        onClick={() => navigate('/games/crunch3/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
-        Play
-      </button>
-      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
-    </PlayLayout>
+    <GameHomeLayout title="Crunch 3" icon="🍕">
+      <StageMap
+        stages={STAGES}
+        currentStage={1}
+        onStageSelect={(stage) => navigate(`/games/crunch3/v1/stage/${stage}`)}
+      />
+      <p style={{ textAlign: 'center', padding: 8, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
+    </GameHomeLayout>
   );
 }
 
@@ -64,6 +65,6 @@ function Crunch3Playing({ stage, onClear, onGameOver }: { stage: number; onClear
 }
 
 registerRoutes('/games/crunch3/v1', [
-  { path: '', element: <Crunch3TitleRoute /> },
+  { path: '', element: <Crunch3HomeRoute /> },
   { path: 'stage/:stageId', element: <Crunch3StageRoute /> },
 ]);
