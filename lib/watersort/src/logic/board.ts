@@ -175,7 +175,7 @@ function isSolvableDFS(tubes: Tube[], maxDepth: number): boolean {
           iterations++;
           visited.add(key);
           if (dfs(next, depth + 1)) return true;
-          visited.delete(key); // Backtrack for DFS
+          // No backtrack: keep visited states to avoid redundant exploration
         }
       }
     }
