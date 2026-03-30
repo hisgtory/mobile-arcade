@@ -1,11 +1,16 @@
-import Phaser from 'phaser';
-import { DEFAULT_WIDTH, DEFAULT_HEIGHT, type GameConfig } from './types';
-import { PlayScene } from './scenes/PlayScene';
+/**
+ * Phaser Game factory for TrickyTwist
+ */
 
-export function createGame(
-  parent: HTMLElement,
-  config?: GameConfig,
-): Phaser.Game {
+import Phaser from 'phaser';
+import { PlayScene } from './scenes/PlayScene';
+import type { GameConfig } from './types';
+
+const DEFAULT_WIDTH = 390;
+const DEFAULT_HEIGHT = 560;
+
+export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Game {
+  const startStage = config?.stage ?? 1;
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
 
   const game = new Phaser.Game({
@@ -17,20 +22,28 @@ export function createGame(
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: DEFAULT_WIDTH * dpr,
+      height: DEFAULT_HEIGHT * dpr,
     },
-    render: { antialias: true, roundPixels: true },
+    render: {
+      antialias: true,
+      roundPixels: true,
+    },
     scene: [PlayScene],
   });
 
-  game.scene.start('PlayScene', { config, dpr });
+  (game as any).__trickytwistConfig = config;
+  (game as any).__dpr = dpr;
+
+  game.scene.start('PlayScene', { config: { stage: startStage }, dpr });
 
   return game;
 }
 
-export function destroyGame(game: Phaser.Game) {
+export function destroyGame(game: Phaser.Game): void {
   game.destroy(true);
 }
 
 export function getPlayScene(game: Phaser.Game): PlayScene | null {
-  return game.scene.getScene('PlayScene') as PlayScene | null;
+  return (game.scene.getScene('PlayScene') as PlayScene) ?? null;
 }

@@ -1,3 +1,3 @@
 export { createGame, destroyGame, getPlayScene } from './game';
-export { getStageConfig } from './types';
-export type { GameConfig, StageConfig } from './types';
+export { getStageConfig } from './logic/stage';
+export type { GameConfig, StageConfig, PuzzleType, CellPos } from './types';

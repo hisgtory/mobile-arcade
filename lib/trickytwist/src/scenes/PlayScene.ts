@@ -4,11 +4,11 @@ import {
   DEFAULT_HEIGHT,
   TILE_EMOJIS,
   TILE_COLORS,
-  getStageConfig,
   type GameConfig,
   type Puzzle,
   type StageConfig,
 } from '../types';
+import { getStageConfig } from '../logic/stage';
 import { generatePuzzleSet, calcScore } from '../logic/board';
 
 type GamePhase = 'idle' | 'showing' | 'answered' | 'celebrating';
@@ -495,6 +495,13 @@ export class PlayScene extends Phaser.Scene {
 
   public restart() {
     this.scene.restart({ config: this.config, dpr: this.dpr });
+  }
+
+  shutdown() {
+    this.timerEvent?.remove();
+    this.timerEvent = null;
+    this.choiceButtons.forEach((b) => b.destroy());
+    this.choiceButtons = [];
   }
 
   // ─── Events ───────────────────────────────────────────

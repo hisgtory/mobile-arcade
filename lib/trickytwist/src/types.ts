@@ -1,10 +1,12 @@
-// ─── Constants ───────────────────────────────────────────
+/**
+ * TrickyTwist game type definitions
+ */
+
 export const DEFAULT_WIDTH = 390;
 export const DEFAULT_HEIGHT = 560;
 
-export const GRID_SIZE = 4;
-
 // ─── Tile types ─────────────────────────────────────────
+
 /** Emoji tiles used for puzzles */
 export const TILE_EMOJIS: readonly string[] = [
   '🔴', '🔵', '🟢', '🟡', '🟣', '🟠', '⚪', '🟤',
@@ -19,6 +21,7 @@ export const TILE_COLORS: readonly string[] = [
 ] as const;
 
 // ─── Puzzle types ────────────────────────────────────────
+
 export type PuzzleType = 'odd_one_out' | 'count' | 'pattern' | 'sequence' | 'mirror';
 
 export interface CellPos {
@@ -42,35 +45,19 @@ export interface Puzzle {
 }
 
 // ─── Stage Config ────────────────────────────────────────
+
 export interface StageConfig {
   stage: number;
+  /** Number of puzzles per stage */
   puzzleCount: number;
+  /** Grid size for grid-based puzzles */
   gridSize: number;
-  timeLimit: number; // seconds
+  /** Time limit in seconds */
+  timeLimit: number;
+  /** Puzzle types available in this stage */
   puzzleTypes: PuzzleType[];
 }
 
-export function getStageConfig(stage: number): StageConfig {
-  const configs: StageConfig[] = [
-    { stage: 1, puzzleCount: 5, gridSize: 3, timeLimit: 60, puzzleTypes: ['odd_one_out'] },
-    { stage: 2, puzzleCount: 5, gridSize: 3, timeLimit: 55, puzzleTypes: ['odd_one_out', 'count'] },
-    { stage: 3, puzzleCount: 6, gridSize: 4, timeLimit: 60, puzzleTypes: ['odd_one_out', 'count', 'pattern'] },
-    { stage: 4, puzzleCount: 6, gridSize: 4, timeLimit: 55, puzzleTypes: ['odd_one_out', 'count', 'pattern', 'sequence'] },
-    { stage: 5, puzzleCount: 8, gridSize: 4, timeLimit: 60, puzzleTypes: ['odd_one_out', 'count', 'pattern', 'sequence', 'mirror'] },
-  ];
-  if (stage <= configs.length) return configs[stage - 1];
-  const puzzleCount = Math.min(8 + Math.floor((stage - 5) / 2), 15);
-  const timeLimit = Math.max(40, 60 - (stage - 5) * 2);
-  return {
-    stage,
-    puzzleCount,
-    gridSize: 4,
-    timeLimit,
-    puzzleTypes: ['odd_one_out', 'count', 'pattern', 'sequence', 'mirror'],
-  };
-}
-
-// ─── Game Types ──────────────────────────────────────────
 export interface GameConfig {
   stage?: number;
 }
