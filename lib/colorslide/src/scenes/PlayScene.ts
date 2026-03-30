@@ -19,6 +19,7 @@ export class PlayScene extends Phaser.Scene {
 
   // Visual
   private cellContainers: Phaser.GameObjects.Container[][] = [];
+  private gridBg: Phaser.GameObjects.Graphics | null = null;
   private phase: GamePhase = 'idle';
   private moveHistory: BoardState[] = [];
   private score = 0;
@@ -82,9 +83,15 @@ export class PlayScene extends Phaser.Scene {
   // ─── Drawing ──────────────────────────────────────────
 
   private drawBoard() {
-    // Clear previous
+    // Clear previous cell containers
     this.cellContainers.forEach(row => row.forEach(c => c.destroy()));
     this.cellContainers = [];
+
+    // Clear previous grid background
+    if (this.gridBg) {
+      this.gridBg.destroy();
+      this.gridBg = null;
+    }
 
     const gridSize = this.boardState.gridSize;
     const cellSize = this.getCellSize();
@@ -93,12 +100,10 @@ export class PlayScene extends Phaser.Scene {
     const cornerRadius = 8 * this.dpr;
 
     // Draw grid background
-    this.children.removeAll();
-
     const origin = this.getGridOrigin();
-    const gridBg = this.add.graphics();
-    gridBg.fillStyle(0xe5e7eb, 1);
-    gridBg.fillRoundedRect(
+    this.gridBg = this.add.graphics();
+    this.gridBg.fillStyle(0xe5e7eb, 1);
+    this.gridBg.fillRoundedRect(
       origin.x - gap,
       origin.y - gap,
       gridSize * cellSize + gap * 2,

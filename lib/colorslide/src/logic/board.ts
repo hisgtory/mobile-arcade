@@ -12,19 +12,52 @@ export function createBoard(config: StageConfig): BoardState {
   const { gridSize, numColors } = config;
   const totalCells = gridSize * gridSize;
   const filledCells = totalCells - 1; // one empty
+  const maxAttempts = 50;
 
-  // Create the solved board first
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Create the solved board first
+    const solvedFlat = createSolvedFlat(gridSize, numColors);
+
+    // Shuffle by performing random valid moves from the solved state
+    const board = flatToBoard(solvedFlat, gridSize);
+    let emptyRow = gridSize - 1;
+    let emptyCol = gridSize - 1;
+
+    // Perform many random moves to shuffle
+    const shuffleMoves = filledCells * 20;
+    const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+
+    for (let i = 0; i < shuffleMoves; i++) {
+      const validMoves: [number, number][] = [];
+      for (const [dr, dc] of dirs) {
+        const nr = emptyRow + dr;
+        const nc = emptyCol + dc;
+        if (nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize) {
+          validMoves.push([nr, nc]);
+        }
+      }
+      const [mr, mc] = validMoves[Math.floor(Math.random() * validMoves.length)];
+      board[emptyRow][emptyCol] = board[mr][mc];
+      board[mr][mc] = -1;
+      emptyRow = mr;
+      emptyCol = mc;
+    }
+
+    const state: BoardState = { board, emptyRow, emptyCol, numColors, gridSize };
+
+    // Ensure the board is not already solved
+    if (!isWon(state)) {
+      return state;
+    }
+  }
+
+  // Fallback: return last attempt even if solved (extremely unlikely after 50 tries)
   const solvedFlat = createSolvedFlat(gridSize, numColors);
-
-  // Shuffle by performing random valid moves from the solved state
   const board = flatToBoard(solvedFlat, gridSize);
   let emptyRow = gridSize - 1;
   let emptyCol = gridSize - 1;
-
-  // Perform many random moves to shuffle
-  const shuffleMoves = filledCells * 20;
+  const shuffleMoves = filledCells * 40; // double the shuffles for fallback
   const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-
   for (let i = 0; i < shuffleMoves; i++) {
     const validMoves: [number, number][] = [];
     for (const [dr, dc] of dirs) {
@@ -40,7 +73,6 @@ export function createBoard(config: StageConfig): BoardState {
     emptyRow = mr;
     emptyCol = mc;
   }
-
   return { board, emptyRow, emptyCol, numColors, gridSize };
 }
 
@@ -138,13 +170,14 @@ export function isWon(state: BoardState): boolean {
     }
     if (cells.length === 0) continue;
 
-    // BFS from first cell of this color
+    // BFS from first cell of this color (index-based queue for O(1) dequeue)
     const visited = new Set<string>();
     const queue: [number, number][] = [cells[0]];
+    let head = 0;
     visited.add(`${cells[0][0]},${cells[0][1]}`);
 
-    while (queue.length > 0) {
-      const [cr, cc] = queue.shift()!;
+    while (head < queue.length) {
+      const [cr, cc] = queue[head++];
       const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
       for (const [dr, dc] of dirs) {
         const nr = cr + dr;

@@ -35,9 +35,8 @@ export function getStageConfig(stage: number): StageConfig {
     { stage: 10, gridSize: 5, numColors: 8 },
   ];
   if (stage <= configs.length) return configs[stage - 1];
-  // Beyond stage 10: 5x5 grid, scale colors up to 8
-  const numColors = Math.min(4 + Math.floor((stage - 5) / 2), 8);
-  return { stage, gridSize: 5, numColors };
+  // Beyond stage 10: 5x5 grid, always max 8 colors (hardest difficulty)
+  return { stage, gridSize: 5, numColors: 8 };
 }
 
 // ─── Game Types ──────────────────────────────────────────
