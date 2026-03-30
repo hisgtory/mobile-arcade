@@ -89,9 +89,8 @@ export class PlayScene extends Phaser.Scene {
     // Clear previous
     this.nodeGraphics.forEach((n) => n.destroy());
     this.nodeGraphics = [];
-    if (!this.edgeGraphics) {
-      this.edgeGraphics = this.add.graphics();
-    }
+    this.edgeGraphics?.destroy();
+    this.edgeGraphics = this.add.graphics();
 
     const scale = this.dpr;
     const nodeRadius = NODE_RADIUS * scale;
@@ -116,8 +115,6 @@ export class PlayScene extends Phaser.Scene {
 
   /** Lightweight update: repositions existing node circles + redraws edges only */
   private updateBoard() {
-    const crossingEdges = getCrossingEdges(this.board.nodes, this.board.edges);
-
     // Redraw edges (clear + stroke is cheap)
     this.redrawEdges();
 
