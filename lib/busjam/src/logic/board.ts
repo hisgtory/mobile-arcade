@@ -7,18 +7,17 @@ import {
   type StageConfig,
 } from '../types';
 
-let nextPassengerId = 1;
-
 // ─── Board Creation ──────────────────────────────────────
 
 export function createBoard(config: StageConfig): BoardState {
-  nextPassengerId = 1;
-  const { numColors, numBuses, queueRows, queueCols } = config;
+  let nextId = 1;
+  const { numColors, numBuses, queueCols } = config;
   const numStops = 2; // 2 bus stops visible at a time
 
   // Total passengers = numBuses * BUS_CAPACITY
   const totalPassengers = numBuses * BUS_CAPACITY;
-  const totalSlots = queueRows * queueCols;
+  // Ensure queue grid has enough slots for all passengers
+  const queueRows = Math.max(config.queueRows, Math.ceil(totalPassengers / queueCols));
 
   // Create a color distribution: each bus color gets BUS_CAPACITY passengers
   // We assign buses to colors round-robin
@@ -48,7 +47,7 @@ export function createBoard(config: StageConfig): BoardState {
     const row: (Passenger | null)[] = [];
     for (let c = 0; c < queueCols; c++) {
       if (pIdx < totalPassengers) {
-        row.push({ id: nextPassengerId++, colorIdx: colorList[pIdx] });
+        row.push({ id: nextId++, colorIdx: colorList[pIdx] });
         pIdx++;
       } else {
         row.push(null);
@@ -186,7 +185,7 @@ export function isGameOver(board: BoardState): boolean {
   // Game over if boarding area is full and no buses can take any passengers
   if (board.boardingArea.length < BOARDING_AREA_LIMIT) return false;
 
-  // Check if any bus at stops can take a passenger from boarding area
+  // Check if any active bus at stops can take a passenger from boarding area
   for (const bus of board.buses) {
     if (bus.departed) continue;
     if (bus.passengers.length >= BUS_CAPACITY) continue;
@@ -195,6 +194,14 @@ export function isGameOver(board: BoardState): boolean {
     }
   }
 
+  // Boarding area is full and no current bus matches.
+  // Check if future buses in the queue could match any boarding area passenger.
+  // If a future bus matches, we're not in deadlock — current buses can still
+  // depart once manually filled or timed out, allowing queue to advance.
+  // However, since buses only depart when full and boarding area is already full
+  // (can't add more passengers), the only way forward is if a current bus
+  // can be filled. Since we already checked that no current bus matches,
+  // this is a true deadlock.
   return true;
 }
 
