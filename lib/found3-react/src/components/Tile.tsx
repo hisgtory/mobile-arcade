@@ -58,6 +58,12 @@ const StyledTile = styled('button', {
   },
 });
 
+const PixelIcon = styled('img', {
+  imageRendering: 'pixelated',
+  '-webkit-image-rendering': 'pixelated',
+  pointerEvents: 'none',
+});
+
 const Shadow = styled('div', {
   position: 'absolute',
   borderRadius: '6px',
@@ -109,16 +115,11 @@ export const Tile: React.FC<TileProps> = ({ tileType, state, size, layer = 0, on
           }}
         />
       )}
-      <img
+      <PixelIcon
         src={`/assets/tiles/${imageKey}.png`}
         alt=""
         draggable={false}
-        style={{
-          width: iconSize,
-          height: iconSize,
-          imageRendering: 'pixelated',
-          pointerEvents: 'none',
-        }}
+        css={{ width: iconSize, height: iconSize }}
       />
     </StyledTile>
   );

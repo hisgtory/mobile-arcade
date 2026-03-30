@@ -7,6 +7,12 @@ import React from 'react';
 import { styled, keyframes } from '@stitches/react';
 import { MAX_SLOT, TILE_IMAGES, TILE_COLORS, type SlotItem } from '../types';
 
+const PixelIcon = styled('img', {
+  imageRendering: 'pixelated',
+  '-webkit-image-rendering': 'pixelated',
+  pointerEvents: 'none',
+});
+
 const slideIn = keyframes({
   '0%': { transform: 'translateY(-20px) scale(0.5)', opacity: 0 },
   '100%': { transform: 'translateY(0) scale(1)', opacity: 1 },
@@ -79,16 +85,11 @@ export const SlotBar: React.FC<SlotBarProps> = ({ items, removingType }) => {
         removing={isRemoving}
         css={{ backgroundColor: bgColor }}
       >
-        <img
+        <PixelIcon
           src={`/assets/tiles/${imageKey}.png`}
           alt=""
           draggable={false}
-          style={{
-            width: 28,
-            height: 28,
-            imageRendering: 'pixelated',
-            pointerEvents: 'none',
-          }}
+          css={{ width: 28, height: 28 }}
         />
       </Slot>
     );
