@@ -24,6 +24,10 @@ const ItemBarRoot = styled('div', {
   borderTop: '1px solid $gray200',
 });
 
+const ButtonWrap = styled('div', {
+  position: 'relative',
+});
+
 const ItemButton = styled('button', {
   display: 'flex',
   flexDirection: 'column',
@@ -54,21 +58,58 @@ const ItemLabel = styled('span', {
   lineHeight: 1,
 });
 
-function ItemBar({ onShuffle, onUndo, onHint }: { onShuffle: () => void; onUndo: () => void; onHint: () => void }) {
+const Badge = styled('span', {
+  position: 'absolute',
+  top: -4,
+  right: -4,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: 18,
+  height: 18,
+  borderRadius: 9,
+  fontFamily: '$body',
+  fontWeight: 700,
+  lineHeight: 1,
+  backgroundColor: '#F43F5E',
+  color: '#FFFFFF',
+  fontSize: 10,
+  padding: '0 4px',
+});
+
+interface ItemBarProps {
+  onShuffle: () => void;
+  onUndo: () => void;
+  onHint: () => void;
+  shuffleCount: number;
+  undoCount: number;
+  hintCount: number;
+}
+
+function ItemBar({ onShuffle, onUndo, onHint, shuffleCount, undoCount, hintCount }: ItemBarProps) {
   return (
     <ItemBarRoot>
-      <ItemButton onClick={onShuffle}>
-        <span style={{ fontSize: 20 }}>🔀</span>
-        <ItemLabel>Shuffle</ItemLabel>
-      </ItemButton>
-      <ItemButton onClick={onUndo}>
-        <span style={{ fontSize: 20 }}>↩️</span>
-        <ItemLabel>Undo</ItemLabel>
-      </ItemButton>
-      <ItemButton onClick={onHint}>
-        <span style={{ fontSize: 20 }}>💡</span>
-        <ItemLabel>Hint</ItemLabel>
-      </ItemButton>
+      <ButtonWrap>
+        <ItemButton onClick={onShuffle}>
+          <span style={{ fontSize: 20 }}>🔀</span>
+          <ItemLabel>Shuffle</ItemLabel>
+        </ItemButton>
+        <Badge>{shuffleCount}</Badge>
+      </ButtonWrap>
+      <ButtonWrap>
+        <ItemButton onClick={onUndo}>
+          <span style={{ fontSize: 20 }}>↩️</span>
+          <ItemLabel>Undo</ItemLabel>
+        </ItemButton>
+        <Badge>{undoCount}</Badge>
+      </ButtonWrap>
+      <ButtonWrap>
+        <ItemButton onClick={onHint}>
+          <span style={{ fontSize: 20 }}>💡</span>
+          <ItemLabel>Hint</ItemLabel>
+        </ItemButton>
+        <Badge>{hintCount}</Badge>
+      </ButtonWrap>
     </ItemBarRoot>
   );
 }

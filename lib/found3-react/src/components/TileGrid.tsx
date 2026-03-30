@@ -14,9 +14,9 @@ import { Tile } from './Tile';
 const GridContainer = styled('div', {
   position: 'relative',
   margin: '0 auto',
-  backgroundColor: '#e8eaed',
+  backgroundColor: '#c9cdd4',
   borderRadius: '12px',
-  boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.08)',
+  boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.12)',
 });
 
 interface TileGridProps {

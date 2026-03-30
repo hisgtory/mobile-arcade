@@ -10,6 +10,9 @@ import { MAX_SLOT, TILE_IMAGES, TILE_COLORS, type SlotItem } from '../types';
 const PixelIcon = styled('img', {
   imageRendering: 'pixelated',
   '-webkit-image-rendering': 'pixelated',
+  '@supports (-webkit-touch-callout: none)': {
+    imageRendering: '-webkit-optimize-contrast',
+  },
   pointerEvents: 'none',
 });
 

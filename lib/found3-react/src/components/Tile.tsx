@@ -72,6 +72,10 @@ const StyledTile = styled('button', {
 const PixelIcon = styled('img', {
   imageRendering: 'pixelated',
   '-webkit-image-rendering': 'pixelated',
+  // Safari fallback: -webkit-optimize-contrast gives nearest-neighbor on WebKit
+  '@supports (-webkit-touch-callout: none)': {
+    imageRendering: '-webkit-optimize-contrast',
+  },
   pointerEvents: 'none',
 });
 
@@ -94,8 +98,9 @@ export const Tile: React.FC<TileProps> = ({ tileType, state, size, layer = 0, on
   const bgColor = TILE_COLORS[tileType % TILE_COLORS.length];
   const isBlocked = state === 'blocked';
 
-  // Match Phaser: icon size = min(40, size * 0.75)
-  const iconSize = Math.min(40, size * 0.75);
+  // Match Phaser: iconSize = min(40*dpr, size*0.75)
+  // In CSS pixels, dpr is handled by the browser. Use size * 0.75 directly.
+  const iconSize = Math.floor(size * 0.75);
 
   // Match Phaser: inner size = size - 4 (due to 2px border on each side)
   const innerSize = size - 4;

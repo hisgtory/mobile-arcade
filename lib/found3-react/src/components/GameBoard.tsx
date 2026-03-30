@@ -36,12 +36,10 @@ const BASE_TILE_GAP_RATIO = 0.08;
 const Container = styled('div', {
   display: 'flex',
   flexDirection: 'column',
-  alignItems: 'center',
-  gap: '16px',
-  padding: '16px',
   width: '100%',
-  maxWidth: '400px',
-  margin: '0 auto',
+  height: '100%',
+  alignItems: 'center',
+  justifyContent: 'center',
   userSelect: 'none',
 });
 
@@ -92,14 +90,22 @@ export const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(
     const onGameOverRef = useRef(onGameOver);
     onGameOverRef.current = onGameOver;
 
-    // Tile size calculation — matches Phaser PlayScene exactly
+    // Tile size calculation — matches Phaser PlayScene (Scale.FIT logic)
+    // Use actual viewport width (minus padding) instead of hardcoded 360
+    const padding = 16;
+    const boardAvailW = Math.min(
+      typeof window !== 'undefined' ? window.innerWidth - padding * 2 : 360,
+      400,
+    );
+    // Estimate available board height: viewport minus HUD(~50) + SlotBar(~60) + ItemBar(~80) + padding
+    const boardAvailH = typeof window !== 'undefined' ? window.innerHeight - 220 : 480;
     const extraOffset = (config.layers - 1) * 0.5;
     const effectiveCols = config.cols + extraOffset;
     const effectiveRows = config.rows + extraOffset;
-    const maxBoardWidth = 360;
     const maxTileW =
-      maxBoardWidth / (effectiveCols + (effectiveCols - 1) * BASE_TILE_GAP_RATIO);
-    const maxTileH = 480 / (effectiveRows + (effectiveRows - 1) * BASE_TILE_GAP_RATIO);
+      boardAvailW / (effectiveCols + (effectiveCols - 1) * BASE_TILE_GAP_RATIO);
+    const maxTileH =
+      boardAvailH / (effectiveRows + (effectiveRows - 1) * BASE_TILE_GAP_RATIO);
     const maxCap = 70;
     const tileSize = Math.floor(Math.min(maxTileW, maxTileH, maxCap));
     const gap = Math.floor(tileSize * BASE_TILE_GAP_RATIO);
