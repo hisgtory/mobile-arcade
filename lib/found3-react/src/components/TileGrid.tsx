@@ -2,7 +2,7 @@
  * Tile grid — renders tiles using absolute positioning
  * Supports multi-layer overlapping (upper layers offset by 0.5 cells)
  *
- * Visual parity: dark board background (#f0f2f5) matching Phaser PlayScene
+ * Visual parity: dark board background (#e8eaed) matching Phaser PlayScene
  */
 
 import React from 'react';
@@ -26,6 +26,7 @@ interface TileGridProps {
   layers: number;
   tileSize: number;
   gap: number;
+  hintTileIds?: Set<string>;
   onTileTap: (tile: TileData) => void;
 }
 
@@ -36,6 +37,7 @@ export const TileGrid: React.FC<TileGridProps> = ({
   layers,
   tileSize,
   gap,
+  hintTileIds,
   onTileTap,
 }) => {
   const extraOffset = (layers - 1) * 0.5;
@@ -60,6 +62,7 @@ export const TileGrid: React.FC<TileGridProps> = ({
     >
       {sorted.map((tile) => {
         const blocked = isTileBlocked(tile, tiles);
+        const isHint = hintTileIds?.has(tile.id) ?? false;
         const left = tile.col * (tileSize + gap);
         const top = tile.row * (tileSize + gap);
 
@@ -75,7 +78,7 @@ export const TileGrid: React.FC<TileGridProps> = ({
           >
             <Tile
               tileType={tile.type}
-              state={blocked ? 'blocked' : 'active'}
+              state={blocked ? 'blocked' : isHint ? 'hint' : 'active'}
               size={tileSize}
               layer={tile.layer}
               onClick={() => onTileTap(tile)}

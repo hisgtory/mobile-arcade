@@ -2,9 +2,10 @@
  * Individual tile component — styled with Stitches
  * Visual parity with lib/found3/src/objects/Tile.ts:
  *   - Pastel bg rectangle with 2px #cccccc border (0.6 opacity)
- *   - Pixel-art PNG icon (not emoji)
+ *   - Pixel-art PNG icon (16×16 with pixelated rendering)
  *   - Shadow for upper layers (layer >= 1)
  *   - Blocked tiles stay fully visible (only interaction blocked)
+ *   - Hint state: scale bounce animation (magnet power-up)
  */
 
 import React from 'react';
@@ -15,6 +16,11 @@ const popIn = keyframes({
   '0%': { transform: 'scale(0)', opacity: 0 },
   '70%': { transform: 'scale(1.1)' },
   '100%': { transform: 'scale(1)', opacity: 1 },
+});
+
+const hintBounce = keyframes({
+  '0%, 100%': { transform: 'scale(1)' },
+  '50%': { transform: 'scale(1.2)' },
 });
 
 const StyledTile = styled('button', {
@@ -50,6 +56,11 @@ const StyledTile = styled('button', {
         transform: 'scale(0.9)',
         boxShadow: '0 0 0 3px #3b82f6',
       },
+      hint: {
+        // Magnet highlight: scale bounce (matches Phaser doMagnet tween)
+        animation: `${hintBounce} 0.4s ease-in-out 3`,
+        cursor: 'pointer',
+      },
     },
   },
 
@@ -72,7 +83,7 @@ const Shadow = styled('div', {
 
 interface TileProps {
   tileType: number;
-  state: 'active' | 'blocked' | 'selected';
+  state: 'active' | 'blocked' | 'selected' | 'hint';
   size: number;
   layer?: number;
   onClick?: () => void;
