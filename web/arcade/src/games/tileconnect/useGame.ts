@@ -24,6 +24,12 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const [remaining, setRemaining] = useState(0);
   const [total, setTotal] = useState(0);
 
+  // Stable refs for callbacks to avoid game re-creation on parent re-render
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
+
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return;
 
@@ -47,12 +53,12 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
     game.events.on('stage-clear', (data: { score: number; elapsedMs: number }) => {
       stageComplete({ stage, score: data.score, elapsedMs: data.elapsedMs, cleared: true });
-      onClear?.({ score: data.score, cleared: true, elapsedMs: data.elapsedMs });
+      onClearRef.current?.({ score: data.score, cleared: true, elapsedMs: data.elapsedMs });
     });
 
     game.events.on('game-over', (data: { score: number; elapsedMs: number }) => {
       stageComplete({ stage, score: data.score, elapsedMs: data.elapsedMs, cleared: false });
-      onGameOver?.({ score: data.score, cleared: false, elapsedMs: data.elapsedMs });
+      onGameOverRef.current?.({ score: data.score, cleared: false, elapsedMs: data.elapsedMs });
     });
 
     return () => {
@@ -61,7 +67,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
         gameRef.current = null;
       }
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   const doShuffle = () => {
     const scene = gameRef.current?.scene?.getScene('PlayScene') as any;

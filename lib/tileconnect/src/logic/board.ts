@@ -6,9 +6,9 @@ export function generateBoard(config: StageConfig): TileData[] {
   const { rows, cols, typeCount } = config;
   const total = rows * cols;
 
-  if (total % typeCount !== 0 || (total / typeCount) % 2 !== 0) {
+  if (total % 2 !== 0 || total % typeCount !== 0 || (total / typeCount) % 2 !== 0) {
     throw new Error(
-      `Invalid stage config: ${total} tiles / ${typeCount} types must divide evenly into pairs`,
+      `Invalid stage config: ${total} tiles with ${typeCount} types — total must be even, divisible by typeCount, and each type must have an even count`,
     );
   }
 
@@ -269,28 +269,38 @@ export function shuffleRemaining(
     }
   }
 
-  // Shuffle types
-  for (let i = types.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [types[i], types[j]] = [types[j], types[i]];
-  }
+  // Retry shuffle until a solvable layout is found (up to 20 attempts)
+  let tiles: TileData[] = [];
+  for (let attempt = 0; attempt < 20; attempt++) {
+    // Shuffle types (Fisher-Yates)
+    for (let i = types.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [types[i], types[j]] = [types[j], types[i]];
+    }
 
-  // Rebuild tiles
-  const tiles: TileData[] = [];
-  for (let k = 0; k < positions.length; k++) {
-    tiles.push({ type: types[k], row: positions[k].row, col: positions[k].col });
-  }
+    // Rebuild tiles
+    tiles = [];
+    for (let k = 0; k < positions.length; k++) {
+      tiles.push({ type: types[k], row: positions[k].row, col: positions[k].col });
+    }
 
-  // Update board in-place
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      board[r][c] = null;
+    // Update board in-place
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        board[r][c] = null;
+      }
+    }
+    for (const t of tiles) {
+      board[t.row][t.col] = t.type;
+    }
+
+    // Check if this layout has valid moves
+    if (hasValidMoves(board, rows, cols)) {
+      return tiles;
     }
   }
-  for (const t of tiles) {
-    board[t.row][t.col] = t.type;
-  }
 
+  // Return last attempt even if unsolvable (caller will handle game over)
   return tiles;
 }
 

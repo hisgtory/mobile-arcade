@@ -31,6 +31,38 @@ const StatValue = styled('span', {
   color: '$text',
 });
 
+const ToolBar = styled('div', {
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  gap: 16,
+  padding: '6px 16px',
+  paddingBottom: 'max(6px, env(safe-area-inset-bottom))',
+  backgroundColor: '$surface',
+  borderTop: '1px solid $gray100',
+});
+
+const ToolButton = styled('button', {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  padding: '10px 20px',
+  backgroundColor: '$white',
+  border: 'none',
+  borderRadius: 12,
+  cursor: 'pointer',
+  fontSize: 14,
+  fontWeight: 600,
+  color: '$gray600',
+  boxShadow: '0 2px 0 0 #D1D5DB, 0 3px 6px rgba(0,0,0,0.08)',
+  transition: 'transform 0.08s, box-shadow 0.08s',
+  '&:active': {
+    transform: 'translateY(2px)',
+    boxShadow: '0 0px 0 0 #D1D5DB, 0 1px 2px rgba(0,0,0,0.06)',
+  },
+});
+
 function formatTime(ms: number): string {
   const s = Math.floor(ms / 1000);
   const m = Math.floor(s / 60);
@@ -74,5 +106,23 @@ export function HUD({ stage, score, remaining, total, elapsedMs, combo }: HUDPro
         </StatBlock>
       )}
     </Container>
+  );
+}
+
+interface ItemBarProps {
+  onShuffle: () => void;
+  onHint: () => void;
+}
+
+export function ItemBar({ onShuffle, onHint }: ItemBarProps) {
+  return (
+    <ToolBar>
+      <ToolButton onClick={onHint}>
+        💡 Hint
+      </ToolButton>
+      <ToolButton onClick={onShuffle}>
+        🔀 Shuffle
+      </ToolButton>
+    </ToolBar>
   );
 }
