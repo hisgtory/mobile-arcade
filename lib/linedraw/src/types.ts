@@ -61,12 +61,17 @@ export function getStageConfig(stage: number): StageConfig {
   if (stage <= STAGE_DEFS.length) return STAGE_DEFS[stage - 1];
   // Beyond stage 10: 6×6 with scaling walls
   const wallCount = Math.min(5 + (stage - 10), 10);
-  const walls: number[] = [];
   const gridSize = 36; // 6×6
-  // Deterministic wall placement for stages beyond 10
-  for (let i = 0; i < wallCount; i++) {
-    const idx = ((i * 7 + stage * 3) % (gridSize - 1)) + 1; // avoid 0 (start), range 1..35
-    if (!walls.includes(idx)) walls.push(idx);
+  // Seed-based shuffle of all candidate indices (1..35, avoiding 0=start)
+  const candidates: number[] = [];
+  for (let i = 1; i < gridSize; i++) candidates.push(i);
+  // Deterministic shuffle using stage as seed
+  let seed = stage * 2654435761; // Knuth multiplicative hash
+  for (let i = candidates.length - 1; i > 0; i--) {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    const j = seed % (i + 1);
+    [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
   }
+  const walls = candidates.slice(0, wallCount);
   return { stage, cols: 6, rows: 6, walls, start: 0 };
 }

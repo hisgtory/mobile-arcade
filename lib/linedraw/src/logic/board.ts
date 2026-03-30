@@ -91,6 +91,8 @@ export function isWon(board: BoardState): boolean {
 
 // ─── Solvability (DFS Hamiltonian path check) ────────────
 
+const MAX_DFS_NODES = 100_000;
+
 function findValidStart(
   cols: number,
   rows: number,
@@ -126,7 +128,8 @@ function hasHamiltonianPath(
 ): boolean {
   const visited = new Set<number>();
   visited.add(start);
-  return dfsHamiltonian(cols, rows, grid, start, visited, total);
+  const counter = { count: 0 };
+  return dfsHamiltonian(cols, rows, grid, start, visited, total, counter);
 }
 
 function dfsHamiltonian(
@@ -136,8 +139,11 @@ function dfsHamiltonian(
   current: number,
   visited: Set<number>,
   total: number,
+  counter: { count: number },
 ): boolean {
   if (visited.size === total) return true;
+  if (counter.count >= MAX_DFS_NODES) return false;
+  counter.count++;
 
   const neighbors = getNeighbors(current, cols, rows);
   for (const n of neighbors) {
@@ -145,7 +151,7 @@ function dfsHamiltonian(
     if (visited.has(n)) continue;
 
     visited.add(n);
-    if (dfsHamiltonian(cols, rows, grid, n, visited, total)) {
+    if (dfsHamiltonian(cols, rows, grid, n, visited, total, counter)) {
       return true;
     }
     visited.delete(n);

@@ -63,10 +63,18 @@ export class PlayScene extends Phaser.Scene {
     this.drawBoard();
     this.emitState();
 
+    // Clear any existing listeners before registering (prevents duplication on restart)
+    this.input.removeAllListeners();
+
     // Input handlers
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => this.onPointerDown(p));
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => this.onPointerMove(p));
     this.input.on('pointerup', () => this.onPointerUp());
+
+    // Clean up on shutdown
+    this.events.once('shutdown', () => {
+      this.input.removeAllListeners();
+    });
   }
 
   // ─── Layout ───────────────────────────────────────────
