@@ -33,14 +33,17 @@ export function createBoard(config: StageConfig): BoardState {
 
 // ─── Piece Placement ─────────────────────────────────────
 
-/** Check if a piece can be placed at the given position offset */
+/**
+ * Check if a piece can be placed at the given position offset.
+ * Validates: in bounds, within silhouette, unoccupied.
+ */
 export function canPlace(
   board: BoardState,
-  piece: PieceDef,
+  cells: TriCell[],
   offsetRow: number,
   offsetCol: number,
 ): boolean {
-  for (const cell of piece.cells) {
+  for (const cell of cells) {
     const r = cell.row + offsetRow;
     const c = cell.col + offsetCol;
 
@@ -52,14 +55,6 @@ export function canPlace(
 
     // Already occupied by another piece
     if (board.grid[r][c] >= 0) return false;
-
-    // Triangle orientation must match:
-    // The piece cell (in its local coord) has an orientation based on (cell.row + cell.col) % 2
-    // The board cell at (r, c) has an orientation based on (r + c) % 2
-    // They must match for proper tessellation
-    const pieceUp = isUpTriangle(cell.row, cell.col);
-    const boardUp = isUpTriangle(r, c);
-    if (pieceUp !== boardUp) return false;
   }
 
   return true;
@@ -69,13 +64,14 @@ export function canPlace(
 export function placePiece(
   board: BoardState,
   piece: PieceDef,
+  cells: TriCell[],
   offsetRow: number,
   offsetCol: number,
 ): BoardState {
   const newGrid = board.grid.map((row) => [...row]);
   const placedCells: TriCell[] = [];
 
-  for (const cell of piece.cells) {
+  for (const cell of cells) {
     const r = cell.row + offsetRow;
     const c = cell.col + offsetCol;
     newGrid[r][c] = piece.id;
