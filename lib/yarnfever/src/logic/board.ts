@@ -116,23 +116,30 @@ function scramblePositions(nodes: NodePos[]): NodePos[] {
   const scrambled = nodes.map((n) => ({ ...n }));
   const margin = 0.1;
   const range = 0.8;
+  const minDist = 0.08;
+  const maxPasses = 10;
 
   for (const node of scrambled) {
     node.x = margin + Math.random() * range;
     node.y = margin + Math.random() * range;
   }
 
-  // Ensure no two nodes are too close
-  for (let i = 0; i < scrambled.length; i++) {
-    for (let j = i + 1; j < scrambled.length; j++) {
-      const dx = scrambled[i].x - scrambled[j].x;
-      const dy = scrambled[i].y - scrambled[j].y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 0.08) {
-        scrambled[j].x = margin + Math.random() * range;
-        scrambled[j].y = margin + Math.random() * range;
+  // Multi-pass: resolve overlapping nodes until none are too close
+  for (let pass = 0; pass < maxPasses; pass++) {
+    let hasOverlap = false;
+    for (let i = 0; i < scrambled.length; i++) {
+      for (let j = i + 1; j < scrambled.length; j++) {
+        const dx = scrambled[i].x - scrambled[j].x;
+        const dy = scrambled[i].y - scrambled[j].y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < minDist) {
+          scrambled[j].x = margin + Math.random() * range;
+          scrambled[j].y = margin + Math.random() * range;
+          hasOverlap = true;
+        }
       }
     }
+    if (!hasOverlap) break;
   }
 
   return scrambled;

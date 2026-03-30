@@ -3,17 +3,6 @@ export const DEFAULT_WIDTH = 390;
 export const DEFAULT_HEIGHT = 560;
 
 // ─── Colors ──────────────────────────────────────────────
-export const YARN_COLORS: readonly string[] = [
-  '#EF4444', // Red
-  '#3B82F6', // Blue
-  '#22C55E', // Green
-  '#EAB308', // Yellow
-  '#A855F7', // Purple
-  '#F97316', // Orange
-  '#EC4899', // Pink
-  '#06B6D4', // Cyan
-] as const;
-
 export const NODE_COLOR = '#374151';
 export const NODE_ACTIVE_COLOR = '#2563EB';
 export const EDGE_NORMAL_COLOR = '#9CA3AF';

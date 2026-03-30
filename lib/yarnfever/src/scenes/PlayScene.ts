@@ -84,18 +84,68 @@ export class PlayScene extends Phaser.Scene {
 
   // ─── Drawing ──────────────────────────────────────────
 
+  /** Full draw: creates node circles + edge graphics from scratch (used on create/restart) */
   private drawBoard() {
     // Clear previous
     this.nodeGraphics.forEach((n) => n.destroy());
     this.nodeGraphics = [];
-    this.edgeGraphics?.destroy();
+    if (!this.edgeGraphics) {
+      this.edgeGraphics = this.add.graphics();
+    }
+
+    const scale = this.dpr;
+    const nodeRadius = NODE_RADIUS * scale;
+
+    // Draw edges
+    this.redrawEdges();
+
+    // Create node circles
+    for (const node of this.board.nodes) {
+      const nodeColor = this.crossings === 0
+        ? EDGE_CLEAR_HEX
+        : (node.id === this.dragNode
+          ? NODE_ACTIVE_HEX
+          : NODE_COLOR_HEX);
+
+      const circle = this.add.circle(node.x, node.y, nodeRadius, nodeColor, 1);
+      circle.setStrokeStyle(2 * scale, 0xffffff);
+      circle.setDepth(10);
+      this.nodeGraphics.push(circle);
+    }
+  }
+
+  /** Lightweight update: repositions existing node circles + redraws edges only */
+  private updateBoard() {
+    const crossingEdges = getCrossingEdges(this.board.nodes, this.board.edges);
+
+    // Redraw edges (clear + stroke is cheap)
+    this.redrawEdges();
+
+    // Update node positions and colors without destroy/recreate
+    for (let i = 0; i < this.board.nodes.length; i++) {
+      const node = this.board.nodes[i];
+      const circle = this.nodeGraphics[i];
+      if (!circle) continue;
+
+      circle.setPosition(node.x, node.y);
+
+      const nodeColor = this.crossings === 0
+        ? EDGE_CLEAR_HEX
+        : (node.id === this.dragNode
+          ? NODE_ACTIVE_HEX
+          : NODE_COLOR_HEX);
+      circle.setFillStyle(nodeColor, 1);
+    }
+  }
+
+  /** Redraw all edge lines on the shared Graphics object */
+  private redrawEdges() {
+    const gfx = this.edgeGraphics;
+    if (!gfx) return;
+    gfx.clear();
 
     const scale = this.dpr;
     const crossingEdges = getCrossingEdges(this.board.nodes, this.board.edges);
-
-    // Draw edges
-    const gfx = this.add.graphics();
-    this.edgeGraphics = gfx;
 
     for (let i = 0; i < this.board.edges.length; i++) {
       const edge = this.board.edges[i];
@@ -117,22 +167,6 @@ export class PlayScene extends Phaser.Scene {
       gfx.moveTo(from.x, from.y);
       gfx.lineTo(to.x, to.y);
       gfx.strokePath();
-    }
-
-    // Draw nodes
-    const nodeRadius = NODE_RADIUS * scale;
-
-    for (const node of this.board.nodes) {
-      const nodeColor = this.crossings === 0
-        ? EDGE_CLEAR_HEX
-        : (node.id === this.dragNode
-          ? NODE_ACTIVE_HEX
-          : NODE_COLOR_HEX);
-
-      const circle = this.add.circle(node.x, node.y, nodeRadius, nodeColor, 1);
-      circle.setStrokeStyle(2 * scale, 0xffffff);
-      circle.setDepth(10);
-      this.nodeGraphics.push(circle);
     }
   }
 
@@ -162,7 +196,7 @@ export class PlayScene extends Phaser.Scene {
       if (closest !== null) {
         this.dragNode = closest;
         this.phase = 'dragging';
-        this.drawBoard();
+        this.updateBoard();
       }
     });
 
@@ -180,7 +214,7 @@ export class PlayScene extends Phaser.Scene {
 
       // Recalculate crossings
       this.crossings = countCrossings(this.board.nodes, this.board.edges);
-      this.drawBoard();
+      this.updateBoard();
       this.emitState();
     });
 
@@ -194,7 +228,7 @@ export class PlayScene extends Phaser.Scene {
       this.dragNode = null;
       this.phase = 'idle';
       this.crossings = countCrossings(this.board.nodes, this.board.edges);
-      this.drawBoard();
+      this.updateBoard();
       this.emitState();
 
       // Check win
