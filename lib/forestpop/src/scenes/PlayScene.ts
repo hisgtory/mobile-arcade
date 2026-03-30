@@ -171,10 +171,10 @@ export class PlayScene extends Phaser.Scene {
     this.phase = GamePhase.ANIMATING;
     this.clearHighlight();
 
-    // Consume a move
+    // Consume a move and reset combo for this tap
     this.movesLeft--;
     this.movesUsed++;
-    this.combo++;
+    this.combo = 1;
     this.emitMoves();
 
     // Calculate score
