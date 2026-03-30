@@ -6,14 +6,12 @@ import {
   type BoardState,
   type GameConfig,
 } from '../types';
-import { createBoard, toggleCell, isWon, isRowComplete, isColComplete } from '../logic/board';
+import { createBoard, toggleCell, isWon, hasErrors, isRowComplete, isColComplete } from '../logic/board';
 import { getStageConfig } from '../logic/stage';
 
-const BG_COLOR = 0xf0f2f5;
 const GRID_LINE_COLOR = 0xd1d5db;
 const FILLED_COLOR = 0x1f2937;
 const MARKED_COLOR = 0xd1d5db;
-const CELL_HOVER_COLOR = 0xe5e7eb;
 const CLUE_COLOR = '#6B7280';
 const CLUE_DONE_COLOR = '#D1D5DB';
 
@@ -41,9 +39,9 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
+  init(data?: { config?: GameConfig; dpr?: number }) {
+    this.config = data?.config ?? this.game.registry.get('config') ?? {};
+    this.dpr = data?.dpr ?? this.game.registry.get('dpr') ?? 1;
   }
 
   create() {
@@ -105,7 +103,6 @@ export class PlayScene extends Phaser.Scene {
     this.gridGfx.fillRect(gx, gy, cs * cols, cs * rows);
 
     // Grid lines
-    this.gridGfx.lineStyle(1, GRID_LINE_COLOR, 1);
     for (let r = 0; r <= rows; r++) {
       const lw = r % 5 === 0 ? 2 : 1;
       this.gridGfx.lineStyle(lw, r % 5 === 0 ? 0x9ca3af : GRID_LINE_COLOR, 1);
@@ -173,8 +170,7 @@ export class PlayScene extends Phaser.Scene {
     const gx = this.gridOffsetX;
     const gy = this.gridOffsetY;
     const cs = this.cellSize;
-    const scale = this.dpr;
-    const fontSize = Math.max(8, Math.min(14, cs * 0.4)) * (scale > 1 ? 1 : 1);
+    const fontSize = Math.max(10, Math.min(14, cs * 0.4));
 
     // Row clues (left of grid)
     for (let r = 0; r < rows; r++) {
@@ -365,6 +361,8 @@ export class PlayScene extends Phaser.Scene {
     const { rows, cols } = this.board.puzzle;
     const totalFilled = this.board.puzzle.solution.flat().filter((v) => v === 1).length;
     let correctFilled = 0;
+    const errors = hasErrors(this.board);
+    const errorCount = errors.length;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         if (this.board.grid[r][c] === CellState.FILLED && this.board.puzzle.solution[r][c] === 1) {
@@ -372,9 +370,10 @@ export class PlayScene extends Phaser.Scene {
         }
       }
     }
-    const progress = Math.floor((correctFilled / totalFilled) * 100);
+    const progress = Math.max(0, Math.floor(((correctFilled - errorCount) / totalFilled) * 100));
 
     this.game.events.emit('moves-update', { moves: this.moves });
     this.game.events.emit('progress-update', { progress });
+    this.game.events.emit('errors-update', { errors: errorCount });
   }
 }

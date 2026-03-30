@@ -351,10 +351,10 @@ function NonogramStageRoute() {
 }
 
 function NonogramPlaying({ stage, onClear }: { stage: number; onClear: (r: NonogramResult) => void }) {
-  const { containerRef, moves, progress, doRestart } = useNonogramGame({ stage, onClear });
+  const { containerRef, moves, progress, errors, doRestart } = useNonogramGame({ stage, onClear });
   return (
     <PlayLayout>
-      <NonogramHUD stage={stage} moves={moves} progress={progress} onRestart={doRestart} />
+      <NonogramHUD stage={stage} moves={moves} progress={progress} errors={errors} onRestart={doRestart} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>
   );

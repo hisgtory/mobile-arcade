@@ -21,12 +21,12 @@ export function createGame(
       height: DEFAULT_HEIGHT * dpr,
     },
     render: { antialias: true, roundPixels: true },
-    scene: [PlayScene],
+    scene: [],
   });
 
-  (game as any).__nonogramConfig = config;
-  (game as any).__dpr = dpr;
-  game.scene.start('PlayScene', { config, dpr });
+  game.registry.set('config', config);
+  game.registry.set('dpr', dpr);
+  game.scene.add('PlayScene', PlayScene, true);
 
   return game;
 }

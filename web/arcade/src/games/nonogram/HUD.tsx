@@ -35,6 +35,7 @@ interface HUDProps {
   stage: number;
   moves: number;
   progress: number;
+  errors?: number;
   puzzleName?: string;
   onRestart?: () => void;
 }
@@ -67,7 +68,7 @@ const ProgressFill = styled('div', {
   transition: 'width 0.3s ease',
 });
 
-export function HUD({ stage, moves, progress, puzzleName, onRestart }: HUDProps) {
+export function HUD({ stage, moves, progress, errors = 0, puzzleName, onRestart }: HUDProps) {
   return (
     <Container>
       <StatBlock>
@@ -84,6 +85,12 @@ export function HUD({ stage, moves, progress, puzzleName, onRestart }: HUDProps)
         <StatLabel>Moves</StatLabel>
         <StatValue>{moves}</StatValue>
       </StatBlock>
+      {errors > 0 && (
+        <StatBlock>
+          <StatLabel>Errors</StatLabel>
+          <StatValue css={{ color: '#EF4444' }}>{errors}</StatValue>
+        </StatBlock>
+      )}
       <StatBlock>
         <StatLabel>Progress</StatLabel>
         <ProgressBar>

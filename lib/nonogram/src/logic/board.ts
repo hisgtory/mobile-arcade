@@ -68,24 +68,6 @@ export function toggleCell(grid: CellState[][], row: number, col: number): CellS
   return newGrid;
 }
 
-/** Direct fill: set cell to FILLED if empty */
-export function fillCell(grid: CellState[][], row: number, col: number): CellState[][] {
-  const newGrid = grid.map((r) => [...r]);
-  if (newGrid[row][col] === CellState.EMPTY) {
-    newGrid[row][col] = CellState.FILLED;
-  }
-  return newGrid;
-}
-
-/** Direct mark: set cell to MARKED if empty */
-export function markCell(grid: CellState[][], row: number, col: number): CellState[][] {
-  const newGrid = grid.map((r) => [...r]);
-  if (newGrid[row][col] === CellState.EMPTY) {
-    newGrid[row][col] = CellState.MARKED;
-  }
-  return newGrid;
-}
-
 // ─── Line Check ──────────────────────────────────────────
 
 /** Check if a row's filled cells match the clue */
