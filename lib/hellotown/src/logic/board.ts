@@ -39,12 +39,24 @@ export function createBoard(config: StageConfig): Board {
     board[cell.row][cell.col] = Math.floor(Math.random() * startLevels);
   }
 
-  // Ensure there's at least one mergeable pair
+  // Ensure there's at least one mergeable pair (adjacent cells with same level)
   if (!hasMergeablePair(board)) {
-    // Force a pair
-    if (itemCount >= 2) {
-      const level = board[allCells[0].row][allCells[0].col];
-      board[allCells[1].row][allCells[1].col] = level;
+    // Find two adjacent occupied cells and force them to the same level
+    let forced = false;
+    for (let r = 0; r < rows && !forced; r++) {
+      for (let c = 0; c < cols && !forced; c++) {
+        if (board[r][c] === EMPTY) continue;
+        // Check right neighbor
+        if (c + 1 < cols && board[r][c + 1] !== EMPTY) {
+          board[r][c + 1] = board[r][c];
+          forced = true;
+        }
+        // Check bottom neighbor
+        else if (r + 1 < rows && board[r + 1][c] !== EMPTY) {
+          board[r + 1][c] = board[r][c];
+          forced = true;
+        }
+      }
     }
   }
 

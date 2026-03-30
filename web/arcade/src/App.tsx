@@ -36,6 +36,7 @@ import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 import { ClearScreen as HelloTownClear } from './games/hellotown/ClearScreen';
 import { HUD as HelloTownHUD } from './games/hellotown/HUD';
 import { useGame as useHelloTownGame, type GameResult as HelloTownResult } from './games/hellotown/useGame';
+import { TOTAL_STAGES as HELLOTOWN_TOTAL_STAGES } from '@arcade/lib-hellotown';
 
 const PlayLayout = styled('div', {
   width: '100%',
@@ -347,7 +348,7 @@ function HelloTownStageRoute() {
   const handleHome = useCallback(() => navigate('/games/hellotown/v1', { replace: true }), [navigate]);
 
   if (screen === 'clear' && gameResult) {
-    return <HelloTownClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+    return <HelloTownClear result={gameResult} stage={stage} totalStages={HELLOTOWN_TOTAL_STAGES} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
   }
 
   return <HelloTownPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;

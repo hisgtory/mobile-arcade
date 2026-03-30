@@ -15,6 +15,7 @@ import { getStageConfig } from '../logic/stage';
 import {
   createBoard,
   canMerge,
+  isAdjacent,
   executeMerge,
   applyGravity,
   hasMergeablePair,
@@ -63,11 +64,11 @@ export class PlayScene extends Phaser.Scene {
 
   init(data: { stage?: number; gameConfig?: GameConfig }): void {
     this.stageNum = data?.stage ?? 1;
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__hellotownConfig;
+    this.gameConfig = data?.gameConfig ?? this.game.registry.get('hellotownConfig');
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr: number = this.game.registry.get('dpr') || 1;
     const { width, height } = this.scale;
 
     // Reset state
@@ -140,6 +141,9 @@ export class PlayScene extends Phaser.Scene {
 
     // Setup input
     this.setupInput();
+
+    // Bind shutdown for cleanup
+    this.events.on('shutdown', this.shutdown, this);
 
     // Emit initial state
     this.maxLevel = getMaxLevel(this.board);
@@ -323,8 +327,8 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
 
-    // Case 2: Move to empty cell
-    if (this.board[to.row][to.col] === EMPTY) {
+    // Case 2: Move to empty cell (must be adjacent)
+    if (this.board[to.row][to.col] === EMPTY && isAdjacent(from, to)) {
       // Consume a move
       this.movesLeft--;
       this.movesUsed++;
@@ -436,6 +440,10 @@ export class PlayScene extends Phaser.Scene {
   // ─── UTILS ──────────────────────────────────────────────
 
   shutdown(): void {
+    this.input.off('pointerdown');
+    this.input.off('pointermove');
+    this.input.off('pointerup');
+    this.events.off('shutdown', this.shutdown, this);
     this.itemGrid = [];
     this.gridBgs = [];
     this.highlightGraphics?.destroy();

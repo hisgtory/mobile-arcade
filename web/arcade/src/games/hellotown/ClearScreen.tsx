@@ -79,16 +79,21 @@ const Button = styled('button', {
 interface ClearScreenProps {
   result: GameResult;
   stage: number;
+  totalStages: number;
   onNext: () => void;
   onRetry: () => void;
   onHome: () => void;
 }
 
-export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScreenProps) {
+export function ClearScreen({ result, stage, totalStages, onNext, onRetry, onHome }: ClearScreenProps) {
+  const isLastStage = stage >= totalStages;
+
   return (
     <Container>
       <Title cleared={result.cleared}>
-        {result.cleared ? '🏆 Stage Clear!' : '😔 Game Over'}
+        {result.cleared
+          ? isLastStage ? '🎉 All Clear!' : '🏆 Stage Clear!'
+          : '😔 Game Over'}
       </Title>
       <StatsCard>
         <StatRow>
@@ -101,11 +106,14 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
         </StatRow>
       </StatsCard>
       <ButtonGroup>
-        {result.cleared ? (
+        {result.cleared && !isLastStage ? (
           <Button variant="primary" onClick={onNext}>Next Stage</Button>
-        ) : (
+        ) : !result.cleared ? (
           <Button variant="primary" onClick={onRetry}>Retry</Button>
-        )}
+        ) : null}
+        <Button variant="secondary" onClick={onRetry}>
+          {result.cleared && isLastStage ? 'Play Again' : 'Retry'}
+        </Button>
         <Button variant="secondary" onClick={onHome}>Home</Button>
       </ButtonGroup>
     </Container>

@@ -13,6 +13,8 @@ const STAGES: StageConfig[] = [
   { stage: 10, rows: 6, cols: 6, maxMoves: 25, targetLevel: 8, startLevels: 4, initialItems: 30 },
 ];
 
+export const TOTAL_STAGES = STAGES.length;
+
 export function getStageConfig(stageNum: number): StageConfig {
   const n = Number.isFinite(stageNum) ? stageNum : 1;
   const idx = Math.max(0, Math.min(n - 1, STAGES.length - 1));
