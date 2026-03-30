@@ -195,13 +195,9 @@ export function isGameOver(board: BoardState): boolean {
   }
 
   // Boarding area is full and no current bus matches.
-  // Check if future buses in the queue could match any boarding area passenger.
-  // If a future bus matches, we're not in deadlock — current buses can still
-  // depart once manually filled or timed out, allowing queue to advance.
-  // However, since buses only depart when full and boarding area is already full
-  // (can't add more passengers), the only way forward is if a current bus
-  // can be filled. Since we already checked that no current bus matches,
-  // this is a true deadlock.
+  // Since buses only depart when full (BUS_CAPACITY passengers of matching color),
+  // and the boarding area is at capacity (no new passengers can be added from the queue),
+  // there is no way to fill the current non-matching buses. This is a true deadlock.
   return true;
 }
 
