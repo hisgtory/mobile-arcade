@@ -109,6 +109,17 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'found3-react',
+    name: 'Found 3 (React)',
+    description: 'React version — performance comparison',
+    icon: '🔍',
+    category: 'puzzle',
+    color: '#F59E0B',
+    webPath: '/games/found3-react/v1',
+    stageCount: 5,
+    isNew: true,
+  },
+  {
     id: 'blockpuzzle',
     name: 'Block Puzzle',
     description: 'Jewel block placement puzzle!',
