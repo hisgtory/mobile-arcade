@@ -1,48 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { GameBoard } from '@arcade/lib-found3-react';
+import { GameBoard, type GameBoardHandle } from '@arcade/lib-found3-react';
 import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { StageMap, type StageInfo } from '../../components/StageMap';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { styled } from '../../styles/stitches.config';
 import { registerRoutes } from '../../router';
 import { HUD } from './HUD';
-import { useGame, type GameResult, type SlotItem } from './useGame';
+import { useGame, haptic, type GameResult } from './useGame';
 
 const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, cleared: false }));
-
-/* ---------- SlotBar ---------- */
-
-const SlotBarRoot = styled('div', {
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-  gap: 6,
-  padding: '8px 12px',
-  backgroundColor: '$surface',
-  borderBottom: '1px solid $gray200',
-});
-
-const SlotCell = styled('div', {
-  width: 44,
-  height: 44,
-  borderRadius: 10,
-  border: '2px solid $gray200',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
-});
-
-function SlotBar({ items }: { items: SlotItem[] }) {
-  const slots = Array.from({ length: 7 }, (_, i) => items[i] ?? null);
-  return (
-    <SlotBarRoot>
-      {slots.map((item, i) => (
-        <SlotCell key={i} style={item ? { backgroundColor: item.color } : undefined} />
-      ))}
-    </SlotBarRoot>
-  );
-}
 
 /* ---------- ItemBar ---------- */
 
@@ -181,10 +148,10 @@ function Found3ReactStageRoute() {
 }
 
 function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: GameResult) => void; onGameOver: (r: GameResult) => void }) {
+  const boardRef = useRef<GameBoardHandle>(null);
   const {
-    gameState, onTileSelect, onMatch, onStateUpdate,
+    gameState, onStateUpdate,
     onClear: handleClear, onGameOver: handleGameOver,
-    doShuffle, doUndo, doHint,
   } = useGame({ stage, onClear, onGameOver });
 
   return (
@@ -196,18 +163,19 @@ function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onC
         totalTiles={gameState.totalTiles}
         score={gameState.score}
       />
-      <SlotBar items={gameState.slotItems} />
-      <div style={{ flex: 1, overflow: 'hidden' }}>
-        <GameBoard
-          stage={stage}
-          onTileSelect={onTileSelect}
-          onMatch={onMatch}
-          onStateUpdate={onStateUpdate}
-          onClear={handleClear}
-          onGameOver={handleGameOver}
-        />
-      </div>
-      <ItemBar onShuffle={doShuffle} onUndo={doUndo} onHint={doHint} />
+      <GameBoard
+        ref={boardRef}
+        stage={stage}
+        haptic={haptic}
+        onStateUpdate={onStateUpdate}
+        onClear={handleClear}
+        onGameOver={handleGameOver}
+      />
+      <ItemBar
+        onShuffle={() => boardRef.current?.doShuffle()}
+        onUndo={() => boardRef.current?.doUndo()}
+        onHint={() => boardRef.current?.doMagnet()}
+      />
     </PlayLayout>
   );
 }

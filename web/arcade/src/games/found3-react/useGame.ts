@@ -1,15 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
 import { stageComplete, haptic } from '../../utils/bridge';
 
+export { haptic };
+
 export interface GameResult {
   score: number;
   elapsedMs: number;
   cleared: boolean;
-}
-
-export interface SlotItem {
-  type: number;
-  color: string;
 }
 
 interface GameState {
@@ -17,7 +14,6 @@ interface GameState {
   elapsedMs: number;
   remainingTiles: number;
   totalTiles: number;
-  slotItems: SlotItem[];
 }
 
 interface UseGameOptions {
@@ -37,16 +33,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     elapsedMs: 0,
     remainingTiles: 0,
     totalTiles: 0,
-    slotItems: [],
   });
-
-  const handleTileSelect = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const handleMatch = useCallback(() => {
-    haptic('slot-matched');
-  }, []);
 
   const handleStateUpdate = useCallback((state: GameState) => {
     setGameState({
@@ -54,7 +41,6 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
       elapsedMs: state.elapsedMs ?? 0,
       remainingTiles: state.remainingTiles ?? 0,
       totalTiles: state.totalTiles ?? 0,
-      slotItems: state.slotItems ?? [],
     });
   }, []);
 
@@ -69,27 +55,10 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     onGameOverRef.current?.({ ...result, cleared: false });
   }, [stage]);
 
-  const doShuffle = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const doUndo = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const doHint = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
   return {
     gameState,
-    onTileSelect: handleTileSelect,
-    onMatch: handleMatch,
     onStateUpdate: handleStateUpdate,
     onClear: handleClear,
     onGameOver: handleGameOver,
-    doShuffle,
-    doUndo,
-    doHint,
   };
 }
