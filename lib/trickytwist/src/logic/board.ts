@@ -96,9 +96,17 @@ function generateCount(gridSize: number): Puzzle {
 
   // Generate choices (one correct, others wrong)
   const wrongChoices = new Set<number>();
-  while (wrongChoices.size < 3) {
-    const w = targetCount + randInt(-2, 2);
+  let guard = 0;
+  while (wrongChoices.size < 3 && guard < 100) {
+    guard++;
+    const w = targetCount + randInt(-5, 5);
     if (w !== targetCount && w > 0) wrongChoices.add(w);
+  }
+  // Fallback: fill remaining with sequential values if range was too narrow
+  let fallback = targetCount + 1;
+  while (wrongChoices.size < 3) {
+    if (fallback !== targetCount) wrongChoices.add(fallback);
+    fallback++;
   }
   const choices = shuffle([targetCount, ...Array.from(wrongChoices)]);
 
@@ -180,9 +188,17 @@ function generateSequence(_gridSize: number): Puzzle {
 
   // Generate wrong choices
   const wrongChoices = new Set<number>();
-  while (wrongChoices.size < 3) {
-    const w = seq.next + randInt(-5, 5);
+  let guard = 0;
+  while (wrongChoices.size < 3 && guard < 100) {
+    guard++;
+    const w = seq.next + randInt(-10, 10);
     if (w !== seq.next && w > 0) wrongChoices.add(w);
+  }
+  // Fallback: fill remaining with sequential values if range was too narrow
+  let fallback = seq.next + 1;
+  while (wrongChoices.size < 3) {
+    if (fallback !== seq.next) wrongChoices.add(fallback);
+    fallback++;
   }
   const choices = shuffle([seq.next, ...Array.from(wrongChoices)]);
 
@@ -201,23 +217,25 @@ function generateSequence(_gridSize: number): Puzzle {
  * Trick: the grid looks symmetric but one cell is off
  */
 function generateMirror(gridSize: number): Puzzle {
+  // Mirror requires gridSize >= 4 to have meaningful puzzles
+  const safeGridSize = Math.max(gridSize, 4);
   const grid: number[][] = [];
-  const half = Math.ceil(gridSize / 2);
+  const half = Math.ceil(safeGridSize / 2);
 
   // Create symmetric grid
-  for (let r = 0; r < gridSize; r++) {
+  for (let r = 0; r < safeGridSize; r++) {
     grid[r] = [];
     for (let c = 0; c < half; c++) {
       const tile = randInt(0, 5);
       grid[r][c] = tile;
-      grid[r][gridSize - 1 - c] = tile;
+      grid[r][safeGridSize - 1 - c] = tile;
     }
   }
 
   // Break symmetry at one point
-  const breakRow = randInt(0, gridSize - 1);
-  const breakCol = randInt(0, Math.floor(gridSize / 2) - 1);
-  const mirrorCol = gridSize - 1 - breakCol;
+  const breakRow = randInt(0, safeGridSize - 1);
+  const breakCol = randInt(0, Math.floor(safeGridSize / 2) - 1);
+  const mirrorCol = safeGridSize - 1 - breakCol;
 
   // Change the mirror side
   let newTile = grid[breakRow][mirrorCol];
@@ -229,7 +247,7 @@ function generateMirror(gridSize: number): Puzzle {
   return {
     type: 'mirror',
     grid,
-    answer: breakRow * gridSize + mirrorCol,
+    answer: breakRow * safeGridSize + mirrorCol,
     question: 'Find the one that breaks symmetry!',
     twist: 'The grid should be a mirror — one cell is wrong',
   };

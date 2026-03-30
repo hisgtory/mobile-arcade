@@ -4,10 +4,8 @@
 
 import Phaser from 'phaser';
 import { PlayScene } from './scenes/PlayScene';
+import { DEFAULT_WIDTH, DEFAULT_HEIGHT } from './types';
 import type { GameConfig } from './types';
-
-const DEFAULT_WIDTH = 390;
-const DEFAULT_HEIGHT = 560;
 
 export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Game {
   const startStage = config?.stage ?? 1;
@@ -31,9 +29,6 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
     },
     scene: [PlayScene],
   });
-
-  (game as any).__trickytwistConfig = config;
-  (game as any).__dpr = dpr;
 
   game.scene.start('PlayScene', { config: { stage: startStage }, dpr });
 
