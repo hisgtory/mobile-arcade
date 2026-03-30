@@ -46,14 +46,14 @@ const ActionBtn = styled('button', {
 interface HUDProps {
   stage: number;
   score: number;
-  moves: number;
   matchesLeft: number;
+  shuffleNotice?: boolean;
   onShuffle?: () => void;
   onHint?: () => void;
   onRestart?: () => void;
 }
 
-export function HUD({ stage, score, moves, matchesLeft, onShuffle, onHint, onRestart }: HUDProps) {
+export function HUD({ stage, score, matchesLeft, shuffleNotice, onShuffle, onHint, onRestart }: HUDProps) {
   return (
     <Container>
       <StatBlock>
@@ -68,7 +68,12 @@ export function HUD({ stage, score, moves, matchesLeft, onShuffle, onHint, onRes
         <StatLabel>Score</StatLabel>
         <StatValue>{score.toLocaleString()}</StatValue>
       </StatBlock>
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {shuffleNotice && (
+          <span style={{ fontSize: 12, color: '#f59e0b', fontWeight: 600 }}>
+            No moves — shuffling…
+          </span>
+        )}
         <ActionBtn onClick={onHint}>Hint</ActionBtn>
         <ActionBtn onClick={onShuffle}>Shuffle</ActionBtn>
         <ActionBtn onClick={onRestart}>↻</ActionBtn>

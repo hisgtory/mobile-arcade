@@ -309,9 +309,9 @@ function MahjongMatchStageRoute() {
   }, []);
   const handleNext = useCallback(() => {
     navigate(`/games/mahjong-match/v1/stage/${stage + 1}`, { replace: true });
-    setPlayKey((k) => k + 1); setScreen('playing');
+    setPlayKey((k) => k + 1); setScreen('playing'); setGameResult(null);
   }, [navigate, stage]);
-  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); setGameResult(null); }, []);
   const handleHome = useCallback(() => navigate('/games/mahjong-match/v1', { replace: true }), [navigate]);
 
   if (screen === 'clear' && gameResult) {
@@ -322,10 +322,10 @@ function MahjongMatchStageRoute() {
 }
 
 function MahjongMatchPlaying({ stage, onClear }: { stage: number; onClear: (r: MahjongMatchResult) => void }) {
-  const { containerRef, score, moves, matchesLeft, doShuffle, doHint, doRestart } = useMahjongMatchGame({ stage, onClear });
+  const { containerRef, score, matchesLeft, shuffleNotice, doShuffle, doHint, doRestart } = useMahjongMatchGame({ stage, onClear });
   return (
     <PlayLayout>
-      <MahjongMatchHUD stage={stage} score={score} moves={moves} matchesLeft={matchesLeft} onShuffle={doShuffle} onHint={doHint} onRestart={doRestart} />
+      <MahjongMatchHUD stage={stage} score={score} matchesLeft={matchesLeft} shuffleNotice={shuffleNotice} onShuffle={doShuffle} onHint={doHint} onRestart={doRestart} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>
   );

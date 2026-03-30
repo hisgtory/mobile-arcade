@@ -73,6 +73,8 @@ export class PlayScene extends Phaser.Scene {
     this.comboCount = 0;
     this.tileSprites.clear();
 
+    this.events.on('shutdown', this.shutdown, this);
+
     this.cacheGridBounds();
     this.createEmojiTextures();
     this.drawBoard();
@@ -417,7 +419,17 @@ export class PlayScene extends Phaser.Scene {
   /** Reshuffle remaining tiles, guaranteeing at least one valid match. */
   public shuffle() {
     if (this.phase !== 'idle') return;
-    this.board.tiles = shuffleBoard(this.board.tiles);
+    const result = shuffleBoard(this.board.tiles);
+    if (result === null) {
+      // Shuffle impossible – game over
+      this.game.events.emit('game-over', {
+        score: this.score,
+        moves: this.moves,
+        stage: this.config.stage ?? 1,
+      });
+      return;
+    }
+    this.board.tiles = result;
     this.selectedTile = null;
     this.drawBoard();
     this.emitState();
@@ -461,6 +473,7 @@ export class PlayScene extends Phaser.Scene {
   /* ────── Cleanup ────── */
 
   shutdown(): void {
+    this.events.off('shutdown', this.shutdown, this);
     this.tileSprites.forEach((c) => c.destroy());
     this.tileSprites.clear();
     this.selectedTile = null;

@@ -10,10 +10,10 @@ interface LayerDef {
 /**
  * Return rectangular grid dimensions for each layer.
  * Bottom layer is the largest; each subsequent layer is smaller and centred.
- * Total tile count across all layers equals the stage's tilesPerLayer target.
+ * Total tile count across all layers equals the stage's totalTiles target.
  */
 function getLayerDefs(config: StageConfig): LayerDef[] {
-  const t = config.tilesPerLayer;
+  const t = config.totalTiles;
   const l = config.layers;
 
   if (l === 3 && t <= 36) {
@@ -60,16 +60,22 @@ function getLayerDefs(config: StageConfig): LayerDef[] {
   const defs: LayerDef[] = [];
   let remaining = t;
   for (let z = 0; z < l; z++) {
+    if (remaining <= 0) break;
     const scale = (l - z) / l;
     const baseCols = Math.max(2, Math.round(8 * scale));
     const baseRows = Math.max(1, Math.round(5 * scale));
     let count = baseCols * baseRows;
     if (count > remaining) count = remaining;
     if (count % 2 !== 0 && count > 1) count--;
+    if (count <= 0) break;
     const cols = Math.max(1, Math.round(Math.sqrt(count * 1.6)));
     const rows = Math.max(1, Math.round(count / cols));
     defs.push({ cols, rows });
     remaining -= cols * rows;
+  }
+  // Ensure at least one layer
+  if (defs.length === 0) {
+    defs.push({ cols: 2, rows: 1 });
   }
   // Fix parity – total must be even
   const total = defs.reduce((s, d) => s + d.cols * d.rows, 0);
@@ -126,12 +132,13 @@ export function isFree(tile: TileData, tiles: TileData[]): boolean {
 
   const active = tiles.filter((t) => !t.removed && t.id !== tile.id);
 
-  // Blocked from above? Any active tile at z+1 covering this position.
+  // Blocked from above? Any active tile at z+1 that overlaps this position.
+  // Two tiles overlap when their grid distance is less than 1 in both axes.
   const hasAbove = active.some(
     (t) =>
       t.gridZ === tile.gridZ + 1 &&
-      t.gridX === tile.gridX &&
-      t.gridY === tile.gridY,
+      Math.abs(t.gridX - tile.gridX) < 1 &&
+      Math.abs(t.gridY - tile.gridY) < 1,
   );
   if (hasAbove) return false;
 
@@ -206,12 +213,18 @@ export function removePair(
 /**
  * Shuffle typeIndex values of remaining tiles while preserving positions.
  * Retries until at least one valid match exists.
+ * Returns null if shuffle is impossible (e.g. fewer than 2 free tiles).
  */
-export function shuffleBoard(tiles: TileData[]): TileData[] {
+export function shuffleBoard(tiles: TileData[]): TileData[] | null {
+  const remaining = tiles.filter((t) => !t.removed);
+  if (remaining.length < 2) return null;
+
+  const free = remaining.filter((t) => isFree(t, tiles));
+  if (free.length < 2) return null;
+
   const maxAttempts = 200;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const remaining = tiles.filter((t) => !t.removed);
     const types = remaining.map((t) => t.typeIndex);
     shuffleArray(types);
 
@@ -228,18 +241,20 @@ export function shuffleBoard(tiles: TileData[]): TileData[] {
 
   // Fallback: force one matching pair among free tiles
   const result = tiles.map((t) => ({ ...t }));
-  const remaining = result.filter((t) => !t.removed);
-  const types = remaining.map((t) => t.typeIndex);
-  shuffleArray(types);
+  const remTypes = remaining.map((t) => t.typeIndex);
+  shuffleArray(remTypes);
   let idx = 0;
   for (const nt of result) {
-    if (!nt.removed) nt.typeIndex = types[idx++];
+    if (!nt.removed) nt.typeIndex = remTypes[idx++];
   }
-  const free = result.filter((t) => !t.removed && isFree(t, result));
-  if (free.length >= 2) {
-    free[1].typeIndex = free[0].typeIndex;
+  const freeResult = result.filter((t) => !t.removed && isFree(t, result));
+  if (freeResult.length >= 2) {
+    freeResult[1].typeIndex = freeResult[0].typeIndex;
+    return result;
   }
-  return result;
+
+  // Cannot produce a valid shuffle
+  return null;
 }
 
 // ─── Board Creation (Reverse Generation) ─────────────────
@@ -261,8 +276,8 @@ function isFreeForGen(
   const hasAbove = present.some(
     (t) =>
       t.gridZ === tile.gridZ + 1 &&
-      t.gridX === tile.gridX &&
-      t.gridY === tile.gridY,
+      Math.abs(t.gridX - tile.gridX) < 1 &&
+      Math.abs(t.gridY - tile.gridY) < 1,
   );
   if (hasAbove) return false;
 

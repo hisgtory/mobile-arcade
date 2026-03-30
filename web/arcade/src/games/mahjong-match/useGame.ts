@@ -19,8 +19,14 @@ export function useGame({ stage, onClear }: UseGameOptions) {
   const [score, setScore] = useState(0);
   const [moves, setMoves] = useState(0);
   const [matchesLeft, setMatchesLeft] = useState(0);
+  const [shuffleNotice, setShuffleNotice] = useState(false);
+  const [result, setResult] = useState<GameResult | null>(null);
 
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
+
+  // Stable ref for callback to avoid re-creating game on onClear change
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -41,21 +47,35 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     });
 
     game.events.on('stage-clear', (data: { score: number; moves: number; stage: number }) => {
-      const result = { score: data.score, moves: data.moves, stage: data.stage, cleared: true };
+      const r = { score: data.score, moves: data.moves, stage: data.stage, cleared: true };
       stageComplete({ stage: data.stage, score: data.score, moves: data.moves, cleared: true });
-      onClear?.(result);
+      setResult(r);
+      onClearRef.current?.(r);
+    });
+
+    game.events.on('game-over', (data: { score: number; moves: number; stage: number }) => {
+      const r = { score: data.score, moves: data.moves, stage: data.stage, cleared: false };
+      setResult(r);
+      onClearRef.current?.(r);
     });
 
     game.events.on('game-stuck', () => {
       const scene = getPlayScene(game);
-      scene?.shuffle();
+      if (scene) {
+        // Show brief notification before shuffling
+        setShuffleNotice(true);
+        setTimeout(() => {
+          scene.shuffle();
+          setShuffleNotice(false);
+        }, 800);
+      }
     });
 
     return () => {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear]);
+  }, [stage]);
 
   const doShuffle = useCallback(() => {
     if (!gameRef.current) return;
@@ -73,7 +93,8 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     if (!gameRef.current) return;
     const scene = getPlayScene(gameRef.current);
     scene?.restart();
+    setResult(null);
   }, []);
 
-  return { containerRef, score, moves, matchesLeft, doShuffle, doHint, doRestart };
+  return { containerRef, score, moves, matchesLeft, shuffleNotice, result, doShuffle, doHint, doRestart };
 }

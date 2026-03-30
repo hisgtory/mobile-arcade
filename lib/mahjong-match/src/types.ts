@@ -27,7 +27,8 @@ export interface BoardState {
 export interface StageConfig {
   stage: number;
   layers: number;
-  tilesPerLayer: number;
+  /** Total number of tiles across all layers (must be even). */
+  totalTiles: number;
   numTypes: number;
 }
 
@@ -38,15 +39,15 @@ export interface GameConfig {
 // ─── Stage Config ────────────────────────────────────────
 export function getStageConfig(stage: number): StageConfig {
   const configs: StageConfig[] = [
-    { stage: 1, layers: 3, tilesPerLayer: 36, numTypes: 6 },
-    { stage: 2, layers: 3, tilesPerLayer: 48, numTypes: 8 },
-    { stage: 3, layers: 4, tilesPerLayer: 60, numTypes: 10 },
-    { stage: 4, layers: 4, tilesPerLayer: 72, numTypes: 12 },
-    { stage: 5, layers: 5, tilesPerLayer: 84, numTypes: 14 },
+    { stage: 1, layers: 3, totalTiles: 36, numTypes: 6 },
+    { stage: 2, layers: 3, totalTiles: 48, numTypes: 8 },
+    { stage: 3, layers: 4, totalTiles: 60, numTypes: 10 },
+    { stage: 4, layers: 4, totalTiles: 72, numTypes: 12 },
+    { stage: 5, layers: 5, totalTiles: 84, numTypes: 14 },
   ];
   if (stage <= configs.length) return configs[stage - 1];
   const layers = Math.min(5 + Math.floor((stage - 5) / 2), 7);
-  const tilesPerLayer = Math.min(84 + (stage - 5) * 12, 144);
+  const totalTiles = Math.min(84 + (stage - 5) * 12, 144);
   const numTypes = Math.min(14 + (stage - 5), 18);
-  return { stage, layers, tilesPerLayer, numTypes };
+  return { stage, layers, totalTiles, numTypes };
 }
