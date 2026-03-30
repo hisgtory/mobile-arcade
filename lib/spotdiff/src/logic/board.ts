@@ -59,20 +59,14 @@ export function createBoard(config: StageConfig): BoardState {
     switch (diffType) {
       case 'color': {
         origValue = shape.color;
-        let newColor = shape.color;
-        while (newColor === shape.color) {
-          newColor = SHAPE_COLORS[Math.floor(Math.random() * SHAPE_COLORS.length)];
-        }
-        diffValue = newColor;
+        const otherColors = SHAPE_COLORS.filter((c) => c !== shape.color);
+        diffValue = otherColors[Math.floor(Math.random() * otherColors.length)];
         break;
       }
       case 'shape': {
         origValue = shape.type;
-        let newType: ShapeType = shape.type;
-        while (newType === shape.type) {
-          newType = SHAPE_TYPES[Math.floor(Math.random() * SHAPE_TYPES.length)];
-        }
-        diffValue = newType;
+        const otherTypes = SHAPE_TYPES.filter((t) => t !== shape.type);
+        diffValue = otherTypes[Math.floor(Math.random() * otherTypes.length)];
         break;
       }
       case 'missing': {
@@ -84,7 +78,9 @@ export function createBoard(config: StageConfig): BoardState {
         const offsetX = (MIN_POSITION_OFFSET + Math.random() * POSITION_OFFSET_RANGE) * (Math.random() < 0.5 ? -1 : 1);
         const offsetY = (MIN_POSITION_OFFSET + Math.random() * POSITION_OFFSET_RANGE) * (Math.random() < 0.5 ? -1 : 1);
         origValue = { x: shape.x, y: shape.y };
-        diffValue = { x: shape.x + offsetX, y: shape.y + offsetY };
+        const newX = Math.max(SHAPE_MIN_X, Math.min(SHAPE_MAX_X, shape.x + offsetX));
+        const newY = Math.max(SHAPE_MIN_Y, Math.min(SHAPE_MAX_Y, shape.y + offsetY));
+        diffValue = { x: newX, y: newY };
         break;
       }
       case 'size': {

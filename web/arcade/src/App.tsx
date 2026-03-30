@@ -354,10 +354,10 @@ function SpotDiffStageRoute() {
 }
 
 function SpotDiffPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: SpotDiffResult) => void; onGameOver: (r: SpotDiffResult) => void }) {
-  const { containerRef, score, lives, maxLives, foundCount, totalDiffs, elapsedMs } = useSpotDiffGame({ stage, onClear, onGameOver });
+  const { containerRef, score, lives, maxLives, foundCount, totalDiffs, elapsedMs, timeLimitMs } = useSpotDiffGame({ stage, onClear, onGameOver });
   return (
     <PlayLayout>
-      <SpotDiffHUD stage={stage} score={score} foundCount={foundCount} totalDiffs={totalDiffs} lives={lives} maxLives={maxLives} elapsedMs={elapsedMs} />
+      <SpotDiffHUD stage={stage} score={score} foundCount={foundCount} totalDiffs={totalDiffs} lives={lives} maxLives={maxLives} elapsedMs={elapsedMs} timeLimitMs={timeLimitMs} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>
   );

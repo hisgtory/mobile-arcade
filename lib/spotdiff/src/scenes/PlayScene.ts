@@ -125,6 +125,17 @@ export class PlayScene extends Phaser.Scene {
       callback: () => {
         if (this.phase === 'playing') {
           this.elapsedMs += 100;
+          // Time limit check
+          const timeLimitMs = this.stageConfig.timeLimit * 1000;
+          if (this.elapsedMs >= timeLimitMs) {
+            this.elapsedMs = timeLimitMs;
+            this.phase = 'gameover';
+            this.game.events.emit('game-over', {
+              score: this.score,
+              stage: this.config.stage ?? 1,
+              elapsedMs: this.elapsedMs,
+            });
+          }
           this.emitState();
         }
       },
@@ -194,8 +205,7 @@ export class PlayScene extends Phaser.Scene {
         g.setPosition(x, y);
         g.setRotation(shape.rotation);
         g.fillRect(-sz, -sz, sz * 2, sz * 2);
-        container.add(g);
-        return;
+        break;
       case 'triangle': {
         const points = [
           { x: x, y: y - sz },
@@ -253,6 +263,12 @@ export class PlayScene extends Phaser.Scene {
         if (this.board.lives === this.board.maxLives) {
           this.score += 300;
         }
+        // Time bonus: remaining seconds × 10
+        const timeLimitMs = this.stageConfig.timeLimit * 1000;
+        const remainingMs = Math.max(0, timeLimitMs - this.elapsedMs);
+        const remainingSecs = Math.floor(remainingMs / 1000);
+        this.score += remainingSecs * 10;
+
         this.phase = 'celebrating';
         this.time.delayedCall(600, () => this.celebrateWin());
       }
@@ -375,6 +391,7 @@ export class PlayScene extends Phaser.Scene {
       foundCount: this.board.foundCount,
       totalDiffs: this.board.differences.length,
       elapsedMs: this.elapsedMs,
+      timeLimitMs: this.stageConfig.timeLimit * 1000,
       combo: this.combo,
     });
   }

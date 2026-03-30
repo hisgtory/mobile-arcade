@@ -39,22 +39,29 @@ interface HUDProps {
   lives: number;
   maxLives: number;
   elapsedMs: number;
+  timeLimitMs: number;
 }
 
 function formatTime(ms: number): string {
-  const secs = Math.floor(ms / 1000);
+  const secs = Math.max(0, Math.floor(ms / 1000));
   const m = Math.floor(secs / 60);
   const s = secs % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export function HUD({ stage, score, foundCount, totalDiffs, lives, maxLives, elapsedMs }: HUDProps) {
+export function HUD({ stage, score, foundCount, totalDiffs, lives, maxLives, elapsedMs, timeLimitMs }: HUDProps) {
   const hearts = '❤️'.repeat(lives) + '🖤'.repeat(maxLives - lives);
+  const remainingMs = Math.max(0, timeLimitMs - elapsedMs);
+  const isLowTime = remainingMs > 0 && remainingMs <= 10000;
   return (
     <Container>
       <StatBlock>
         <StatLabel>Stage</StatLabel>
         <StatValue>{stage}</StatValue>
+      </StatBlock>
+      <StatBlock>
+        <StatLabel>Time</StatLabel>
+        <StatValue css={isLowTime ? { color: '$rose500' } : undefined}>{formatTime(remainingMs)}</StatValue>
       </StatBlock>
       <StatBlock>
         <StatLabel>Found</StatLabel>
