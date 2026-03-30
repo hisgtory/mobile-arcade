@@ -1,8 +1,8 @@
 /**
  * Board logic for ForestPop
  *
- * Tap-to-pop connected groups mechanic using BFS flood fill.
- * board[row][col] = TileType (-1 = empty)
+ * Tap-to-pop: BFS flood fill to find connected groups of same type.
+ * The board is a 2D array: board[row][col] = TileType (-1 = empty)
  */
 
 import type { TileType, CellPos, StageConfig } from '../types';
@@ -11,7 +11,7 @@ export const EMPTY = -1;
 
 export type Board = TileType[][];
 
-/** Create a new board filled with random tiles */
+/** Create a new board with random tiles */
 export function createBoard(config: StageConfig): Board {
   const { rows, cols, typeCount } = config;
   return Array.from({ length: rows }, () =>
@@ -20,22 +20,22 @@ export function createBoard(config: StageConfig): Board {
 }
 
 /**
- * BFS flood fill — find all connected same-type tiles from a starting cell.
- * Only considers orthogonal (up/down/left/right) neighbors.
+ * Find all connected tiles of the same type starting from (row, col).
+ * Uses BFS flood fill (4-directional: up, down, left, right).
  */
-export function findConnectedGroup(board: Board, start: CellPos): CellPos[] {
+export function findConnectedGroup(board: Board, row: number, col: number): CellPos[] {
   const rows = board.length;
   const cols = board[0].length;
-  const type = board[start.row][start.col];
+  const tileType = board[row][col];
 
-  if (type === EMPTY) return [];
+  if (tileType === EMPTY) return [];
 
   const visited = new Set<string>();
-  const queue: CellPos[] = [start];
   const group: CellPos[] = [];
+  const queue: CellPos[] = [{ row, col }];
   const key = (r: number, c: number) => `${r},${c}`;
 
-  visited.add(key(start.row, start.col));
+  visited.add(key(row, col));
 
   while (queue.length > 0) {
     const cell = queue.shift()!;
@@ -53,7 +53,7 @@ export function findConnectedGroup(board: Board, start: CellPos): CellPos[] {
         n.row >= 0 && n.row < rows &&
         n.col >= 0 && n.col < cols &&
         !visited.has(key(n.row, n.col)) &&
-        board[n.row][n.col] === type
+        board[n.row][n.col] === tileType
       ) {
         visited.add(key(n.row, n.col));
         queue.push(n);
@@ -64,11 +64,12 @@ export function findConnectedGroup(board: Board, start: CellPos): CellPos[] {
   return group;
 }
 
-/** Remove cells (set to EMPTY) */
-export function removeCells(board: Board, cells: CellPos[]): void {
+/** Remove cells (set to EMPTY) and return count removed */
+export function removeCells(board: Board, cells: CellPos[]): number {
   for (const { row, col } of cells) {
     board[row][col] = EMPTY;
   }
+  return cells.length;
 }
 
 /** Apply gravity: drop tiles down into empty cells. Returns cells that moved. */
@@ -112,30 +113,28 @@ export function fillEmpty(board: Board, typeCount: number): CellPos[] {
   return filled;
 }
 
-/** Calculate score for popping a group */
+/** Calculate score for a popped group */
 export function calcPopScore(cellCount: number, combo: number): number {
-  // Bigger groups give more points per tile
-  const perTile = cellCount <= 3 ? 50 : cellCount <= 5 ? 80 : cellCount <= 8 ? 120 : 200;
-  return perTile * cellCount * Math.max(1, combo);
+  // Bigger groups = exponentially more points
+  const base = cellCount <= 3 ? cellCount * 50 : cellCount * cellCount * 10;
+  return base * Math.max(1, combo);
 }
 
-/** Check if any tappable group exists with at least minGroup tiles */
-export function hasValidMoves(board: Board, minGroup: number): boolean {
+/** Check if any valid moves remain (any group >= minGroupSize) */
+export function hasValidMoves(board: Board, minGroupSize: number): boolean {
   const rows = board.length;
   const cols = board[0].length;
-  const visited = new Set<string>();
+  const checked = new Set<string>();
   const key = (r: number, c: number) => `${r},${c}`;
 
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
-      if (visited.has(key(r, c))) continue;
-      if (board[r][c] === EMPTY) continue;
-
-      const group = findConnectedGroup(board, { row: r, col: c });
+      if (board[r][c] === EMPTY || checked.has(key(r, c))) continue;
+      const group = findConnectedGroup(board, r, c);
       for (const cell of group) {
-        visited.add(key(cell.row, cell.col));
+        checked.add(key(cell.row, cell.col));
       }
-      if (group.length >= minGroup) return true;
+      if (group.length >= minGroupSize) return true;
     }
   }
 

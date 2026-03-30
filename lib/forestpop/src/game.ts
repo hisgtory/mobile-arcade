@@ -18,7 +18,7 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
     parent,
     width: DEFAULT_WIDTH * dpr,
     height: DEFAULT_HEIGHT * dpr,
-    backgroundColor: '#e8f5e9',
+    backgroundColor: '#f0f9f4',
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,

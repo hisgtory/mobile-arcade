@@ -1,8 +1,7 @@
 /**
  * ForestPop game type definitions
  *
- * Forest-themed tap-to-pop puzzle: tap connected groups of 2+ same-type
- * tiles to pop them, then gravity fills gaps with new tiles.
+ * Forest-themed tap-to-pop puzzle: tap connected groups of same-type tiles to pop them.
  */
 
 export type TileType = number;
@@ -12,15 +11,20 @@ export interface CellPos {
   col: number;
 }
 
+export interface TileData {
+  type: TileType;
+  row: number;
+  col: number;
+}
+
 export interface PopResult {
   cells: CellPos[];
-  type: TileType;
   score: number;
 }
 
 export interface StageConfig {
   stage: number;
-  /** Number of distinct tile types (5-8) */
+  /** Number of distinct tile types (4-7) */
   typeCount: number;
   /** Grid rows */
   rows: number;
@@ -31,7 +35,7 @@ export interface StageConfig {
   /** Target score to clear */
   targetScore: number;
   /** Minimum group size to pop */
-  minGroup: number;
+  minGroupSize: number;
 }
 
 export interface GameConfig {
@@ -48,14 +52,13 @@ export enum GamePhase {
   GAME_OVER = 'game_over',
 }
 
-// Forest animal emoji tile types
+// Forest animal emoji tiles
 export const TILE_EMOJIS: string[] = [
   '🐻',  // bear
   '🦊',  // fox
   '🐰',  // rabbit
   '🦉',  // owl
-  '🐿️', // squirrel
+  '🐿️',  // squirrel
   '🦌',  // deer
   '🐸',  // frog
-  '🦋',  // butterfly
 ];

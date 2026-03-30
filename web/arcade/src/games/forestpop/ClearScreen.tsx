@@ -64,7 +64,7 @@ const Button = styled('button', {
   variants: {
     variant: {
       primary: {
-        backgroundColor: '#16a34a',
+        backgroundColor: '#16A34A',
         color: '#fff',
       },
       secondary: {
@@ -88,7 +88,7 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
   return (
     <Container>
       <Title cleared={result.cleared}>
-        {result.cleared ? 'Stage Clear!' : 'Game Over'}
+        {result.cleared ? 'Stage Clear! 🌲' : 'Game Over 🍂'}
       </Title>
       <StatsCard>
         <StatRow>

@@ -1,8 +1,8 @@
 /**
  * PlayScene for ForestPop
  *
- * Tap connected groups of 2+ same-type tiles to pop them.
- * Gravity drops remaining tiles down, new tiles fill from top.
+ * Tap connected groups of same-type forest animals to pop them.
+ * Phaser handles the tile board. HUD is handled by React.
  *
  * Events emitted:
  *   'score-update'  — { score, combo }
@@ -57,10 +57,6 @@ export class PlayScene extends Phaser.Scene {
     this.gameConfig = data?.gameConfig ?? (this.game as any).__forestpopConfig;
   }
 
-  preload(): void {
-    // No asset loading needed — using emoji text
-  }
-
   create(): void {
     const dpr = (this.game as any).__dpr || 1;
     const { width, height } = this.scale;
@@ -77,7 +73,7 @@ export class PlayScene extends Phaser.Scene {
     this.movesLeft = this.stageConfig.maxMoves;
 
     // Background
-    this.cameras.main.setBackgroundColor('#e8f5e9');
+    this.cameras.main.setBackgroundColor('#f0f9f4');
 
     // Calculate tile size to fit board
     const padding = 20 * dpr;
@@ -146,31 +142,31 @@ export class PlayScene extends Phaser.Scene {
 
   private showGroupHighlight(row: number, col: number): void {
     this.clearHighlight();
-    const group = findConnectedGroup(this.board, { row, col });
-    if (group.length >= this.stageConfig.minGroup) {
+    const group = findConnectedGroup(this.board, row, col);
+    if (group.length >= this.stageConfig.minGroupSize) {
       this.highlightedCells = group;
-      for (const { row: r, col: c } of group) {
-        const t = this.tileGrid[r][c];
+      for (const cell of group) {
+        const t = this.tileGrid[cell.row]?.[cell.col];
         if (t) t.highlight(true);
       }
     }
   }
 
   private clearHighlight(): void {
-    for (const { row, col } of this.highlightedCells) {
-      const t = this.tileGrid[row]?.[col];
+    for (const cell of this.highlightedCells) {
+      const t = this.tileGrid[cell.row]?.[cell.col];
       if (t) t.highlight(false);
     }
     this.highlightedCells = [];
   }
 
-  // ─── TAP + POP LOOP ─────────────────────────────────
+  // ─── POP LOGIC ──────────────────────────────────────────
 
   private async tryPop(row: number, col: number): Promise<void> {
     if (this.phase !== GamePhase.PLAYING) return;
 
-    const group = findConnectedGroup(this.board, { row, col });
-    if (group.length < this.stageConfig.minGroup) return;
+    const group = findConnectedGroup(this.board, row, col);
+    if (group.length < this.stageConfig.minGroupSize) return;
 
     this.phase = GamePhase.ANIMATING;
     this.clearHighlight();
@@ -178,40 +174,24 @@ export class PlayScene extends Phaser.Scene {
     // Consume a move
     this.movesLeft--;
     this.movesUsed++;
-    this.combo = 0;
+    this.combo++;
     this.emitMoves();
 
-    // Process the pop
-    await this.processPop(group);
-
-    // Check game state
-    if (this.score >= this.stageConfig.targetScore) {
-      this.stageClear();
-    } else if (this.movesLeft <= 0) {
-      this.gameOver();
-    } else if (!hasValidMoves(this.board, this.stageConfig.minGroup)) {
-      this.gameOver();
-    } else {
-      this.phase = GamePhase.PLAYING;
-    }
-  }
-
-  private async processPop(group: CellPos[]): Promise<void> {
-    this.combo++;
-    const groupScore = calcPopScore(group.length, this.combo);
-    this.score += groupScore;
+    // Calculate score
+    const popScore = calcPopScore(group.length, this.combo);
+    this.score += popScore;
     this.emitScore();
     this.game.events.emit('group-popped');
 
     // Animate destroy
     const destroyPromises = group.map(
-      ({ row, col }) =>
+      ({ row: r, col: c }) =>
         new Promise<void>((res) => {
-          const tile = this.tileGrid[row][col];
+          const tile = this.tileGrid[r][c];
           if (tile) {
             tile.animateDestroy(() => {
               tile.destroy();
-              this.tileGrid[row][col] = null;
+              this.tileGrid[r][c] = null;
               res();
             });
           } else {
@@ -226,8 +206,6 @@ export class PlayScene extends Phaser.Scene {
 
     // Gravity
     const gravityMoves = applyGravity(this.board);
-
-    // Animate gravity
     const gravityPromises = gravityMoves.map(({ from, to }) => {
       const tile = this.tileGrid[from.row][from.col];
       if (tile) {
@@ -244,15 +222,69 @@ export class PlayScene extends Phaser.Scene {
 
     // Fill empty
     const filled = fillEmpty(this.board, this.stageConfig.typeCount);
-    for (const { row, col } of filled) {
-      const pos = this.gridToPixel(row, col);
-      const tile = new Tile(this, pos.x, pos.y, this.board[row][col], row, col, this.tileSize);
-      this.tileGrid[row][col] = tile;
+    for (const { row: r, col: c } of filled) {
+      const pos = this.gridToPixel(r, c);
+      const tile = new Tile(this, pos.x, pos.y, this.board[r][c], r, c, this.tileSize);
+      this.tileGrid[r][c] = tile;
       this.setupTileInput(tile);
       tile.animateSpawn();
     }
 
     // Wait for spawn animation
+    await this.delay(300);
+
+    // Check game state
+    if (this.score >= this.stageConfig.targetScore) {
+      this.stageClear();
+    } else if (this.movesLeft <= 0) {
+      this.gameOver();
+    } else if (!hasValidMoves(this.board, this.stageConfig.minGroupSize)) {
+      // No valid moves — reshuffle
+      await this.reshuffleBoard();
+      this.phase = GamePhase.PLAYING;
+    } else {
+      this.phase = GamePhase.PLAYING;
+    }
+  }
+
+  private async reshuffleBoard(): Promise<void> {
+    // Animate all tiles out
+    const allTiles: Tile[] = [];
+    for (let r = 0; r < this.stageConfig.rows; r++) {
+      for (let c = 0; c < this.stageConfig.cols; c++) {
+        const tile = this.tileGrid[r][c];
+        if (tile) allTiles.push(tile);
+      }
+    }
+
+    await Promise.all(
+      allTiles.map(
+        (tile) =>
+          new Promise<void>((res) => {
+            this.tweens.add({
+              targets: tile,
+              alpha: 0,
+              duration: 150,
+              onComplete: () => { tile.destroy(); res(); },
+            });
+          }),
+      ),
+    );
+
+    // Recreate board
+    this.board = createBoard(this.stageConfig);
+    this.tileGrid = [];
+    for (let r = 0; r < this.stageConfig.rows; r++) {
+      this.tileGrid[r] = [];
+      for (let c = 0; c < this.stageConfig.cols; c++) {
+        const { x, y } = this.gridToPixel(r, c);
+        const tile = new Tile(this, x, y, this.board[r][c], r, c, this.tileSize);
+        this.tileGrid[r][c] = tile;
+        this.setupTileInput(tile);
+        tile.animateSpawn();
+      }
+    }
+
     await this.delay(300);
   }
 

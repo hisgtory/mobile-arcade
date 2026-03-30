@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'forestpop',
+    name: 'Forest Pop',
+    description: 'Tap groups of forest friends to pop!',
+    icon: '🌲',
+    category: 'puzzle',
+    color: '#16A34A',
+    webPath: '/games/forestpop/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

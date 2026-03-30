@@ -34,7 +34,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     });
     gameRef.current = game;
 
-    game.events.on('group-popped', () => haptic('match-cleared'));
+    game.events.on('group-popped', () => haptic('group-popped'));
 
     game.events.on('score-update', (data: { score: number; combo: number }) => {
       setScore(data.score);

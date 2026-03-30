@@ -31,7 +31,7 @@ export class Tile extends Phaser.GameObjects.Container {
     this.gridCol = col;
     this.tileSize = size;
 
-    // Background
+    // Background rounded rect
     this.bg = scene.add.rectangle(0, 0, size - 2, size - 2, 0xffffff, 1);
     this.bg.setStrokeStyle(1, 0xe5e7eb, 0.8);
     this.add(this.bg);
@@ -56,9 +56,14 @@ export class Tile extends Phaser.GameObjects.Container {
     this.icon.setText(emoji);
   }
 
-  /** Highlight tile as part of a tappable group */
+  /** Highlight tile (when part of a valid group on hover/press) */
   highlight(on: boolean): void {
     this.bg.setFillStyle(on ? 0xfef3c7 : 0xffffff, 1);
+    if (on) {
+      this.setScale(1.05);
+    } else {
+      this.setScale(1);
+    }
   }
 
   animateDestroy(onComplete: () => void): void {

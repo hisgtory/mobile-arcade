@@ -1,11 +1,11 @@
 import type { StageConfig } from '../types';
 
 const STAGES: StageConfig[] = [
-  { stage: 1, typeCount: 5, rows: 8, cols: 8, maxMoves: 30, targetScore: 2000, minGroup: 2 },
-  { stage: 2, typeCount: 5, rows: 8, cols: 8, maxMoves: 28, targetScore: 4000, minGroup: 2 },
-  { stage: 3, typeCount: 6, rows: 8, cols: 8, maxMoves: 25, targetScore: 6000, minGroup: 2 },
-  { stage: 4, typeCount: 6, rows: 9, cols: 9, maxMoves: 22, targetScore: 8000, minGroup: 3 },
-  { stage: 5, typeCount: 7, rows: 9, cols: 9, maxMoves: 20, targetScore: 12000, minGroup: 3 },
+  { stage: 1, typeCount: 4, rows: 8, cols: 8, maxMoves: 25, targetScore: 800, minGroupSize: 2 },
+  { stage: 2, typeCount: 5, rows: 8, cols: 8, maxMoves: 22, targetScore: 1500, minGroupSize: 2 },
+  { stage: 3, typeCount: 5, rows: 8, cols: 8, maxMoves: 20, targetScore: 2500, minGroupSize: 2 },
+  { stage: 4, typeCount: 6, rows: 8, cols: 8, maxMoves: 18, targetScore: 4000, minGroupSize: 3 },
+  { stage: 5, typeCount: 6, rows: 8, cols: 8, maxMoves: 15, targetScore: 6000, minGroupSize: 3 },
 ];
 
 export function getStageConfig(stageNum: number): StageConfig {
