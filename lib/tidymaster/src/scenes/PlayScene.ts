@@ -15,7 +15,7 @@ export class PlayScene extends Phaser.Scene {
   private dpr = 1;
   private selectedItemId: number | null = null;
   private phase: 'idle' | 'animating' | 'celebrating' | 'gameover' = 'idle';
-  private moveHistory: { itemId: number; shelfIndex: number }[] = [];
+  private moveHistory: { itemId: number; shelfIndex: number; pointsAwarded: number }[] = [];
   private score = 0;
   private moves = 0;
   private combo = 0;
@@ -236,9 +236,10 @@ export class PlayScene extends Phaser.Scene {
 
     if (correct) {
       this.phase = 'animating';
-      this.moveHistory.push({ itemId, shelfIndex });
       this.board = newBoard;
       this.combo++;
+      const pointsAwarded = 100 * this.combo;
+      this.moveHistory.push({ itemId, shelfIndex, pointsAwarded });
 
       const container = this.itemSprites.get(itemId);
       const shelfContainer = this.shelfContainers[shelfIndex];
@@ -257,7 +258,7 @@ export class PlayScene extends Phaser.Scene {
           duration: 400,
           ease: 'Cubic.easeInOut',
           onComplete: () => {
-            this.score += 100 * this.combo;
+            this.score += pointsAwarded;
             this.drawBoard();
             this.emitState();
 
@@ -271,7 +272,7 @@ export class PlayScene extends Phaser.Scene {
       } else {
         this.clearGlow();
         this.selectedItemId = null;
-        this.score += 100 * this.combo;
+        this.score += pointsAwarded;
         this.drawBoard();
         this.emitState();
         if (isWon(this.board)) {
@@ -405,7 +406,7 @@ export class PlayScene extends Phaser.Scene {
 
     const last = this.moveHistory.pop()!;
     this.board = undoPlace(this.board, last.itemId, last.shelfIndex);
-    this.score = Math.max(0, this.score - 100);
+    this.score = Math.max(0, this.score - last.pointsAwarded);
     this.combo = 0;
 
     this.clearGlow();
