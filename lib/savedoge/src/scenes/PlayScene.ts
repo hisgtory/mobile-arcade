@@ -56,6 +56,22 @@ export class PlayScene extends Phaser.Scene {
   private hazardObjects: Phaser.GameObjects.Graphics[] = [];
   private hazardTimer?: Phaser.Time.TimerEvent;
   private graceTimer?: Phaser.Time.TimerEvent;
+  private particleTimers: Phaser.Time.TimerEvent[] = [];
+
+  // Active hazard particles for update loop
+  private activeParticles: {
+    g: Phaser.GameObjects.Graphics;
+    startX: number;
+    startY: number;
+    vx: number;
+    vy: number;
+    gravity: number;
+    size: number;
+    color: number;
+    startTime: number;
+    maxLifetime: number;
+    lineSegments: { x1: number; y1: number; x2: number; y2: number }[];
+  }[] = [];
 
   // Score
   private score = 0;
@@ -81,6 +97,11 @@ export class PlayScene extends Phaser.Scene {
     this.dogeHit = false;
     this.score = 0;
     this.hazardObjects = [];
+    this.activeParticles = [];
+    this.particleTimers = [];
+
+    // Bind shutdown to Phaser's shutdown event
+    this.events.on('shutdown', this.shutdown, this);
 
     const w = DEFAULT_WIDTH * this.dpr;
     const h = DEFAULT_HEIGHT * this.dpr;
@@ -368,7 +389,7 @@ export class PlayScene extends Phaser.Scene {
     for (let i = 0; i < hazard.count; i++) {
       const delay = (i / hazard.count) * HAZARD_DURATION_MS * 0.8;
 
-      this.time.delayedCall(delay, () => {
+      const spawnTimer = this.time.delayedCall(delay, () => {
         if (this.phase === 'result') return;
 
         const size = (3 + Math.random() * 4) * s;
@@ -414,56 +435,74 @@ export class PlayScene extends Phaser.Scene {
         g.setDepth(8);
         this.hazardObjects.push(g);
 
-        // Animate with gravity
+        // Add to active particles for update loop
         const gravity = hazard.direction === 'top' ? 80 * s : 30 * s;
-        const startTime = this.time.now;
-        const maxLifetime = 5000;
-
-        const updateEvent = this.time.addEvent({
-          delay: 16,
-          loop: true,
-          callback: () => {
-            if (this.phase === 'result' || !g.active) {
-              updateEvent.destroy();
-              return;
-            }
-
-            const elapsed = (this.time.now - startTime) / 1000;
-            if (elapsed * 1000 > maxLifetime) {
-              g.destroy();
-              updateEvent.destroy();
-              return;
-            }
-
-            const newX = startX + vx * elapsed;
-            const newY = startY + vy * elapsed + 0.5 * gravity * elapsed * elapsed;
-            g.setPosition(newX, newY);
-
-            // Check collision with lines
-            if (this.checkLineCollision(newX, newY, size, lineSegments)) {
-              // Particle hit line — bounce or stop
-              this.createHitEffect(newX, newY, color, s);
-              g.destroy();
-              updateEvent.destroy();
-              return;
-            }
-
-            // Check collision with ground
-            if (newY > groundY) {
-              g.destroy();
-              updateEvent.destroy();
-              return;
-            }
-
-            // Check collision with doge
-            if (!this.dogeHit && this.checkDogeCollision(newX, newY, size)) {
-              this.onDogeHit();
-              g.destroy();
-              updateEvent.destroy();
-            }
-          },
+        this.activeParticles.push({
+          g,
+          startX,
+          startY,
+          vx,
+          vy,
+          gravity,
+          size,
+          color,
+          startTime: this.time.now,
+          maxLifetime: 5000,
+          lineSegments,
         });
       });
+      this.particleTimers.push(spawnTimer);
+    }
+  }
+
+  // ─── Update Loop (replaces per-particle timers) ───────
+
+  update(_time: number, _delta: number): void {
+    if (this.phase !== 'simulating') return;
+
+    const groundY = (this.stageConfig.platformY ?? 0.82) * DEFAULT_HEIGHT * this.dpr;
+    const s = this.dpr;
+
+    for (let i = this.activeParticles.length - 1; i >= 0; i--) {
+      const p = this.activeParticles[i];
+
+      if (!p.g.active) {
+        this.activeParticles.splice(i, 1);
+        continue;
+      }
+
+      const elapsed = (this.time.now - p.startTime) / 1000;
+      if (elapsed * 1000 > p.maxLifetime) {
+        p.g.destroy();
+        this.activeParticles.splice(i, 1);
+        continue;
+      }
+
+      const newX = p.startX + p.vx * elapsed;
+      const newY = p.startY + p.vy * elapsed + 0.5 * p.gravity * elapsed * elapsed;
+      p.g.setPosition(newX, newY);
+
+      // Check collision with lines
+      if (this.checkLineCollision(newX, newY, p.size, p.lineSegments)) {
+        this.createHitEffect(newX, newY, p.color, s);
+        p.g.destroy();
+        this.activeParticles.splice(i, 1);
+        continue;
+      }
+
+      // Check collision with ground
+      if (newY > groundY) {
+        p.g.destroy();
+        this.activeParticles.splice(i, 1);
+        continue;
+      }
+
+      // Check collision with doge
+      if (!this.dogeHit && this.checkDogeCollision(newX, newY, p.size)) {
+        this.onDogeHit();
+        p.g.destroy();
+        this.activeParticles.splice(i, 1);
+      }
     }
   }
 
@@ -693,6 +732,8 @@ export class PlayScene extends Phaser.Scene {
   // ─── Cleanup ──────────────────────────────────────────
 
   shutdown(): void {
+    this.events.off('shutdown', this.shutdown, this);
+
     if (this.graceTimer) {
       this.graceTimer.destroy();
       this.graceTimer = undefined;
@@ -701,10 +742,15 @@ export class PlayScene extends Phaser.Scene {
       this.hazardTimer.destroy();
       this.hazardTimer = undefined;
     }
+    for (const t of this.particleTimers) {
+      if (t.getOverallProgress() < 1) t.destroy();
+    }
+    this.particleTimers = [];
     for (const h of this.hazardObjects) {
       if (h.active) h.destroy();
     }
     this.hazardObjects = [];
+    this.activeParticles = [];
     this.lines = [];
     this.drawPoints = [];
     this.input.off('pointerdown');

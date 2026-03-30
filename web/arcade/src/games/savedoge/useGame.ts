@@ -23,6 +23,12 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
 
+  // Stable refs for callbacks to avoid game re-creation
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -47,7 +53,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
           score: data.score,
           cleared: true,
         });
-        onClear?.(result);
+        onClearRef.current?.(result);
       },
     );
 
@@ -60,7 +66,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
           score: data.score,
           cleared: false,
         });
-        onGameOver?.(result);
+        onGameOverRef.current?.(result);
       },
     );
 
@@ -68,7 +74,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   const doUndo = useCallback(() => {
     if (!gameRef.current) return;
