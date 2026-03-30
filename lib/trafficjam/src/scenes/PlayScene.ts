@@ -135,29 +135,37 @@ export class PlayScene extends Phaser.Scene {
     body.strokeRoundedRect(-vw / 2 + pad, -vh / 2 + pad, vw - pad * 2, vh - pad * 2, radius);
     container.add(body);
 
-    // Direction indicator (small arrow)
+    // Direction indicator (small arrow) — vertices calculated per-direction, no rotation
     const arrow = this.add.graphics();
     arrow.fillStyle(0xffffff, 0.6);
-    const arrowSize = 5 * this.dpr;
-    const offsetX = isHorizontal ? (vehicle.direction === 'right' ? vw / 2 - pad - arrowSize * 2 : -vw / 2 + pad + arrowSize) : 0;
-    const offsetY = isHorizontal ? 0 : (vehicle.direction === 'down' ? vh / 2 - pad - arrowSize * 2 : -vh / 2 + pad + arrowSize);
-    arrow.fillTriangle(
-      offsetX, offsetY - arrowSize,
-      offsetX + arrowSize, offsetY + arrowSize,
-      offsetX - arrowSize, offsetY + arrowSize,
-    );
-
-    // Rotate arrow to point in direction
+    const as = 5 * this.dpr;
     switch (vehicle.direction) {
-      case 'right': arrow.setRotation(Math.PI / 2); break;
-      case 'left': arrow.setRotation(-Math.PI / 2); break;
-      case 'down': arrow.setRotation(Math.PI); break;
-      case 'up': arrow.setRotation(0); break;
+      case 'right': {
+        const cx = vw / 2 - pad - as * 1.5;
+        arrow.fillTriangle(cx + as, 0, cx - as, -as, cx - as, as);
+        break;
+      }
+      case 'left': {
+        const cx = -vw / 2 + pad + as * 1.5;
+        arrow.fillTriangle(cx - as, 0, cx + as, -as, cx + as, as);
+        break;
+      }
+      case 'down': {
+        const cy = vh / 2 - pad - as * 1.5;
+        arrow.fillTriangle(0, cy + as, -as, cy - as, as, cy - as);
+        break;
+      }
+      case 'up': {
+        const cy = -vh / 2 + pad + as * 1.5;
+        arrow.fillTriangle(0, cy - as, -as, cy + as, as, cy + as);
+        break;
+      }
     }
     container.add(arrow);
 
-    // Emoji label
-    const emoji = VEHICLE_EMOJIS[idx % VEHICLE_EMOJIS.length];
+    // Emoji label — use vehicle.id for stable mapping across undo/redo
+    const vNum = parseInt(vehicle.id.replace('v', ''), 10) - 1;
+    const emoji = VEHICLE_EMOJIS[vNum % VEHICLE_EMOJIS.length];
     const fontSize = Math.floor(this.cellSize * 0.45);
     const label = this.add.text(0, 0, emoji, {
       fontSize: `${fontSize}px`,

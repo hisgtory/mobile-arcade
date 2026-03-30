@@ -63,15 +63,16 @@ const Button = styled('button', {
 interface ClearScreenProps {
   result: GameResult;
   stage: number;
-  onNext: () => void;
+  onNext?: (() => void) | null;
   onRetry: () => void;
   onHome: () => void;
 }
 
 export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScreenProps) {
+  const isAllClear = !onNext;
   return (
     <Overlay>
-      <Title>{result.cleared ? 'Stage Clear!' : 'Game Over'}</Title>
+      <Title>{isAllClear ? '🎉 All Clear!' : 'Stage Clear!'}</Title>
       <Card>
         <StatRow>
           <Label>Stage</Label>
@@ -86,7 +87,7 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
           <Value>{result.moves}</Value>
         </StatRow>
       </Card>
-      {result.cleared && (
+      {onNext && (
         <Button
           css={{ backgroundColor: '$primary', color: '#fff' }}
           onClick={onNext}

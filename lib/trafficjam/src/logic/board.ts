@@ -143,9 +143,10 @@ export function isSolvable(board: BoardState): boolean {
   return false;
 }
 
+/** Board state key for BFS visited set. Includes position info for extensibility. */
 function boardKey(board: BoardState): string {
   return board.vehicles
-    .map((v) => v.id)
+    .map((v) => `${v.id}:${v.row},${v.col}`)
     .sort()
-    .join(',');
+    .join('|');
 }

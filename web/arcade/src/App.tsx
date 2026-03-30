@@ -32,6 +32,7 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { ClearScreen as TrafficJamClear } from './games/trafficjam/ClearScreen';
 import { HUD as TrafficJamHUD } from './games/trafficjam/HUD';
 import { useGame as useTrafficJamGame, type GameResult as TrafficJamResult } from './games/trafficjam/useGame';
+import { TOTAL_STAGES as TRAFFICJAM_TOTAL_STAGES } from '@arcade/lib-trafficjam';
 
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
@@ -315,7 +316,8 @@ function TrafficJamStageRoute() {
   const handleHome = useCallback(() => navigate('/games/trafficjam/v1', { replace: true }), [navigate]);
 
   if (screen === 'clear' && gameResult) {
-    return <TrafficJamClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+    const isLastStage = stage >= TRAFFICJAM_TOTAL_STAGES;
+    return <TrafficJamClear result={gameResult} stage={stage} onNext={isLastStage ? null : handleNext} onRetry={handleRetry} onHome={handleHome} />;
   }
 
   return <TrafficJamPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;

@@ -20,6 +20,8 @@ export function useGame({ stage, onClear }: UseGameOptions) {
   const [moves, setMoves] = useState(0);
 
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -40,14 +42,14 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     game.events.on('stage-clear', (data: { score: number; moves: number; stage: number }) => {
       const result = { score: data.score, moves: data.moves, stage: data.stage, cleared: true };
       stageComplete({ stage: data.stage, score: data.score, moves: data.moves, cleared: true });
-      onClear?.(result);
+      onClearRef.current?.(result);
     });
 
     return () => {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear]);
+  }, [stage]);
 
   const doUndo = useCallback(() => {
     if (!gameRef.current) return;

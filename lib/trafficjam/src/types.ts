@@ -180,6 +180,8 @@ const STAGES: StageConfig[] = [
   },
 ];
 
+export const TOTAL_STAGES = STAGES.length;
+
 export function getStageConfig(stage: number): StageConfig {
   if (stage >= 1 && stage <= STAGES.length) {
     return STAGES[stage - 1];
