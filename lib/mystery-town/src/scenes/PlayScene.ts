@@ -24,7 +24,7 @@ const BOARD_PADDING = 16;
 
 // ─── Scoring ─────────────────────────────────────────────
 const SCORE_MERGE = 10;
-const SCORE_HIGH_LEVEL_BONUS = 40;
+const SCORE_HIGH_LEVEL_BONUS = 50;
 const SCORE_CLUE_BONUS = 200;
 
 // ─── Animation Delays ────────────────────────────────────
@@ -120,17 +120,19 @@ export class PlayScene extends Phaser.Scene {
   private getCellIndex(px: number, py: number): number {
     const gap = CELL_GAP * this.dpr;
     const { cols, rows } = this.board;
+    const step = this.cellSize + gap;
 
-    for (let r = 0; r < rows; r++) {
-      for (let c = 0; c < cols; c++) {
-        const idx = r * cols + c;
-        const rect = this.getCellRect(idx);
-        if (px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h) {
-          return idx;
-        }
-      }
-    }
-    return -1;
+    const col = Math.floor((px - this.boardOffsetX) / step);
+    const row = Math.floor((py - this.boardOffsetY) / step);
+
+    if (col < 0 || col >= cols || row < 0 || row >= rows) return -1;
+
+    // Verify pointer is within cell bounds (not in gap)
+    const cellX = this.boardOffsetX + col * step;
+    const cellY = this.boardOffsetY + row * step;
+    if (px > cellX + this.cellSize || py > cellY + this.cellSize) return -1;
+
+    return row * cols + col;
   }
 
   // ─── Drawing ──────────────────────────────────────────
@@ -209,16 +211,7 @@ export class PlayScene extends Phaser.Scene {
 
     const val = this.board.cells[idx];
 
-    if (val === null) {
-      // Tap empty cell → spawn new item
-      const spawned = spawnItem(this.board);
-      if (spawned >= 0) {
-        this.drawBoard();
-        this.animateSpawn(spawned);
-        this.checkGameOver();
-        this.emitState();
-      }
-    } else {
+    if (val !== null) {
       // Start drag from an item
       this.dragFrom = idx;
       this.drawBoard();
@@ -483,7 +476,6 @@ export class PlayScene extends Phaser.Scene {
 
   private checkGameOver() {
     if (isGameOver(this.board)) {
-      this.phase = 'celebrating';
       this.time.delayedCall(300, () => {
         this.game.events.emit('game-over', {
           score: this.score,
@@ -491,6 +483,8 @@ export class PlayScene extends Phaser.Scene {
           stage: this.config.stage ?? 1,
           clues: this.board.cluesCollected,
         });
+        // Reset phase after emit so restart() from React still works
+        this.phase = 'idle';
       });
     }
   }

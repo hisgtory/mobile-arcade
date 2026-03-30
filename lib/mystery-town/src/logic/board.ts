@@ -1,8 +1,8 @@
 import { MAX_ITEM_LEVEL, type Cell, type BoardState, type StageConfig, type MergeMove } from '../types';
 
 // ─── Constants ───────────────────────────────────────────
-const INITIAL_FILL_RATIO = 0.3;
-const MAX_INITIAL_ITEMS = 8;
+const INITIAL_FILL_RATIO = 0.6;
+const MAX_INITIAL_ITEMS = 20;
 
 // ─── Board Creation ──────────────────────────────────────
 
@@ -24,7 +24,7 @@ export function createBoard(config: StageConfig): BoardState {
 
 // ─── Spawn ───────────────────────────────────────────────
 
-/** Spawn a new Lv1 item on an empty cell. Returns the index or -1 if board is full. */
+/** Spawn a new Lv1 item on a random empty cell. Mutates board in-place. Returns the index or -1 if board is full. */
 export function spawnItem(board: BoardState): number {
   const empties = board.cells
     .map((c, i) => (c === null ? i : -1))
@@ -63,7 +63,7 @@ export function canMerge(board: BoardState, fromIdx: number, toIdx: number): Mer
   return { fromIdx, toIdx, newLevel: fromVal + 1 };
 }
 
-/** Execute a merge: remove fromIdx item, upgrade toIdx item */
+/** Execute a merge: remove fromIdx item, upgrade toIdx item. Mutates board in-place. */
 export function executeMerge(board: BoardState, move: MergeMove): { clueCreated: boolean } {
   board.cells[move.fromIdx] = null;
   board.cells[move.toIdx] = move.newLevel;

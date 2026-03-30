@@ -27,6 +27,12 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
 
+  // Stable refs for callbacks — avoid game re-creation on callback change
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -54,20 +60,20 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     game.events.on('stage-clear', (data: { score: number; moves: number; stage: number; clues: number }) => {
       const result = { score: data.score, moves: data.moves, stage: data.stage, clues: data.clues, cleared: true };
       stageComplete({ stage: data.stage, score: data.score, moves: data.moves, cleared: true });
-      onClear?.(result);
+      onClearRef.current?.(result);
     });
 
     game.events.on('game-over', (data: { score: number; moves: number; stage: number; clues: number }) => {
       const result = { score: data.score, moves: data.moves, stage: data.stage, clues: data.clues, cleared: false };
       stageComplete({ stage: data.stage, score: data.score, moves: data.moves, cleared: false });
-      onGameOver?.(result);
+      onGameOverRef.current?.(result);
     });
 
     return () => {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   const doRestart = useCallback(() => {
     if (!gameRef.current) return;
