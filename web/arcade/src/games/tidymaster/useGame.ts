@@ -12,14 +12,20 @@ export interface GameResult {
 interface UseGameOptions {
   stage: number;
   onClear?: (result: GameResult) => void;
+  onGameOver?: (result: GameResult) => void;
 }
 
-export function useGame({ stage, onClear }: UseGameOptions) {
+export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(0);
   const [moves, setMoves] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState(0);
 
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -37,17 +43,27 @@ export function useGame({ stage, onClear }: UseGameOptions) {
       setMoves(data.moves);
     });
 
+    game.events.on('time-update', (data: { time: number }) => {
+      setTimeRemaining(data.time);
+    });
+
     game.events.on('stage-clear', (data: { score: number; moves: number; stage: number }) => {
       const result = { score: data.score, moves: data.moves, stage: data.stage, cleared: true };
       stageComplete({ stage: data.stage, score: data.score, moves: data.moves, cleared: true });
-      onClear?.(result);
+      onClearRef.current?.(result);
+    });
+
+    game.events.on('game-over', (data: { score: number; moves: number; stage: number }) => {
+      const result = { score: data.score, moves: data.moves, stage: data.stage, cleared: false };
+      stageComplete({ stage: data.stage, score: data.score, moves: data.moves, cleared: false });
+      onGameOverRef.current?.(result);
     });
 
     return () => {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear]);
+  }, [stage]);
 
   const doUndo = useCallback(() => {
     if (!gameRef.current) return;
@@ -61,5 +77,5 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     scene?.restart();
   }, []);
 
-  return { containerRef, score, moves, doUndo, doRestart };
+  return { containerRef, score, moves, timeRemaining, doUndo, doRestart };
 }

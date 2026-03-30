@@ -64,21 +64,20 @@ export function createBoard(config: StageConfig): BoardState {
 }
 
 export function placeItem(board: BoardState, itemId: number, shelfIndex: number): { correct: boolean; board: BoardState } {
+  const item = board.items.find(it => it.id === itemId);
+  if (!item || item.shelved) return { correct: false, board };
+
+  const shelf = board.shelves[shelfIndex];
+  if (item.category !== shelf.category) return { correct: false, board };
+
   const newItems = board.items.map(it => ({ ...it }));
   const newShelves = board.shelves.map(sh => ({ ...sh, items: [...sh.items] }));
 
-  const item = newItems.find(it => it.id === itemId);
-  if (!item || item.shelved) return { correct: false, board: { ...board, items: newItems, shelves: newShelves } };
+  const newItem = newItems.find(it => it.id === itemId)!;
+  newItem.shelved = true;
+  newShelves[shelfIndex].items.push(itemId);
 
-  const shelf = newShelves[shelfIndex];
-  const correct = item.category === shelf.category;
-
-  if (correct) {
-    item.shelved = true;
-    shelf.items.push(itemId);
-  }
-
-  return { correct, board: { ...board, items: newItems, shelves: newShelves } };
+  return { correct: true, board: { ...board, items: newItems, shelves: newShelves } };
 }
 
 export function isWon(board: BoardState): boolean {

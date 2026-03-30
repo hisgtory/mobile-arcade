@@ -336,6 +336,9 @@ function TidyMasterStageRoute() {
   const handleClear = useCallback((r: TidyMasterResult) => {
     if (!isRN) { setGameResult(r); setScreen('clear'); }
   }, []);
+  const handleGameOver = useCallback((r: TidyMasterResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
   const handleNext = useCallback(() => {
     navigate(`/games/tidymaster/v1/stage/${stage + 1}`, { replace: true });
     setPlayKey((k) => k + 1); setScreen('playing');
@@ -347,14 +350,14 @@ function TidyMasterStageRoute() {
     return <TidyMasterClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
   }
 
-  return <TidyMasterPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+  return <TidyMasterPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
 }
 
-function TidyMasterPlaying({ stage, onClear }: { stage: number; onClear: (r: TidyMasterResult) => void }) {
-  const { containerRef, score, moves, doUndo, doRestart } = useTidyMasterGame({ stage, onClear });
+function TidyMasterPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: TidyMasterResult) => void; onGameOver: (r: TidyMasterResult) => void }) {
+  const { containerRef, score, moves, timeRemaining, doUndo, doRestart } = useTidyMasterGame({ stage, onClear, onGameOver });
   return (
     <PlayLayout>
-      <TidyMasterHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
+      <TidyMasterHUD stage={stage} score={score} moves={moves} timeRemaining={timeRemaining} onUndo={doUndo} onRestart={doRestart} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>
   );

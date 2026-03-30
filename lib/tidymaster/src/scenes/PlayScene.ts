@@ -14,10 +14,13 @@ export class PlayScene extends Phaser.Scene {
   private config: GameConfig = {};
   private dpr = 1;
   private selectedItemId: number | null = null;
-  private phase: 'idle' | 'animating' | 'celebrating' = 'idle';
+  private phase: 'idle' | 'animating' | 'celebrating' | 'gameover' = 'idle';
   private moveHistory: { itemId: number; shelfIndex: number }[] = [];
   private score = 0;
   private moves = 0;
+  private combo = 0;
+  private timeRemaining = 0;
+  private timerEvent: Phaser.Time.TimerEvent | null = null;
 
   private itemSprites: Map<number, Phaser.GameObjects.Container> = new Map();
   private shelfContainers: Phaser.GameObjects.Container[] = [];
@@ -42,6 +45,8 @@ export class PlayScene extends Phaser.Scene {
     this.moveHistory = [];
     this.score = 0;
     this.moves = 0;
+    this.combo = 0;
+    this.timeRemaining = stageConfig.timeLimit;
     this.itemSprites.clear();
     this.shelfContainers = [];
     this.glowRing = null;
@@ -49,6 +54,14 @@ export class PlayScene extends Phaser.Scene {
     this.drawFloorItems();
     this.drawShelves();
     this.emitState();
+
+    // Start countdown timer
+    this.timerEvent = this.time.addEvent({
+      delay: 1000,
+      callback: this.onTimerTick,
+      callbackScope: this,
+      loop: true,
+    });
   }
 
   private drawFloorItems() {
@@ -225,6 +238,7 @@ export class PlayScene extends Phaser.Scene {
       this.phase = 'animating';
       this.moveHistory.push({ itemId, shelfIndex });
       this.board = newBoard;
+      this.combo++;
 
       const container = this.itemSprites.get(itemId);
       const shelfContainer = this.shelfContainers[shelfIndex];
@@ -243,7 +257,7 @@ export class PlayScene extends Phaser.Scene {
           duration: 400,
           ease: 'Cubic.easeInOut',
           onComplete: () => {
-            this.score += 100;
+            this.score += 100 * this.combo;
             this.drawBoard();
             this.emitState();
 
@@ -257,7 +271,7 @@ export class PlayScene extends Phaser.Scene {
       } else {
         this.clearGlow();
         this.selectedItemId = null;
-        this.score += 100;
+        this.score += 100 * this.combo;
         this.drawBoard();
         this.emitState();
         if (isWon(this.board)) {
@@ -267,7 +281,8 @@ export class PlayScene extends Phaser.Scene {
         }
       }
     } else {
-      // Wrong shelf — shake it
+      // Wrong shelf — shake it, reset combo
+      this.combo = 0;
       this.shakeShelf(shelfIndex);
       this.clearGlow();
       this.selectedItemId = null;
@@ -297,6 +312,14 @@ export class PlayScene extends Phaser.Scene {
 
   private celebrateWin() {
     this.phase = 'celebrating';
+    if (this.timerEvent) {
+      this.timerEvent.destroy();
+      this.timerEvent = null;
+    }
+
+    // Stage clear bonus + time bonus
+    this.score += 500;
+    this.score += this.timeRemaining * 10;
 
     const screenW = DEFAULT_WIDTH * this.dpr;
     const screenH = DEFAULT_HEIGHT * this.dpr;
@@ -340,9 +363,41 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
+  // ─── Timer ────────────────────────────────────────────
+
+  private onTimerTick() {
+    if (this.phase === 'celebrating' || this.phase === 'gameover') return;
+
+    this.timeRemaining--;
+    this.game.events.emit('time-update', { time: this.timeRemaining });
+
+    if (this.timeRemaining <= 0) {
+      this.timeRemaining = 0;
+      this.onTimeUp();
+    }
+  }
+
+  private onTimeUp() {
+    this.phase = 'gameover';
+    if (this.timerEvent) {
+      this.timerEvent.destroy();
+      this.timerEvent = null;
+    }
+
+    this.clearGlow();
+    this.selectedItemId = null;
+
+    this.game.events.emit('game-over', {
+      score: this.score,
+      moves: this.moves,
+      stage: this.config.stage ?? 1,
+    });
+  }
+
   private emitState() {
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('moves-update', { moves: this.moves });
+    this.game.events.emit('time-update', { time: this.timeRemaining });
   }
 
   public undo() {
@@ -351,7 +406,7 @@ export class PlayScene extends Phaser.Scene {
     const last = this.moveHistory.pop()!;
     this.board = undoPlace(this.board, last.itemId, last.shelfIndex);
     this.score = Math.max(0, this.score - 100);
-    this.moves = Math.max(0, this.moves - 1);
+    this.combo = 0;
 
     this.clearGlow();
     this.selectedItemId = null;
@@ -360,6 +415,22 @@ export class PlayScene extends Phaser.Scene {
   }
 
   public restart() {
+    this.shutdown();
     this.scene.restart({ config: this.config, dpr: this.dpr });
+  }
+
+  shutdown() {
+    if (this.timerEvent) {
+      this.timerEvent.destroy();
+      this.timerEvent = null;
+    }
+    this.itemSprites.forEach(c => c.destroy());
+    this.itemSprites.clear();
+    this.shelfContainers.forEach(c => c.destroy());
+    this.shelfContainers = [];
+    if (this.glowRing) {
+      this.glowRing.destroy();
+      this.glowRing = null;
+    }
   }
 }

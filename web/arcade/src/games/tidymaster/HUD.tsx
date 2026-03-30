@@ -47,16 +47,26 @@ interface HUDProps {
   stage: number;
   score: number;
   moves: number;
+  timeRemaining: number;
   onUndo?: () => void;
   onRestart?: () => void;
 }
 
-export function HUD({ stage, score, moves, onUndo, onRestart }: HUDProps) {
+export function HUD({ stage, score, moves, timeRemaining, onUndo, onRestart }: HUDProps) {
+  const minutes = Math.floor(timeRemaining / 60);
+  const seconds = timeRemaining % 60;
+  const timeStr = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  const isLow = timeRemaining <= 10;
+
   return (
     <Container>
       <StatBlock>
         <StatLabel>Stage</StatLabel>
         <StatValue>{stage}</StatValue>
+      </StatBlock>
+      <StatBlock>
+        <StatLabel>Time</StatLabel>
+        <StatValue css={isLow ? { color: '$rose500' } : undefined}>{timeStr}</StatValue>
       </StatBlock>
       <StatBlock>
         <StatLabel>Moves</StatLabel>
