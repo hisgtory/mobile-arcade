@@ -149,6 +149,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/woodoku/v1',
     isNew: true,
   },
+  {
+    id: 'getcolor',
+    name: 'Get Color',
+    description: 'Timed color-sorting puzzle!',
+    icon: '🎨',
+    category: 'puzzle',
+    color: '#1E1B4B',
+    webPath: '/games/getcolor/v1',
+    stageCount: 10,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

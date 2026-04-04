@@ -74,6 +74,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/getcolor:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/minesweeper:
     dependencies:
       phaser:
@@ -200,6 +210,9 @@ importers:
       '@arcade/lib-found3-react':
         specifier: workspace:*
         version: link:../../lib/found3-react
+      '@arcade/lib-getcolor':
+        specifier: workspace:*
+        version: link:../../lib/getcolor
       '@arcade/lib-minesweeper':
         specifier: workspace:*
         version: link:../../lib/minesweeper

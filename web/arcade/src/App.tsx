@@ -14,6 +14,7 @@ import './games/blockpuzzle/routes';
 import './games/found3-react/routes';
 import './games/blockcrush/routes';
 import './games/woodoku/routes';
+import './games/getcolor/routes';
 
 import { getRegisteredRoutes } from './router';
 

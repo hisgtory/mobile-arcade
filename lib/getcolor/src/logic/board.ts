@@ -41,10 +41,10 @@ export function createBoard(config: StageConfig): BoardState {
 /** Count consecutive same-color segments on top of a tube */
 export function topCount(tube: Tube): number {
   if (tube.length === 0) return 0;
-  const topColor = tube[tube.length - 1];
+  const tc = tube[tube.length - 1];
   let count = 0;
   for (let i = tube.length - 1; i >= 0; i--) {
-    if (tube[i] === topColor) count++;
+    if (tube[i] === tc) count++;
     else break;
   }
   return count;
@@ -104,7 +104,7 @@ export function isWon(tubes: Tube[]): boolean {
   return tubes.every((t) => t.length === 0 || isTubeSolved(t));
 }
 
-// ─── BFS Solver (for level validation) ───────────────────
+// ─── Solver (for level validation) ───────────────────────
 
 function boardKey(tubes: Tube[]): string {
   // Sort tubes for canonical form (order doesn't matter)
@@ -175,7 +175,6 @@ function isSolvableDFS(tubes: Tube[], maxDepth: number): boolean {
           iterations++;
           visited.add(key);
           if (dfs(next, depth + 1)) return true;
-          // No backtrack: keep visited states to avoid redundant exploration
         }
       }
     }
