@@ -1,0 +1,25 @@
+{
+  "name": "@arcade/lib-sudoku",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "phaser": "^3.80.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.0"
+  }
+}
