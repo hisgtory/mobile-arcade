@@ -32,8 +32,10 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
-// ─── GetColor ───
-import { getColorRoutes } from './games/getcolor/routes';
+// ─── GetColor (side-effect: registers routes) ───
+import './games/getcolor/routes';
+
+import { getRegisteredRoutes } from './router';
 
 const PlayLayout = styled('div', {
   width: '100%',
@@ -330,8 +332,10 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
-      {/* GetColor */}
-      {getColorRoutes()}
+      {/* Dynamically registered game routes */}
+      {getRegisteredRoutes().map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

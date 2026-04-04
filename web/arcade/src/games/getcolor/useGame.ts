@@ -45,8 +45,8 @@ export function useGame({ stage, onClear, onTimeout }: UseGameOptions) {
     gameRef.current = game;
 
     // Haptic events
-    game.events.on('tube-tapped', () => haptic('light'));
-    game.events.on('tube-solved', () => haptic('medium'));
+    game.events.on('tube-tapped', () => haptic('tube-tapped'));
+    game.events.on('tube-solved', () => haptic('tube-solved'));
 
     // Unified state update
     game.events.on('state-update', (data: { score: number; moves: number; phase: string; timeLeft: number }) => {
