@@ -6,8 +6,10 @@
  * Gravity pulls blocks down, empty columns collapse left.
  *
  * Events emitted:
- *   'score-update' — { score }
- *   'game-over'    — { score }
+ *   'state-update'    — { score, phase }
+ *   'block-tapped'    — (haptic trigger)
+ *   'blocks-crushed'  — (haptic trigger)
+ *   'game-over'       — { score }
  */
 
 import Phaser from 'phaser';
@@ -32,6 +34,7 @@ export class PlayScene extends Phaser.Scene {
   private phase: GamePhase = GamePhase.PLAYING;
   private board!: Board;
   private score: number = 0;
+  private dpr: number = 1;
 
   // Visual
   private cellSize: number = 32;
@@ -43,12 +46,12 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { gameConfig?: GameConfig }): void {
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__blockcrushConfig;
+  init(data: { config?: GameConfig; dpr?: number }): void {
+    this.gameConfig = data?.config ?? (this.game as any).__blockcrushConfig;
+    this.dpr = data?.dpr ?? (this.game as any).__dpr ?? 1;
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
     const { width, height } = this.scale;
 
     this.phase = GamePhase.PLAYING;
@@ -58,7 +61,7 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#f0f2f5');
 
     // Calculate cell size to fit grid on screen
-    const padding = 16 * dpr;
+    const padding = 16 * this.dpr;
     const availableW = width - padding * 2;
     const availableH = height - padding * 2;
     this.cellSize = Math.floor(Math.min(availableW / COLS, availableH / ROWS));
@@ -109,7 +112,7 @@ export class PlayScene extends Phaser.Scene {
       this.handleTap(pointer.x, pointer.y);
     });
 
-    this.emitScore();
+    this.emitState();
   }
 
   // -- TAP HANDLING --
@@ -130,22 +133,29 @@ export class PlayScene extends Phaser.Scene {
       return;
     }
 
+    // Haptic: block tapped
+    this.game.events.emit('block-tapped');
+
     this.phase = GamePhase.ANIMATING;
 
     // Calculate score
     const groupScore = calcGroupScore(group.length);
     this.score += groupScore;
 
+    // Snapshot colors before crush for gravity animation
+    const preCrush: number[][] = this.board.map((row) => [...row]);
+
     // Crush on the data model
     crushGroup(this.board, group);
 
     // Animate crush (shrink + particles), then gravity + shift
-    this.animateCrush(group, groupScore);
+    this.animateCrush(group, groupScore, preCrush);
   }
 
   private animateCrush(
     group: { row: number; col: number }[],
     groupScore: number,
+    preCrush: number[][],
   ): void {
     // Show score popup
     this.showScorePopup(group, groupScore);
@@ -169,9 +179,8 @@ export class PlayScene extends Phaser.Scene {
           const cell = this.gridCells[row][col];
           const cx = cell.x;
           const cy = cell.y;
-          const color = cell.fillColor;
 
-          this.spawnParticles(cx, cy, color);
+          this.spawnParticles(cx, cy, preCrush[row][col] || 0xfa6c41);
 
           this.tweens.add({
             targets: cell,
@@ -187,6 +196,8 @@ export class PlayScene extends Phaser.Scene {
               cell.setStrokeStyle(1, CELL_BORDER_COLOR, 0.5);
               completed++;
               if (completed === totalCells) {
+                // Haptic: blocks crushed
+                this.game.events.emit('blocks-crushed');
                 this.onCrushComplete();
               }
             },
@@ -199,106 +210,75 @@ export class PlayScene extends Phaser.Scene {
   private onCrushComplete(): void {
     // Apply gravity to data model
     applyGravity(this.board);
+    // Shift columns in data model
+    shiftColumnsLeft(this.board);
 
-    // Animate gravity (blocks falling to new positions)
-    this.animateGravity(() => {
-      // Shift columns in data model
-      shiftColumnsLeft(this.board);
+    // Animate the board redraw with a falling effect
+    this.animateBoardRedraw(() => {
+      this.emitState();
 
-      // Animate column shift
-      this.animateColumnShift(() => {
-        this.emitScore();
-
-        // Check game over
-        if (!hasValidMoves(this.board)) {
-          this.gameOver();
-        } else {
-          this.phase = GamePhase.PLAYING;
-        }
-      });
+      // Check game over
+      if (!hasValidMoves(this.board)) {
+        this.gameOver();
+      } else {
+        this.phase = GamePhase.PLAYING;
+      }
     });
   }
 
-  private animateGravity(onComplete: () => void): void {
-    // Update all cell visuals to match new board state with falling tween
+  /**
+   * Redraw all cells to match the current board state.
+   * Cells that gain a new color (block fell into them) animate from above.
+   * Cells that become empty just snap to empty.
+   */
+  private animateBoardRedraw(onComplete: () => void): void {
     let tweenCount = 0;
     let tweenDone = 0;
 
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
+    for (let c = 0; c < COLS; c++) {
+      for (let r = ROWS - 1; r >= 0; r--) {
         const color = this.board[r][c];
         const cell = this.gridCells[r][c];
+        const targetX = this.gridStartX + c * this.cellSize + this.cellSize / 2;
         const targetY = this.gridStartY + r * this.cellSize + this.cellSize / 2;
 
-        if (color !== 0) {
-          const prevColor = cell.fillColor;
-          const prevY = cell.y;
-          cell.setFillStyle(color);
-          cell.setStrokeStyle(1, 0xffffff, 0.3);
+        // Reset position (cells are fixed slots)
+        cell.setPosition(targetX, targetY);
 
-          if (Math.abs(prevY - targetY) > 1 || prevColor !== color) {
+        const currentColor = cell.fillColor;
+
+        if (color !== 0) {
+          if (currentColor !== color || currentColor === CELL_BG_COLOR) {
+            // This cell has a new block that fell in — animate from above
+            cell.setFillStyle(color);
+            cell.setStrokeStyle(1, 0xffffff, 0.3);
+            cell.setScale(0.3);
+            cell.setAlpha(0.5);
+
+            const delay = (ROWS - 1 - r) * 20 + c * 5;
             tweenCount++;
             this.tweens.add({
               targets: cell,
-              y: targetY,
-              duration: 150,
-              ease: 'Bounce.easeOut',
-              delay: c * 10,
+              scaleX: 1,
+              scaleY: 1,
+              alpha: 1,
+              duration: 180,
+              ease: 'Back.easeOut',
+              delay,
               onComplete: () => {
                 tweenDone++;
                 if (tweenDone === tweenCount) onComplete();
               },
             });
           }
+          // If same color, no animation needed
         } else {
+          // Empty cell
           cell.setFillStyle(CELL_BG_COLOR);
           cell.setStrokeStyle(1, CELL_BORDER_COLOR, 0.5);
-          cell.setPosition(
-            this.gridStartX + c * this.cellSize + this.cellSize / 2,
-            targetY,
-          );
+          cell.setScale(1);
+          cell.setAlpha(1);
         }
-      }
-    }
-
-    if (tweenCount === 0) onComplete();
-  }
-
-  private animateColumnShift(onComplete: () => void): void {
-    // Snap all cells to correct positions based on board state
-    let tweenCount = 0;
-    let tweenDone = 0;
-
-    for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        const color = this.board[r][c];
-        const cell = this.gridCells[r][c];
-        const targetX = this.gridStartX + c * this.cellSize + this.cellSize / 2;
-        const targetY = this.gridStartY + r * this.cellSize + this.cellSize / 2;
-
-        if (color !== 0) {
-          cell.setFillStyle(color);
-          cell.setStrokeStyle(1, 0xffffff, 0.3);
-        } else {
-          cell.setFillStyle(CELL_BG_COLOR);
-          cell.setStrokeStyle(1, CELL_BORDER_COLOR, 0.5);
-        }
-
-        if (Math.abs(cell.x - targetX) > 1) {
-          tweenCount++;
-          this.tweens.add({
-            targets: cell,
-            x: targetX,
-            duration: 120,
-            ease: 'Power2',
-            onComplete: () => {
-              tweenDone++;
-              if (tweenDone === tweenCount) onComplete();
-            },
-          });
-        }
-
-        cell.y = targetY;
       }
     }
 
@@ -419,16 +399,15 @@ export class PlayScene extends Phaser.Scene {
     this.phase = GamePhase.GAME_OVER;
 
     this.cameras.main.shake(300, 0.008);
-    this.cameras.main.fade(600, 0, 0, 0, false, (_cam: unknown, progress: number) => {
+    this.cameras.main.fade(600, 0, 0, 0, false, (_cam: any, progress: number) => {
       if (progress >= 1) {
-        this.gameConfig?.onGameOver?.();
         this.game.events.emit('game-over', { score: this.score });
       }
     });
   }
 
-  private emitScore(): void {
-    this.game.events.emit('score-update', { score: this.score });
+  private emitState(): void {
+    this.game.events.emit('state-update', { score: this.score, phase: this.phase });
   }
 
   shutdown(): void {

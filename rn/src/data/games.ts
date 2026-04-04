@@ -129,6 +129,16 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/blockpuzzle/v1',
     isNew: true,
   },
+  {
+    id: 'blockcrush',
+    name: 'Block Crush',
+    description: 'Tap groups of same-colored blocks!',
+    icon: '💥',
+    category: 'puzzle',
+    color: '#F43F5E',
+    webPath: '/games/blockcrush/v1',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

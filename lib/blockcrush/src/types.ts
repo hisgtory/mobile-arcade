@@ -9,7 +9,7 @@ export enum GamePhase {
 }
 
 export interface GameConfig {
-  onGameOver?: () => void;
+  // Empty for now — game communicates via Phaser events only
 }
 
 export const COLS = 10;

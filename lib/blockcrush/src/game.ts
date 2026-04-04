@@ -17,8 +17,6 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
     scale: {
       mode: Phaser.Scale.FIT,
       autoCenter: Phaser.Scale.CENTER_BOTH,
-      width: DEFAULT_WIDTH * dpr,
-      height: DEFAULT_HEIGHT * dpr,
     },
     render: {
       antialias: true,
@@ -27,13 +25,15 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
     scene: [PlayScene],
   });
 
-  (game as any).__blockcrushConfig = config;
-  (game as any).__dpr = dpr;
-  game.scene.start('PlayScene', { gameConfig: config });
+  game.scene.start('PlayScene', { config, dpr });
 
   return game;
 }
 
 export function destroyGame(game: Phaser.Game): void {
   game.destroy(true);
+}
+
+export function getPlayScene(game: Phaser.Game): PlayScene | null {
+  return game.scene.getScene('PlayScene') as PlayScene | null;
 }
