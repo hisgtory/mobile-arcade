@@ -4,7 +4,6 @@ import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
-  cleared: boolean;
 }
 
 interface UseGameOptions {
@@ -13,29 +12,29 @@ interface UseGameOptions {
 
 export function useGame({ onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [score, setScore] = useState(0);
-  const [combo, setCombo] = useState(0);
-
   const onGameOverRef = useRef(onGameOver);
   onGameOverRef.current = onGameOver;
+  const [score, setScore] = useState(0);
+  const [bestScore, setBestScore] = useState(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const game = createGame(containerRef.current);
 
-    game.events.on('state-update', (data: { score: number; combo: number }) => {
-      setScore(data.score);
-      setCombo(data.combo);
-    });
+    game.events.on('piece-placed', () => haptic('piece-placed'));
+    game.events.on('line-cleared', () => haptic('line-cleared'));
+    game.events.on('combo-cleared', () => haptic('combo-cleared'));
+    game.events.on('game-over', () => haptic('game-over'));
 
-    game.events.on('piece-placed', () => haptic('light'));
-    game.events.on('line-cleared', () => haptic('medium'));
-    game.events.on('combo-cleared', () => haptic('heavy'));
+    game.events.on('state-update', (data: { score: number; bestScore: number }) => {
+      setScore(data.score);
+      setBestScore(data.bestScore);
+    });
 
     game.events.on('game-over', (data: { score: number }) => {
       stageComplete({ stage: 0, score: data.score, cleared: false });
-      onGameOverRef.current?.({ score: data.score, cleared: false });
+      onGameOverRef.current?.({ score: data.score });
     });
 
     return () => {
@@ -43,5 +42,5 @@ export function useGame({ onGameOver }: UseGameOptions) {
     };
   }, []);
 
-  return { containerRef, score, combo };
+  return { containerRef, score, bestScore };
 }

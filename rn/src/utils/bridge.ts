@@ -19,7 +19,8 @@ type BridgeRequestType =
   | 'HAPTIC'
   | 'ITEM_USED'
   | 'STAGE_CLEAR'
-  | 'GAME_OVER';
+  | 'GAME_OVER'
+  | 'NAVIGATE';
 
 type BridgeResponseType =
   | 'ACK'
@@ -54,6 +55,7 @@ export interface StageCompleteData {
 
 export interface BridgeHostCallbacks {
   onStageComplete?: (data: StageCompleteData) => void;
+  onNavigateArcade?: () => void;
 }
 
 // ─── Response Type Mapping ──────────────────────────────────
@@ -68,6 +70,7 @@ const RESPONSE_TYPE_MAP: Record<BridgeRequestType, BridgeResponseType> = {
   ITEM_USED: 'ACK',
   STAGE_CLEAR: 'ACK',
   GAME_OVER: 'ACK',
+  NAVIGATE: 'ACK',
 };
 
 // ─── BridgeHost ─────────────────────────────────────────────
@@ -135,6 +138,9 @@ export class BridgeHost {
           break;
         case 'GAME_OVER':
           this.handleStageComplete(msg, false);
+          break;
+        case 'NAVIGATE':
+          this.handleNavigate(msg);
           break;
         default:
           this.sendResponse(msg.msgId, 'ACK', 'error', undefined, 'unknown_type');
@@ -208,14 +214,63 @@ export class BridgeHost {
     this.callbacks.onStageComplete?.({ stage, score, elapsedMs, cleared });
   }
 
+  private handleNavigate(msg: BridgeMessage) {
+    const target = msg.payload?.target;
+    if (target === 'arcade') {
+      this.callbacks.onNavigateArcade?.();
+    }
+    this.sendResponse(msg.msgId, 'ACK', 'ack');
+  }
+
+  // ─── Haptic Patterns ───────────────────────────────────
+  // Web sends game event names, RN decides the haptic pattern.
+  // To change haptic feel, edit this map — no web changes needed.
+
+  private static readonly HAPTIC_PATTERNS: Record<string, { style: Haptics.ImpactFeedbackStyle; count: number }> = {
+    // ─── Found3 ───
+    'tile-tapped':   { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'slot-matched':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Crunch3 ───
+    'tile-swapped':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'match-cleared': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── BlockRush ───
+    'piece-placed':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'line-cleared':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── WaterSort ───
+    'tube-tapped':   { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'tube-solved':   { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── TicTacToe ───
+    'cell-tapped':   { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'round-end':     { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+    'grid-upgrade':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+    // ─── Number10 (Make 10) ───
+    'drag-start':    { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'cells-cleared': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Minesweeper ───
+    'flag-toggled':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'mine-hit':      { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+    'game-clear':    { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Sudoku ───
+    'cell-selected': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'number-placed': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'mistake-made':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+    // ─── Block Puzzle ─── (piece-placed, line-cleared shared with BlockRush)
+    'combo-cleared': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Fallback (direct style names) ───
+    light:  { style: Haptics.ImpactFeedbackStyle.Light, count: 1 },
+    medium: { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 },
+    heavy:  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+  };
+
   private async handleHaptic(msg: BridgeMessage) {
-    const style = msg.payload?.style ?? 'medium';
-    const impactMap: Record<string, Haptics.ImpactFeedbackStyle> = {
-      light: Haptics.ImpactFeedbackStyle.Light,
-      medium: Haptics.ImpactFeedbackStyle.Medium,
-      heavy: Haptics.ImpactFeedbackStyle.Heavy,
-    };
-    await Haptics.impactAsync(impactMap[style] ?? Haptics.ImpactFeedbackStyle.Medium);
+    const event = msg.payload?.style ?? 'medium';
+    const pattern = BridgeHost.HAPTIC_PATTERNS[event]
+      ?? { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 };
+
+    for (let i = 0; i < pattern.count; i++) {
+      await Haptics.impactAsync(pattern.style);
+      if (i < pattern.count - 1) await new Promise((r) => setTimeout(r, 60));
+    }
     this.sendResponse(msg.msgId, 'ACK', 'ack');
   }
 
