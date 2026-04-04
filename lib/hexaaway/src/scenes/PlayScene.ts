@@ -5,8 +5,10 @@
  * Drag pieces onto the grid. Full lines clear.
  *
  * Events emitted:
- *   'score-update' — { score }
- *   'game-over'    — { score }
+ *   'state-update'   — { score, phase }
+ *   'piece-placed'   — (haptic trigger)
+ *   'line-cleared'   — (haptic trigger)
+ *   'game-over'      — { score }
  */
 
 import Phaser from 'phaser';
@@ -59,11 +61,11 @@ export class PlayScene extends Phaser.Scene {
   }
 
   init(data: { gameConfig?: GameConfig }): void {
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__hexaawayConfig;
+    this.gameConfig = data?.gameConfig ?? this.game.registry.get('hexaawayConfig');
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr: number = this.game.registry.get('dpr') || 1;
     const { width, height } = this.scale;
 
     this.phase = GamePhase.PLAYING;
@@ -103,7 +105,7 @@ export class PlayScene extends Phaser.Scene {
 
     // Generate initial 3 pieces
     this.spawnPieceSlots();
-    this.emitScore();
+    this.emitState();
   }
 
   // -- HEX COORDINATE CONVERSION (pointy-top) --
@@ -172,7 +174,7 @@ export class PlayScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     const gridAreaH = height * 0.62;
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr: number = this.game.registry.get('dpr') || 1;
     const padding = 16 * dpr;
     const gridBottom = padding + gridAreaH;
     const slotAreaY = gridBottom + (height - gridBottom) / 2;
@@ -202,7 +204,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private updateDrag(px: number, py: number): void {
-    if (!this.dragPiece) return;
+    if (!this.dragPiece || this.phase !== GamePhase.PLAYING) return;
     const offsetY = this.hexSize * 3;
     this.dragPiece.moveTo(px, py - offsetY);
 
@@ -215,7 +217,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private endDrag(px: number, py: number): void {
-    if (!this.dragPiece) return;
+    if (!this.dragPiece || this.phase !== GamePhase.PLAYING) return;
 
     const offsetY = this.hexSize * 3;
     const hex = this.pixelToHex(px, py - offsetY);
@@ -227,7 +229,9 @@ export class PlayScene extends Phaser.Scene {
     this.clearHighlights();
 
     if (canPlace(this.board, piece, hex.q, hex.r)) {
-      // Valid placement
+      // Valid placement — emit haptic immediately before animation
+      this.game.events.emit('piece-placed');
+
       const placed = placePiece(this.board, piece, hex.q, hex.r);
 
       // Update visual grid
@@ -262,6 +266,10 @@ export class PlayScene extends Phaser.Scene {
       if (lines.length > 0) {
         this.phase = GamePhase.ANIMATING;
         this.consecutiveClears++;
+
+        // Emit haptic event immediately before animation
+        this.game.events.emit('line-cleared');
+
         const cleared = clearLines(this.board, lines);
         const lineCount = lines.length;
         const clearScore =
@@ -325,7 +333,7 @@ export class PlayScene extends Phaser.Scene {
         this.score += placed.length;
       }
 
-      this.emitScore();
+      this.emitState();
 
       // Check if all 3 pieces used → spawn new set
       if (this.pieceSlots.every((s) => s.used)) {
@@ -458,11 +466,15 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  private emitScore(): void {
-    this.game.events.emit('score-update', { score: this.score });
+  private emitState(): void {
+    this.game.events.emit('state-update', { score: this.score, phase: this.phase });
   }
 
   shutdown(): void {
+    this.game.events.off('state-update');
+    this.game.events.off('piece-placed');
+    this.game.events.off('line-cleared');
+    this.game.events.off('game-over');
     this.pieceSlots = [];
     this.cellGraphics.clear();
     this.highlightHexes = [];

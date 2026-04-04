@@ -24,8 +24,7 @@ import { HUD as BlockRushHUD } from './games/blockrush/HUD';
 import { useGame as useBlockRushGame, type GameResult as BlockRushResult } from './games/blockrush/useGame';
 
 // ─── HexaAway ───
-import { HUD as HexaAwayHUD } from './games/hexaaway/HUD';
-import { useGame as useHexaAwayGame, type GameResult as HexaAwayResult } from './games/hexaaway/useGame';
+import { HexaAwayTitleRoute, HexaAwayPlayRoute } from './games/hexaaway/routes';
 
 // ─── WaterSort ───
 import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
@@ -217,72 +216,6 @@ function BlockRushPlaying({ onGameOver }: { onGameOver: (r: BlockRushResult) => 
   return (
     <PlayLayout>
       <BlockRushHUD score={score} />
-      <GameCanvas ref={containerRef} />
-    </PlayLayout>
-  );
-}
-
-// ─── WaterSort Routes ─────────────────────────────────
-
-// ─── HexaAway Routes ──────────────────────────────────
-
-function HexaAwayTitleRoute() {
-  const navigate = useNavigate();
-  globalStyles();
-  return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Hexa Away</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Fill hex lines to clear!</p>
-      <button
-        onClick={() => navigate('/games/hexaaway/v1/play')}
-        style={{ marginTop: 32, backgroundColor: '#8b5cf6', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
-        Play
-      </button>
-    </PlayLayout>
-  );
-}
-
-function HexaAwayPlayRoute() {
-  const navigate = useNavigate();
-  const [gameResult, setGameResult] = useState<HexaAwayResult | null>(null);
-
-  const handleGameOver = useCallback((r: HexaAwayResult) => {
-    setGameResult(r);
-  }, []);
-
-  if (gameResult) {
-    return (
-      <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 24, padding: 20 }}>
-        <h1 style={{ fontSize: 36, fontWeight: 800, color: '#DC2626' }}>Game Over</h1>
-        <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '85%', maxWidth: 320, textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-          <p style={{ fontSize: 14, color: '#6B7280' }}>Score</p>
-          <p style={{ fontSize: 28, fontWeight: 700, color: '#111827' }}>{gameResult.score.toLocaleString()}</p>
-        </div>
-        <button
-          onClick={() => { setGameResult(null); }}
-          style={{ backgroundColor: '#8b5cf6', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 18, fontWeight: 700, cursor: 'pointer', width: '85%', maxWidth: 320 }}
-        >
-          Retry
-        </button>
-        <button
-          onClick={() => navigate('/games/hexaaway/v1')}
-          style={{ backgroundColor: '#fff', color: '#374151', border: '1px solid #D1D5DB', padding: '16px 48px', borderRadius: 16, fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '85%', maxWidth: 320 }}
-        >
-          Home
-        </button>
-      </PlayLayout>
-    );
-  }
-
-  return <HexaAwayPlaying onGameOver={handleGameOver} />;
-}
-
-function HexaAwayPlaying({ onGameOver }: { onGameOver: (r: HexaAwayResult) => void }) {
-  const { containerRef, score } = useHexaAwayGame({ onGameOver });
-  return (
-    <PlayLayout>
-      <HexaAwayHUD score={score} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>
   );
