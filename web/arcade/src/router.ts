@@ -1,27 +1,26 @@
-/**
- * Lightweight route registry for per-game routes.tsx files.
- * Games call registerRoutes() as a side-effect import;
- * App.tsx renders all registered routes via getRegisteredRoutes().
- */
-import type { ReactElement } from 'react';
+import { type ReactNode } from 'react';
 
-interface RouteEntry {
+interface GameRoute {
   path: string;
-  element: ReactElement;
+  element: ReactNode;
 }
 
-const routeStore: RouteEntry[] = [];
+const registry: GameRoute[] = [];
 
-export function registerRoutes(
-  basePath: string,
-  routes: { path: string; element: ReactElement }[],
-): void {
-  for (const r of routes) {
-    const fullPath = r.path ? `${basePath}/${r.path}` : basePath;
-    routeStore.push({ path: fullPath, element: r.element });
+export function registerRoutes(basePath: string, routes: { path: string; element: ReactNode }[]) {
+  const base = basePath.replace(/\/$/, '');
+  for (const route of routes) {
+    const sub = route.path.replace(/^\//, '');
+    const fullPath = sub ? `${base}/${sub}` : base;
+    const existing = registry.findIndex(r => r.path === fullPath);
+    if (existing >= 0) {
+      registry[existing] = { path: fullPath, element: route.element };
+    } else {
+      registry.push({ path: fullPath, element: route.element });
+    }
   }
 }
 
-export function getRegisteredRoutes(): readonly RouteEntry[] {
-  return routeStore;
+export function getRegisteredRoutes(): readonly GameRoute[] {
+  return registry.slice();
 }

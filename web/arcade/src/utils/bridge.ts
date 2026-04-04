@@ -1,5 +1,6 @@
 /**
- * Lightweight bridge for sending stage-clear/game-over messages to RN.
+ * Lightweight bridge for RN communication.
+ * Sends haptic events, stage-clear, and game-over messages.
  * Shared across all games in web/arcade.
  */
 
@@ -20,6 +21,18 @@ function sendToRN(type: string, payload: Record<string, unknown>): void {
   window.ReactNativeWebView!.postMessage(JSON.stringify(msg));
 }
 
+export function haptic(event: string): void {
+  sendToRN('HAPTIC', { style: event });
+}
+
+export function navigateToArcade(): void {
+  if (isRN) {
+    sendToRN('NAVIGATE', { target: 'arcade' });
+  } else {
+    window.location.href = '/';
+  }
+}
+
 export function stageComplete(data: {
   stage: number;
   score: number;
@@ -28,8 +41,4 @@ export function stageComplete(data: {
   cleared: boolean;
 }): void {
   sendToRN(data.cleared ? 'STAGE_CLEAR' : 'GAME_OVER', data);
-}
-
-export function haptic(event: string): void {
-  sendToRN('HAPTIC', { event });
 }
