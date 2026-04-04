@@ -1,50 +1,129 @@
-import { useNavigate } from 'react-router-dom';
+import { useRef, useEffect } from 'react';
 import { styled } from '../styles/stitches.config';
 
-const Grid = styled('div', {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(5, 1fr)',
-  gap: 12,
-  padding: '0 20px',
-  maxWidth: 320,
-  width: '100%',
+export interface StageInfo {
+  id: number;
+  cleared: boolean;
+  stars?: number;
+}
+
+interface StageMapProps {
+  stages: StageInfo[];
+  currentStage: number;
+  onStageSelect: (stage: number) => void;
+}
+
+const ScrollContainer = styled('div', {
+  flex: 1,
+  overflowY: 'auto',
+  WebkitOverflowScrolling: 'touch',
 });
 
-const StageButton = styled('button', {
+const Track = styled('div', {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6,
+  padding: '20px 32px 40px',
+  minHeight: '100%',
+});
+
+const NodeRow = styled('div', {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+});
+
+const NodeCircle = styled('button', {
   width: 52,
   height: 52,
-  borderRadius: 12,
-  border: '2px solid $gray200',
-  backgroundColor: '$white',
-  fontSize: 18,
-  fontWeight: 700,
-  color: '$text',
-  cursor: 'pointer',
+  borderRadius: '50%',
+  border: 'none',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  transition: 'background-color 0.15s',
-  '&:active': {
-    backgroundColor: '$gray100',
+  fontSize: 18,
+  fontWeight: 700,
+  transition: 'transform 0.15s',
+  flexShrink: 0,
+
+  variants: {
+    state: {
+      locked: {
+        backgroundColor: '$gray200',
+        color: '$gray400',
+        cursor: 'default',
+        opacity: 0.5,
+      },
+      current: {
+        backgroundColor: '$primary',
+        color: '$white',
+        cursor: 'pointer',
+        boxShadow: '0 0 0 4px rgba(250, 108, 65, 0.3)',
+        transform: 'scale(1.15)',
+      },
+      cleared: {
+        backgroundColor: '$emerald500',
+        color: '$white',
+        cursor: 'pointer',
+      },
+    },
   },
 });
 
-interface StageMapProps {
-  stageCount: number;
-  basePath: string; // e.g. '/games/nonogram/v1'
-}
+const NodeLabel = styled('span', {
+  fontSize: 13,
+  color: '$textMuted',
+  fontWeight: 600,
+});
 
-export function StageMap({ stageCount, basePath }: StageMapProps) {
-  const navigate = useNavigate();
-  const stages = Array.from({ length: stageCount }, (_, i) => i + 1);
+export function StageMap({ stages, currentStage, onStageSelect }: StageMapProps) {
+  const currentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      currentRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [currentStage]);
+
+  const sorted = [...stages].sort((a, b) => b.id - a.id);
 
   return (
-    <Grid>
-      {stages.map((s) => (
-        <StageButton key={s} onClick={() => navigate(`${basePath}/stage/${s}`)}>
-          {s}
-        </StageButton>
-      ))}
-    </Grid>
+    <ScrollContainer>
+      <Track>
+        {sorted.map((stage) => {
+          const state =
+            stage.id > currentStage
+              ? 'locked'
+              : stage.id === currentStage
+                ? 'current'
+                : 'cleared';
+          const isRight = stage.id % 2 === 0;
+
+          return (
+            <NodeRow
+              key={stage.id}
+              ref={state === 'current' ? currentRef : undefined}
+              css={{
+                justifyContent: isRight ? 'flex-end' : 'flex-start',
+                paddingLeft: isRight ? 0 : 16,
+                paddingRight: isRight ? 16 : 0,
+              }}
+            >
+              {isRight && <NodeLabel>Stage {stage.id}</NodeLabel>}
+              <NodeCircle
+                state={state}
+                onClick={() => state !== 'locked' && onStageSelect(stage.id)}
+                disabled={state === 'locked'}
+                aria-label={`Stage ${stage.id}${state === 'cleared' ? ', cleared' : state === 'current' ? ', current' : ', locked'}`}
+              >
+                {state === 'cleared' ? '✓' : stage.id}
+              </NodeCircle>
+              {!isRight && <NodeLabel>Stage {stage.id}</NodeLabel>}
+            </NodeRow>
+          );
+        })}
+      </Track>
+    </ScrollContainer>
   );
 }

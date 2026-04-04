@@ -1,31 +1,29 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { styled } from '../../styles/stitches.config';
 import { registerRoutes } from '../../router';
 import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { StageMap } from '../../components/StageMap';
+import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { GameCanvas } from '../../components/GameCanvas';
 import { ClearScreen } from './ClearScreen';
 import { HUD } from './HUD';
 import { useGame, type GameResult } from './useGame';
 
-const PlayLayout = styled('div', {
-  width: '100%',
-  height: '100vh',
-  display: 'flex',
-  flexDirection: 'column',
-  backgroundColor: '$bg',
-  overflow: 'hidden',
-});
-
-const isRN = typeof window !== 'undefined' && typeof window.ReactNativeWebView !== 'undefined';
+const STAGE_COUNT = 10;
 
 // ─── Title / Stage Map ──────────────────────────────────
 
 function NonogramHome() {
+  const navigate = useNavigate();
+  const stages = Array.from({ length: STAGE_COUNT }, (_, i) => ({ id: i + 1, cleared: false }));
+
   return (
-    <GameHomeLayout icon="🖼️" title="Nonogram" description="Fill the grid to reveal pixel art!">
-      <StageMap stageCount={10} basePath="/games/nonogram/v1" />
+    <GameHomeLayout title="Nonogram" icon="🖼️">
+      <StageMap
+        stages={stages}
+        currentStage={1}
+        onStageSelect={(stage) => navigate(`/games/nonogram/v1/stage/${stage}`)}
+      />
     </GameHomeLayout>
   );
 }

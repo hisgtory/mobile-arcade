@@ -6,6 +6,10 @@ import { globalStyles } from './styles/global';
 // ─── Shared ───
 import { GameCanvas } from './components/GameCanvas';
 
+// ─── Nonogram (side-effect: registers routes) ───
+import './games/nonogram/routes';
+import { getRegisteredRoutes } from './router';
+
 // ─── Found3 ───
 import { TitleScreen as Found3Title } from './games/found3/TitleScreen';
 import { ClearScreen as Found3Clear } from './games/found3/ClearScreen';
@@ -31,10 +35,6 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
-
-// ─── Nonogram (side-effect: registers routes) ───
-import './games/nonogram/routes';
-import { getRegisteredRoutes } from './router';
 
 const PlayLayout = styled('div', {
   width: '100%',
@@ -331,9 +331,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
-      {/* Registered game routes */}
-      {getRegisteredRoutes().map(({ fullPath, element }) => (
-        <Route key={fullPath} path={fullPath} element={element} />
+      {/* Registered game routes (Nonogram, etc.) */}
+      {getRegisteredRoutes().map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
       ))}
 
       {/* Default */}
