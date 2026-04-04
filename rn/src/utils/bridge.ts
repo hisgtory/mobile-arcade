@@ -228,7 +228,7 @@ export class BridgeHost {
   }
 
   private async handleHaptic(msg: BridgeMessage) {
-    const event = msg.payload?.style ?? 'medium';
+    const event = msg.payload?.event ?? msg.payload?.style ?? 'medium';
     const pattern = HAPTIC_PATTERNS[event] ?? HAPTIC_PATTERNS['medium'];
 
     for (let i = 0; i < pattern.count; i++) {

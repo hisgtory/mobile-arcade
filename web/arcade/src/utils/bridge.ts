@@ -31,5 +31,5 @@ export function stageComplete(data: {
 }
 
 export function haptic(event: string): void {
-  sendToRN('HAPTIC', { style: event });
+  sendToRN('HAPTIC', { event });
 }

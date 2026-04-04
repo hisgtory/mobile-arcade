@@ -41,7 +41,7 @@ export function GameHomeLayout({ icon, title, description, children }: GameHomeL
   globalStyles();
   return (
     <Container>
-      <Title>{icon} {title}</Title>
+      <Title><span role="img" aria-label={title}>{icon}</span> {title}</Title>
       <Description>{description}</Description>
       {children}
     </Container>
