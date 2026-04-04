@@ -72,7 +72,7 @@ const RESPONSE_TYPE_MAP: Record<BridgeRequestType, BridgeResponseType> = {
 
 // ─── Haptic Patterns ────────────────────────────────────────
 
-const HAPTIC_PATTERNS: Record<string, { style: string; count?: number }> = {
+const HAPTIC_PATTERNS: Record<string, { style: string }> = {
   'piece-placed': { style: 'light' },
   'line-cleared': { style: 'medium' },
   'block-tapped': { style: 'light' },
@@ -221,6 +221,7 @@ export class BridgeHost {
   }
 
   private async handleHaptic(msg: BridgeMessage) {
+    // Supports both semantic event names (new) and legacy style names (backward compat)
     const event = msg.payload?.event;
     const fallbackStyle = msg.payload?.style ?? 'medium';
     const pattern = event ? HAPTIC_PATTERNS[event] : null;
