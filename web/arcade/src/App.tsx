@@ -29,8 +29,7 @@ import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
 // ─── Woodoku ───
-import { HUD as WoodokuHUD } from './games/woodoku/HUD';
-import { useGame as useWoodokuGame, type GameResult as WoodokuResult } from './games/woodoku/useGame';
+import { woodokuRoutes } from './games/woodoku/routes';
 
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
@@ -277,68 +276,7 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
 }
 
 // ─── Woodoku Routes ───────────────────────────────────
-
-function WoodokuTitleRoute() {
-  const navigate = useNavigate();
-  globalStyles();
-  return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#5c4a32', letterSpacing: -1 }}>Woodoku</h1>
-      <p style={{ fontSize: 16, color: '#8b7355' }}>Fill rows, columns & regions!</p>
-      <button
-        onClick={() => navigate('/games/woodoku/v1/play')}
-        style={{ marginTop: 32, backgroundColor: '#8b5e3c', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
-        Play
-      </button>
-    </PlayLayout>
-  );
-}
-
-function WoodokuPlayRoute() {
-  const navigate = useNavigate();
-  const [gameResult, setGameResult] = useState<WoodokuResult | null>(null);
-
-  const handleGameOver = useCallback((r: WoodokuResult) => {
-    setGameResult(r);
-  }, []);
-
-  if (gameResult) {
-    return (
-      <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 24, padding: 20 }}>
-        <h1 style={{ fontSize: 36, fontWeight: 800, color: '#a0522d' }}>Game Over</h1>
-        <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '85%', maxWidth: 320, textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-          <p style={{ fontSize: 14, color: '#8b7355' }}>Score</p>
-          <p style={{ fontSize: 28, fontWeight: 700, color: '#5c4a32' }}>{gameResult.score.toLocaleString()}</p>
-        </div>
-        <button
-          onClick={() => { setGameResult(null); }}
-          style={{ backgroundColor: '#8b5e3c', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 18, fontWeight: 700, cursor: 'pointer', width: '85%', maxWidth: 320 }}
-        >
-          Retry
-        </button>
-        <button
-          onClick={() => navigate('/games/woodoku/v1')}
-          style={{ backgroundColor: '#fff', color: '#5c4a32', border: '1px solid #d4c5a9', padding: '16px 48px', borderRadius: 16, fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '85%', maxWidth: 320 }}
-        >
-          Home
-        </button>
-      </PlayLayout>
-    );
-  }
-
-  return <WoodokuPlaying onGameOver={handleGameOver} />;
-}
-
-function WoodokuPlaying({ onGameOver }: { onGameOver: (r: WoodokuResult) => void }) {
-  const { containerRef, score } = useWoodokuGame({ onGameOver });
-  return (
-    <PlayLayout>
-      <WoodokuHUD score={score} />
-      <GameCanvas ref={containerRef} />
-    </PlayLayout>
-  );
-}
+// (defined in games/woodoku/routes.tsx)
 
 // ─── TicTacToe Routes ─────────────────────────────────
 
@@ -388,8 +326,7 @@ export function App() {
       <Route path="/games/blockrush/v1/play" element={<BlockRushPlayRoute />} />
 
       {/* Woodoku */}
-      <Route path="/games/woodoku/v1" element={<WoodokuTitleRoute />} />
-      <Route path="/games/woodoku/v1/play" element={<WoodokuPlayRoute />} />
+      {woodokuRoutes()}
 
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />

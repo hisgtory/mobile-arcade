@@ -77,6 +77,16 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'woodoku',
+    name: 'Woodoku Blast',
+    description: 'Fill rows, columns & regions!',
+    icon: '🪵',
+    category: 'puzzle',
+    color: '#92400E',
+    webPath: '/games/woodoku/v1',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

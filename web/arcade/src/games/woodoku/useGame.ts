@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createGame, destroyGame } from '@arcade/lib-woodoku';
-import { stageComplete } from '../../utils/bridge';
+import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -14,27 +14,34 @@ interface UseGameOptions {
 export function useGame({ onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(0);
+  const [combo, setCombo] = useState(0);
+
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const game = createGame(containerRef.current, {
-      onGameOver: () => {},
+    const game = createGame(containerRef.current);
+
+    game.events.on('state-update', (data: { score: number; combo: number }) => {
+      setScore(data.score);
+      setCombo(data.combo);
     });
 
-    game.events.on('score-update', (data: { score: number }) => {
-      setScore(data.score);
-    });
+    game.events.on('piece-placed', () => haptic('light'));
+    game.events.on('line-cleared', () => haptic('medium'));
+    game.events.on('combo-cleared', () => haptic('heavy'));
 
     game.events.on('game-over', (data: { score: number }) => {
       stageComplete({ stage: 0, score: data.score, cleared: false });
-      onGameOver?.({ score: data.score, cleared: false });
+      onGameOverRef.current?.({ score: data.score, cleared: false });
     });
 
     return () => {
       destroyGame(game);
     };
-  }, [onGameOver]);
+  }, []);
 
-  return { containerRef, score };
+  return { containerRef, score, combo };
 }

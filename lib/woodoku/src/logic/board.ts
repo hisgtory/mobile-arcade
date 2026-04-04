@@ -135,6 +135,7 @@ export function clearLines(
 
 /** Calculate score for clearing lines/regions */
 export function calcClearScore(lineCount: number, cellCount: number): number {
+  if (lineCount <= 0) return 0;
   const lineBonus = lineCount <= 1 ? 1 : lineCount;
   return cellCount * 10 * lineBonus;
 }

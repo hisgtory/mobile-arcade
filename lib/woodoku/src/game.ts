@@ -24,16 +24,20 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
       antialias: true,
       roundPixels: true,
     },
-    scene: [PlayScene],
+    scene: [],
   });
 
-  (game as any).__woodokuConfig = config;
-  (game as any).__dpr = dpr;
-  game.scene.start('PlayScene', { gameConfig: config });
+  game.registry.set('woodokuConfig', config);
+  game.registry.set('dpr', dpr);
+  game.scene.add('PlayScene', PlayScene, true, { gameConfig: config });
 
   return game;
 }
 
 export function destroyGame(game: Phaser.Game): void {
   game.destroy(true);
+}
+
+export function getPlayScene(game: Phaser.Game): PlayScene | null {
+  return (game.scene.getScene('PlayScene') as PlayScene) ?? null;
 }

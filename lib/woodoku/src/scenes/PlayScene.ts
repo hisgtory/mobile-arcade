@@ -5,9 +5,12 @@
  * Drag pieces onto the grid. Full rows/cols/regions clear.
  * Wood-toned visual theme.
  *
- * Events emitted:
- *   'score-update' — { score }
- *   'game-over'    — { score }
+ * Events emitted (on game.events):
+ *   'state-update'   — { score, bestScore, combo, phase }
+ *   'piece-placed'   — (haptic trigger)
+ *   'line-cleared'   — (haptic trigger)
+ *   'combo-cleared'  — (haptic trigger)
+ *   'game-over'      — { score }
  */
 
 import Phaser from 'phaser';
@@ -33,6 +36,7 @@ export class PlayScene extends Phaser.Scene {
   private phase: GamePhase = GamePhase.PLAYING;
   private board!: Board;
   private score: number = 0;
+  private bestScore: number = 0;
   private consecutiveClears: number = 0;
 
   // Visual
@@ -50,17 +54,21 @@ export class PlayScene extends Phaser.Scene {
   }
 
   init(data: { gameConfig?: GameConfig }): void {
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__woodokuConfig;
+    this.gameConfig = data?.gameConfig
+      ?? this.game.registry.get('woodokuConfig') as GameConfig | undefined;
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr: number = this.game.registry.get('dpr') ?? 1;
     const { width, height } = this.scale;
 
     this.phase = GamePhase.PLAYING;
     this.board = createBoard();
     this.score = 0;
+    this.bestScore = 0;
     this.consecutiveClears = 0;
+
+    this.events.on('shutdown', this.shutdown, this);
 
     this.cameras.main.setBackgroundColor('#f5efe6');
 
@@ -111,7 +119,7 @@ export class PlayScene extends Phaser.Scene {
     // Generate initial 3 pieces
     this.spawnPieceSlots();
 
-    this.emitScore();
+    this.emitState();
   }
 
   // -- PIECE SLOTS --
@@ -183,6 +191,9 @@ export class PlayScene extends Phaser.Scene {
 
       this.pieceSlots[slotIndex].markUsed();
 
+      // Haptic: piece placed
+      this.game.events.emit('piece-placed');
+
       // Placement pop animation
       for (const { row, col } of placed) {
         const cell = this.gridCells[row][col];
@@ -206,6 +217,13 @@ export class PlayScene extends Phaser.Scene {
         const cleared = clearLines(this.board, lines);
         const clearScore = calcClearScore(lineCount, cleared.length) * Math.max(1, this.consecutiveClears);
         this.score += clearScore + placed.length;
+        if (this.score > this.bestScore) this.bestScore = this.score;
+
+        // Haptic: line cleared
+        this.game.events.emit('line-cleared');
+        if (this.consecutiveClears >= 2) {
+          this.game.events.emit('combo-cleared');
+        }
 
         // Screen shake
         const shakeIntensity = Math.min(3 + this.consecutiveClears * 2, 12);
@@ -215,9 +233,6 @@ export class PlayScene extends Phaser.Scene {
         for (const { row, col } of cleared) {
           this.gridCells[row][col].setFillStyle(0xffffff);
         }
-
-        // Combo text
-        this.showComboText(lineCount, this.consecutiveClears, clearScore);
 
         // Staggered destroy animation
         this.time.delayedCall(100, () => {
@@ -245,7 +260,7 @@ export class PlayScene extends Phaser.Scene {
                   cell.setStrokeStyle(1, CELL_BORDER_COLOR, 0.5);
                   completed++;
                   if (completed === cleared.length) {
-                    this.phase = GamePhase.PLAYING;
+                    this.onClearAnimComplete();
                   }
                 },
               });
@@ -255,17 +270,16 @@ export class PlayScene extends Phaser.Scene {
       } else {
         this.consecutiveClears = 0;
         this.score += placed.length;
+        if (this.score > this.bestScore) this.bestScore = this.score;
       }
 
-      this.emitScore();
+      this.emitState();
 
-      // Check if all 3 pieces used → spawn new set
-      if (this.pieceSlots.every((s) => s.used)) {
-        this.time.delayedCall(300, () => {
+      // Check if all 3 pieces used → spawn new set (only when not animating)
+      if (lineCount === 0) {
+        if (this.pieceSlots.every((s) => s.used)) {
           this.spawnPieceSlots();
-          this.checkGameOver();
-        });
-      } else {
+        }
         this.checkGameOver();
       }
     } else {
@@ -305,45 +319,13 @@ export class PlayScene extends Phaser.Scene {
 
   // -- JUICE EFFECTS --
 
-  private showComboText(lineCount: number, combo: number, score: number): void {
-    const { width } = this.scale;
-    const gridCenterY = this.gridStartY + (this.cellSize * GRID_SIZE) / 2;
-
-    const messages = ['Nice!', 'Great!', 'Awesome!', 'AMAZING!', 'INCREDIBLE!'];
-    const msgIdx = Math.min(combo - 1, messages.length - 1);
-    const msg = lineCount > 1 ? `${messages[msgIdx]} ×${lineCount}` : messages[msgIdx];
-
-    const colors = [0xc0784b, 0xa0522d, 0x8b5e3c, 0x6b4226, 0xd4a373];
-    const color = colors[Math.min(combo - 1, colors.length - 1)];
-
-    const text = this.add.text(width / 2, gridCenterY - 30, msg, {
-      fontSize: `${Math.min(28 + combo * 4, 48)}px`,
-      fontFamily: 'system-ui, sans-serif',
-      fontStyle: 'bold',
-      color: `#${color.toString(16).padStart(6, '0')}`,
-      stroke: '#ffffff',
-      strokeThickness: 4,
-    }).setOrigin(0.5).setDepth(200);
-
-    const scoreText = this.add.text(width / 2, gridCenterY + 10, `+${score}`, {
-      fontSize: '20px',
-      fontFamily: 'system-ui, sans-serif',
-      fontStyle: 'bold',
-      color: '#5c4a32',
-    }).setOrigin(0.5).setDepth(200);
-
-    for (const t of [text, scoreText]) {
-      this.tweens.add({
-        targets: t,
-        y: t.y - 60,
-        alpha: 0,
-        scaleX: 1.3,
-        scaleY: 1.3,
-        duration: 800,
-        ease: 'Power2',
-        onComplete: () => t.destroy(),
-      });
+  private onClearAnimComplete(): void {
+    this.phase = GamePhase.PLAYING;
+    this.emitState();
+    if (this.pieceSlots.every((s) => s.used)) {
+      this.spawnPieceSlots();
     }
+    this.checkGameOver();
   }
 
   private spawnParticles(x: number, y: number, color: number): void {
@@ -381,21 +363,34 @@ export class PlayScene extends Phaser.Scene {
 
   private gameOver(): void {
     this.phase = GamePhase.GAME_OVER;
+    this.emitState();
+
+    this.game.events.emit('game-over', { score: this.score });
 
     this.cameras.main.shake(300, 0.008);
     this.cameras.main.fade(600, 0, 0, 0, false, (_cam: any, progress: number) => {
       if (progress >= 1) {
         this.gameConfig?.onGameOver?.();
-        this.game.events.emit('game-over', { score: this.score });
       }
     });
   }
 
-  private emitScore(): void {
-    this.game.events.emit('score-update', { score: this.score });
+  private emitState(): void {
+    this.game.events.emit('state-update', {
+      score: this.score,
+      bestScore: this.bestScore,
+      combo: this.consecutiveClears,
+      phase: this.phase,
+    });
   }
 
   shutdown(): void {
+    this.events.off('shutdown', this.shutdown, this);
+    this.game.events.off('state-update');
+    this.game.events.off('piece-placed');
+    this.game.events.off('line-cleared');
+    this.game.events.off('combo-cleared');
+    this.game.events.off('game-over');
     this.pieceSlots = [];
     this.gridCells = [];
     this.highlightRects = [];
@@ -484,10 +479,16 @@ class DragPieceVisual {
     this.container = scene.add.container(0, 0);
     this.container.setDepth(100);
 
+    // Apply center offset like PieceSlot does
+    const maxR = Math.max(...piece.cells.map((c) => c.row));
+    const maxC = Math.max(...piece.cells.map((c) => c.col));
+    const offsetX = -(maxC + 1) * cellSize / 2;
+    const offsetY = -(maxR + 1) * cellSize / 2;
+
     for (const cell of piece.cells) {
       const rect = scene.add.rectangle(
-        cell.col * cellSize + cellSize / 2,
-        cell.row * cellSize + cellSize / 2,
+        offsetX + cell.col * cellSize + cellSize / 2,
+        offsetY + cell.row * cellSize + cellSize / 2,
         cellSize - 2,
         cellSize - 2,
         piece.color,
