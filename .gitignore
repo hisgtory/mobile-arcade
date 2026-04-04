@@ -37,3 +37,4 @@ rn/android/app/build/
 # Metro
 .metro-health-check*
 rn/.expo/
+package-lock.json
