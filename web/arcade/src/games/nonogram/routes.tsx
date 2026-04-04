@@ -1,7 +1,9 @@
 import { useState, useCallback } from 'react';
-import { Route, useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { styled } from '../../styles/stitches.config';
-import { globalStyles } from '../../styles/global';
+import { registerRoutes } from '../../router';
+import { GameHomeLayout } from '../../components/GameHomeLayout';
+import { StageMap } from '../../components/StageMap';
 import { GameCanvas } from '../../components/GameCanvas';
 import { ClearScreen } from './ClearScreen';
 import { HUD } from './HUD';
@@ -20,47 +22,17 @@ const isRN = typeof window !== 'undefined' && typeof window.ReactNativeWebView !
 
 // ─── Title / Stage Map ──────────────────────────────────
 
-function NonogramTitleRoute() {
-  const navigate = useNavigate();
-  globalStyles();
-
-  const stages = Array.from({ length: 10 }, (_, i) => i + 1);
-
+function NonogramHome() {
   return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, overflowY: 'auto' }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🖼️ Nonogram</h1>
-      <p style={{ fontSize: 16, color: '#6B7280', marginBottom: 16 }}>Fill the grid to reveal pixel art!</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, padding: '0 20px', maxWidth: 320, width: '100%' }}>
-        {stages.map((s) => (
-          <button
-            key={s}
-            onClick={() => navigate(`/games/nonogram/v1/stage/${s}`)}
-            style={{
-              width: 52,
-              height: 52,
-              borderRadius: 12,
-              border: '2px solid #D1D5DB',
-              backgroundColor: '#fff',
-              fontSize: 18,
-              fontWeight: 700,
-              color: '#111827',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-    </PlayLayout>
+    <GameHomeLayout icon="🖼️" title="Nonogram" description="Fill the grid to reveal pixel art!">
+      <StageMap stageCount={10} basePath="/games/nonogram/v1" />
+    </GameHomeLayout>
   );
 }
 
 // ─── Stage Route ─────────────────────────────────────────
 
-function NonogramStageRoute() {
+function NonogramStage() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
@@ -100,9 +72,7 @@ function NonogramPlaying({ stage, onClear, onGameOver }: { stage: number; onClea
 
 // ─── Route Registration ─────────────────────────────────
 
-export function nonogramRoutes() {
-  return [
-    <Route key="nonogram-title" path="/games/nonogram/v1" element={<NonogramTitleRoute />} />,
-    <Route key="nonogram-stage" path="/games/nonogram/v1/stage/:stageId" element={<NonogramStageRoute />} />,
-  ];
-}
+registerRoutes('/games/nonogram/v1', [
+  { path: '', element: <NonogramHome /> },
+  { path: 'stage/:stageId', element: <NonogramStage /> },
+]);

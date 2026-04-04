@@ -70,6 +70,25 @@ const RESPONSE_TYPE_MAP: Record<BridgeRequestType, BridgeResponseType> = {
   GAME_OVER: 'ACK',
 };
 
+// ─── Haptic Patterns ─────────────────────────────────────────
+
+interface HapticPattern {
+  style: Haptics.ImpactFeedbackStyle;
+  count: number;
+  interval: number;
+}
+
+const HAPTIC_PATTERNS: Record<string, HapticPattern> = {
+  // Game-specific semantic events
+  'cell-tapped': { style: Haptics.ImpactFeedbackStyle.Light, count: 1, interval: 0 },
+  'mistake-made': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3, interval: 60 },
+  'puzzle-clear': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6, interval: 60 },
+  // Legacy fallback styles
+  'light': { style: Haptics.ImpactFeedbackStyle.Light, count: 1, interval: 0 },
+  'medium': { style: Haptics.ImpactFeedbackStyle.Medium, count: 1, interval: 0 },
+  'heavy': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1, interval: 0 },
+};
+
 // ─── BridgeHost ─────────────────────────────────────────────
 
 export class BridgeHost {
@@ -209,13 +228,15 @@ export class BridgeHost {
   }
 
   private async handleHaptic(msg: BridgeMessage) {
-    const style = msg.payload?.style ?? 'medium';
-    const impactMap: Record<string, Haptics.ImpactFeedbackStyle> = {
-      light: Haptics.ImpactFeedbackStyle.Light,
-      medium: Haptics.ImpactFeedbackStyle.Medium,
-      heavy: Haptics.ImpactFeedbackStyle.Heavy,
-    };
-    await Haptics.impactAsync(impactMap[style] ?? Haptics.ImpactFeedbackStyle.Medium);
+    const event = msg.payload?.style ?? 'medium';
+    const pattern = HAPTIC_PATTERNS[event] ?? HAPTIC_PATTERNS['medium'];
+
+    for (let i = 0; i < pattern.count; i++) {
+      if (i > 0 && pattern.interval > 0) {
+        await new Promise<void>((resolve) => setTimeout(resolve, pattern.interval));
+      }
+      await Haptics.impactAsync(pattern.style);
+    }
     this.sendResponse(msg.msgId, 'ACK', 'ack');
   }
 

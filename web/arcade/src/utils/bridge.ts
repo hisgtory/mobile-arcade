@@ -30,6 +30,6 @@ export function stageComplete(data: {
   sendToRN(data.cleared ? 'STAGE_CLEAR' : 'GAME_OVER', data);
 }
 
-export function haptic(style: 'light' | 'medium' | 'heavy' = 'medium'): void {
-  sendToRN('HAPTIC', { style });
+export function haptic(event: string): void {
+  sendToRN('HAPTIC', { style: event });
 }

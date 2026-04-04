@@ -44,9 +44,9 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     });
 
     // Haptic events
-    game.events.on('cell-tapped', () => haptic('light'));
-    game.events.on('mistake-made', () => haptic('heavy'));
-    game.events.on('puzzle-clear', () => haptic('heavy'));
+    game.events.on('cell-tapped', () => haptic('cell-tapped'));
+    game.events.on('mistake-made', () => haptic('mistake-made'));
+    game.events.on('puzzle-clear', () => haptic('puzzle-clear'));
 
     game.events.on('stage-clear', (data: { score: number; moves: number; stage: number; elapsedMs: number }) => {
       const result: GameResult = { score: data.score, moves: data.moves, stage: data.stage, elapsedMs: data.elapsedMs, cleared: true };

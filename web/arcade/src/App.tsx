@@ -32,8 +32,9 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
-// ─── Nonogram ───
-import { nonogramRoutes } from './games/nonogram/routes';
+// ─── Nonogram (side-effect: registers routes) ───
+import './games/nonogram/routes';
+import { getRegisteredRoutes } from './router';
 
 const PlayLayout = styled('div', {
   width: '100%',
@@ -330,8 +331,10 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
-      {/* Nonogram */}
-      {nonogramRoutes()}
+      {/* Registered game routes */}
+      {getRegisteredRoutes().map(({ fullPath, element }) => (
+        <Route key={fullPath} path={fullPath} element={element} />
+      ))}
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
