@@ -70,6 +70,18 @@ const RESPONSE_TYPE_MAP: Record<BridgeRequestType, BridgeResponseType> = {
   GAME_OVER: 'ACK',
 };
 
+// ─── Haptic Patterns ────────────────────────────────────────
+
+const HAPTIC_PATTERNS: Record<string, { style: string; count?: number }> = {
+  'piece-placed': { style: 'light' },
+  'line-cleared': { style: 'medium' },
+  'block-tapped': { style: 'light' },
+  'combo-cleared': { style: 'heavy' },
+  'cell-tapped': { style: 'light' },
+  'mistake-made': { style: 'heavy' },
+  'puzzle-clear': { style: 'heavy' },
+};
+
 // ─── BridgeHost ─────────────────────────────────────────────
 
 export class BridgeHost {
@@ -209,7 +221,10 @@ export class BridgeHost {
   }
 
   private async handleHaptic(msg: BridgeMessage) {
-    const style = msg.payload?.style ?? 'medium';
+    const event = msg.payload?.event;
+    const fallbackStyle = msg.payload?.style ?? 'medium';
+    const pattern = event ? HAPTIC_PATTERNS[event] : null;
+    const style = pattern?.style ?? fallbackStyle;
     const impactMap: Record<string, Haptics.ImpactFeedbackStyle> = {
       light: Haptics.ImpactFeedbackStyle.Light,
       medium: Haptics.ImpactFeedbackStyle.Medium,

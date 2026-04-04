@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { styled } from './styles/stitches.config';
 import { globalStyles } from './styles/global';
+import { getRegisteredRoutes } from './router';
 
 // ─── Shared ───
 import { GameCanvas } from './components/GameCanvas';
@@ -23,8 +24,8 @@ import { useGame as useCrunch3Game, type GameResult as Crunch3Result } from './g
 import { HUD as BlockRushHUD } from './games/blockrush/HUD';
 import { useGame as useBlockRushGame, type GameResult as BlockRushResult } from './games/blockrush/useGame';
 
-// ─── HexaAway ───
-import { HexaAwayTitleRoute, HexaAwayPlayRoute } from './games/hexaaway/routes';
+// ─── HexaAway (ADR-016: side-effect route registration) ───
+import './games/hexaaway/routes';
 
 // ─── WaterSort ───
 import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
@@ -322,9 +323,10 @@ export function App() {
       <Route path="/games/blockrush/v1" element={<BlockRushTitleRoute />} />
       <Route path="/games/blockrush/v1/play" element={<BlockRushPlayRoute />} />
 
-      {/* HexaAway */}
-      <Route path="/games/hexaaway/v1" element={<HexaAwayTitleRoute />} />
-      <Route path="/games/hexaaway/v1/play" element={<HexaAwayPlayRoute />} />
+      {/* Registered routes (ADR-016) */}
+      {getRegisteredRoutes().map((r) => (
+        <Route key={r.path} path={r.path} element={r.element} />
+      ))}
 
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />

@@ -30,11 +30,11 @@ export function useGame({ onGameOver }: UseGameOptions) {
     });
 
     game.events.on('piece-placed', () => {
-      haptic('light');
+      haptic('piece-placed');
     });
 
     game.events.on('line-cleared', () => {
-      haptic('medium');
+      haptic('line-cleared');
     });
 
     game.events.on('game-over', (data: { score: number }) => {

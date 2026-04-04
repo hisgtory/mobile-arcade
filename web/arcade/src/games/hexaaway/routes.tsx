@@ -5,6 +5,7 @@ import { GameCanvas } from '../../components/GameCanvas';
 import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { HUD } from './HUD';
 import { useGame, type GameResult } from './useGame';
+import { registerRoutes } from '../../router';
 
 const PlayLayout = styled('div', {
   width: '100%',
@@ -13,6 +14,24 @@ const PlayLayout = styled('div', {
   flexDirection: 'column',
   backgroundColor: '$bg',
   overflow: 'hidden',
+});
+
+const PlayButton = styled('button', {
+  marginTop: 32,
+  backgroundColor: '#10B981',
+  color: '#fff',
+  border: 'none',
+  padding: '16px 48px',
+  borderRadius: 16,
+  fontSize: 20,
+  fontWeight: 700,
+  cursor: 'pointer',
+});
+
+const Subtitle = styled('p', {
+  fontSize: 16,
+  color: '$textMuted',
+  margin: 0,
 });
 
 const OverContainer = styled('div', {
@@ -69,20 +88,22 @@ const ActionButton = styled('button', {
   maxWidth: 320,
 });
 
-export function HexaAwayTitleRoute() {
+function HexaAwayHome() {
+  const navigate = useNavigate();
   return (
-    <GameHomeLayout
-      title="Hexa Away"
-      subtitle="Fill hex lines to clear!"
-      playPath="/games/hexaaway/v1/play"
-      color="#8b5cf6"
-    />
+    <GameHomeLayout title="Hexa Away" icon="⬡">
+      <Subtitle>Fill hex lines to clear!</Subtitle>
+      <PlayButton onClick={() => navigate('/games/hexaaway/v1/play')}>
+        Play
+      </PlayButton>
+    </GameHomeLayout>
   );
 }
 
-export function HexaAwayPlayRoute() {
+function HexaAwayPlay() {
   const navigate = useNavigate();
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   const handleGameOver = useCallback((r: GameResult) => {
     setGameResult(r);
@@ -97,8 +118,8 @@ export function HexaAwayPlayRoute() {
           <ScoreValue>{gameResult.score.toLocaleString()}</ScoreValue>
         </ScoreCard>
         <ActionButton
-          css={{ backgroundColor: '#8b5cf6', color: '#fff' }}
-          onClick={() => { setGameResult(null); }}
+          css={{ backgroundColor: '#10B981', color: '#fff' }}
+          onClick={() => { setGameResult(null); setRetryCount((k) => k + 1); }}
         >
           Retry
         </ActionButton>
@@ -112,7 +133,7 @@ export function HexaAwayPlayRoute() {
     );
   }
 
-  return <HexaAwayPlaying onGameOver={handleGameOver} />;
+  return <HexaAwayPlaying key={retryCount} onGameOver={handleGameOver} />;
 }
 
 function HexaAwayPlaying({ onGameOver }: { onGameOver: (r: GameResult) => void }) {
@@ -124,3 +145,8 @@ function HexaAwayPlaying({ onGameOver }: { onGameOver: (r: GameResult) => void }
     </PlayLayout>
   );
 }
+
+registerRoutes('/games/hexaaway/v1', [
+  { path: '', element: <HexaAwayHome /> },
+  { path: 'play', element: <HexaAwayPlay /> },
+]);

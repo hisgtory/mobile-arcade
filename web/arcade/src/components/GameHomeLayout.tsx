@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import type { ReactNode } from 'react';
 import { styled } from '../styles/stitches.config';
 import { globalStyles } from '../styles/global';
 
@@ -14,6 +14,11 @@ const Container = styled('div', {
   overflow: 'hidden',
 });
 
+const Icon = styled('span', {
+  fontSize: 64,
+  lineHeight: 1,
+});
+
 const Title = styled('h1', {
   fontSize: 48,
   fontWeight: 800,
@@ -22,43 +27,19 @@ const Title = styled('h1', {
   margin: 0,
 });
 
-const Subtitle = styled('p', {
-  fontSize: 16,
-  color: '$textMuted',
-  margin: 0,
-});
-
-const PlayButton = styled('button', {
-  marginTop: 32,
-  color: '#fff',
-  border: 'none',
-  padding: '16px 48px',
-  borderRadius: 16,
-  fontSize: 20,
-  fontWeight: 700,
-  cursor: 'pointer',
-});
-
 interface GameHomeLayoutProps {
   title: string;
-  subtitle: string;
-  playPath: string;
-  color: string;
+  icon?: string;
+  children: ReactNode;
 }
 
-export function GameHomeLayout({ title, subtitle, playPath, color }: GameHomeLayoutProps) {
-  const navigate = useNavigate();
+export function GameHomeLayout({ title, icon, children }: GameHomeLayoutProps) {
   globalStyles();
   return (
     <Container>
+      {icon && <Icon>{icon}</Icon>}
       <Title>{title}</Title>
-      <Subtitle>{subtitle}</Subtitle>
-      <PlayButton
-        css={{ backgroundColor: color }}
-        onClick={() => navigate(playPath)}
-      >
-        Play
-      </PlayButton>
+      {children}
     </Container>
   );
 }
