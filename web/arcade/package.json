@@ -21,6 +21,7 @@
     "@arcade/lib-sudoku": "workspace:*",
     "@arcade/lib-blockpuzzle": "workspace:*",
     "@arcade/lib-found3-react": "workspace:*",
+    "@arcade/lib-woodoku": "workspace:*",
     "@stitches/react": "^1.2.8",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",

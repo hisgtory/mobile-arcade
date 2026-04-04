@@ -139,6 +139,16 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/blockcrush/v1',
     isNew: true,
   },
+  {
+    id: 'woodoku',
+    name: 'Woodoku Blast',
+    description: '9×9 wood block puzzle with region clears!',
+    icon: '🪵',
+    category: 'puzzle',
+    color: '#92400E',
+    webPath: '/games/woodoku/v1',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
