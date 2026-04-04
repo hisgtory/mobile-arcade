@@ -33,9 +33,7 @@ import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
 // ─── Nonogram ───
-import { ClearScreen as NonogramClear } from './games/nonogram/ClearScreen';
-import { HUD as NonogramHUD } from './games/nonogram/HUD';
-import { useGame as useNonogramGame, type GameResult as NonogramResult } from './games/nonogram/useGame';
+import { nonogramRoutes } from './games/nonogram/routes';
 
 const PlayLayout = styled('div', {
   width: '100%',
@@ -306,60 +304,6 @@ function TicTacToePlayRoute() {
   );
 }
 
-// ─── Nonogram Routes ──────────────────────────────────
-
-function NonogramTitleRoute() {
-  const navigate = useNavigate();
-  globalStyles();
-  return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Nonogram</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Fill the grid to reveal pixel art!</p>
-      <button
-        onClick={() => navigate('/games/nonogram/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
-        Play
-      </button>
-    </PlayLayout>
-  );
-}
-
-function NonogramStageRoute() {
-  const { stageId } = useParams();
-  const navigate = useNavigate();
-  const stage = parseInt(stageId || '1', 10);
-  const [playKey, setPlayKey] = useState(0);
-  const [gameResult, setGameResult] = useState<NonogramResult | null>(null);
-  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
-
-  const handleClear = useCallback((r: NonogramResult) => {
-    if (!isRN) { setGameResult(r); setScreen('clear'); }
-  }, []);
-  const handleNext = useCallback(() => {
-    navigate(`/games/nonogram/v1/stage/${stage + 1}`, { replace: true });
-    setPlayKey((k) => k + 1); setScreen('playing');
-  }, [navigate, stage]);
-  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
-  const handleHome = useCallback(() => navigate('/games/nonogram/v1', { replace: true }), [navigate]);
-
-  if (screen === 'clear' && gameResult) {
-    return <NonogramClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
-  }
-
-  return <NonogramPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
-}
-
-function NonogramPlaying({ stage, onClear }: { stage: number; onClear: (r: NonogramResult) => void }) {
-  const { containerRef, moves, progress, errors, doRestart } = useNonogramGame({ stage, onClear });
-  return (
-    <PlayLayout>
-      <NonogramHUD stage={stage} moves={moves} progress={progress} errors={errors} onRestart={doRestart} />
-      <GameCanvas ref={containerRef} />
-    </PlayLayout>
-  );
-}
-
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -387,8 +331,7 @@ export function App() {
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
       {/* Nonogram */}
-      <Route path="/games/nonogram/v1" element={<NonogramTitleRoute />} />
-      <Route path="/games/nonogram/v1/stage/:stageId" element={<NonogramStageRoute />} />
+      {nonogramRoutes()}
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

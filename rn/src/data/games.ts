@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'nonogram',
+    name: 'Nonogram',
+    description: 'Fill the grid to reveal pixel art!',
+    icon: '🖼️',
+    category: 'puzzle',
+    color: '#059669',
+    webPath: '/games/nonogram/v1',
+    stageCount: 10,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

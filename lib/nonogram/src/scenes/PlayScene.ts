@@ -3,6 +3,7 @@ import {
   CellState,
   DEFAULT_WIDTH,
   DEFAULT_HEIGHT,
+  MAX_ERRORS,
   type BoardState,
   type GameConfig,
 } from '../types';
@@ -15,7 +16,7 @@ const MARKED_COLOR = 0xd1d5db;
 const CLUE_COLOR = '#6B7280';
 const CLUE_DONE_COLOR = '#D1D5DB';
 
-type GamePhase = 'idle' | 'celebrating';
+type GamePhase = 'idle' | 'celebrating' | 'game-over';
 
 export class PlayScene extends Phaser.Scene {
   private board!: BoardState;
@@ -24,6 +25,7 @@ export class PlayScene extends Phaser.Scene {
 
   private phase: GamePhase = 'idle';
   private moves = 0;
+  private startTime = 0;
   private cellSize = 0;
   private gridOffsetX = 0;
   private gridOffsetY = 0;
@@ -50,6 +52,7 @@ export class PlayScene extends Phaser.Scene {
     this.board = createBoard(stageConfig.puzzle);
     this.phase = 'idle';
     this.moves = 0;
+    this.startTime = Date.now();
     this.clueTexts = [];
 
     this.computeLayout();
@@ -242,9 +245,31 @@ export class PlayScene extends Phaser.Scene {
     this.board.grid = toggleCell(this.board.grid, row, col);
     this.moves++;
 
+    // Emit haptic: cell tapped
+    this.game.events.emit('cell-tapped');
+
+    // Check if this was an error
+    const errors = hasErrors(this.board);
+    if (this.board.grid[row][col] === CellState.FILLED && this.board.puzzle.solution[row][col] === 0) {
+      this.game.events.emit('mistake-made');
+    }
+
     this.drawCells();
     this.drawClues();
     this.emitState();
+
+    // Check game-over (too many errors)
+    if (errors.length >= MAX_ERRORS) {
+      this.phase = 'game-over';
+      const elapsedMs = Date.now() - this.startTime;
+      this.game.events.emit('game-over', {
+        score: 0,
+        moves: this.moves,
+        stage: this.config.stage ?? 1,
+        elapsedMs,
+      });
+      return;
+    }
 
     // Check win
     if (isWon(this.board)) {
@@ -260,6 +285,16 @@ export class PlayScene extends Phaser.Scene {
   private celebrateWin() {
     const w = DEFAULT_WIDTH * this.dpr;
     const h = DEFAULT_HEIGHT * this.dpr;
+
+    // Emit haptic and stage-clear immediately
+    this.game.events.emit('puzzle-clear');
+    const elapsedMs = Date.now() - this.startTime;
+    this.game.events.emit('stage-clear', {
+      score: this.calculateScore(),
+      moves: this.moves,
+      stage: this.config.stage ?? 1,
+      elapsedMs,
+    });
 
     // Reveal pixel art with color
     const { rows, cols } = this.board.puzzle;
@@ -327,15 +362,6 @@ export class PlayScene extends Phaser.Scene {
           onComplete: () => p.destroy(),
         });
       }
-
-      // Emit stage clear
-      this.time.delayedCall(800, () => {
-        this.game.events.emit('stage-clear', {
-          score: this.calculateScore(),
-          moves: this.moves,
-          stage: this.config.stage ?? 1,
-        });
-      });
     });
   }
 
@@ -372,8 +398,11 @@ export class PlayScene extends Phaser.Scene {
     }
     const progress = Math.min(100, Math.max(0, Math.floor(((correctFilled - errorCount) / totalFilled) * 100)));
 
-    this.game.events.emit('moves-update', { moves: this.moves });
-    this.game.events.emit('progress-update', { progress });
-    this.game.events.emit('errors-update', { errors: errorCount });
+    this.game.events.emit('state-update', {
+      moves: this.moves,
+      progress,
+      errors: errorCount,
+      phase: this.phase,
+    });
   }
 }

@@ -1,20 +1,22 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { createGame, destroyGame, getPlayScene } from '@arcade/lib-nonogram';
-import { stageComplete } from '../../utils/bridge';
+import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
   moves: number;
   stage: number;
+  elapsedMs: number;
   cleared: boolean;
 }
 
 interface UseGameOptions {
   stage: number;
   onClear?: (result: GameResult) => void;
+  onGameOver?: (result: GameResult) => void;
 }
 
-export function useGame({ stage, onClear }: UseGameOptions) {
+export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [moves, setMoves] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -23,6 +25,8 @@ export function useGame({ stage, onClear }: UseGameOptions) {
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
   const onClearRef = useRef(onClear);
   onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -32,22 +36,28 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     });
     gameRef.current = game;
 
-    game.events.on('moves-update', (data: { moves: number }) => {
+    // Unified state update
+    game.events.on('state-update', (data: { moves: number; progress: number; errors: number; phase: string }) => {
       setMoves(data.moves);
-    });
-
-    game.events.on('progress-update', (data: { progress: number }) => {
       setProgress(data.progress);
-    });
-
-    game.events.on('errors-update', (data: { errors: number }) => {
       setErrors(data.errors);
     });
 
-    game.events.on('stage-clear', (data: { score: number; moves: number; stage: number }) => {
-      const result = { score: data.score, moves: data.moves, stage: data.stage, cleared: true };
-      stageComplete({ stage: data.stage, score: data.score, moves: data.moves, cleared: true });
+    // Haptic events
+    game.events.on('cell-tapped', () => haptic('light'));
+    game.events.on('mistake-made', () => haptic('heavy'));
+    game.events.on('puzzle-clear', () => haptic('heavy'));
+
+    game.events.on('stage-clear', (data: { score: number; moves: number; stage: number; elapsedMs: number }) => {
+      const result: GameResult = { score: data.score, moves: data.moves, stage: data.stage, elapsedMs: data.elapsedMs, cleared: true };
+      stageComplete({ stage: data.stage, score: data.score, moves: data.moves, elapsedMs: data.elapsedMs, cleared: true });
       onClearRef.current?.(result);
+    });
+
+    game.events.on('game-over', (data: { score: number; moves: number; stage: number; elapsedMs: number }) => {
+      const result: GameResult = { score: data.score, moves: data.moves, stage: data.stage, elapsedMs: data.elapsedMs, cleared: false };
+      stageComplete({ stage: data.stage, score: data.score, moves: data.moves, elapsedMs: data.elapsedMs, cleared: false });
+      onGameOverRef.current?.(result);
     });
 
     return () => {

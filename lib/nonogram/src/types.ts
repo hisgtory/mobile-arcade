@@ -44,3 +44,6 @@ export interface GameConfig {
   onClear?: () => void;
   onGameOver?: () => void;
 }
+
+// ─── Game Constants ─────────────────────────────────────
+export const MAX_ERRORS = 3;

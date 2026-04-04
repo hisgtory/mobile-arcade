@@ -76,9 +76,10 @@ interface ClearScreenProps {
 }
 
 export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScreenProps) {
+  const isGameOver = !result.cleared;
   return (
     <Overlay>
-      <Title>🎨 Puzzle Clear!</Title>
+      <Title>{isGameOver ? '💔 Game Over' : '🎨 Puzzle Clear!'}</Title>
       <Card>
         <StatRow>
           <Label>Stage</Label>
@@ -93,12 +94,14 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
           <Value>{result.moves}</Value>
         </StatRow>
       </Card>
-      <Button
-        css={{ backgroundColor: '$primary', color: '#fff' }}
-        onClick={onNext}
-      >
-        Next Puzzle
-      </Button>
+      {!isGameOver && (
+        <Button
+          css={{ backgroundColor: '$primary', color: '#fff' }}
+          onClick={onNext}
+        >
+          Next Puzzle
+        </Button>
+      )}
       <Button
         css={{ backgroundColor: '#fff', color: '$text', border: '1px solid $gray200' }}
         onClick={onRetry}
