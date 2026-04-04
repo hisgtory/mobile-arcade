@@ -33,7 +33,7 @@ export function useGame({ stage, onClear, onTimeout }: UseGameOptions) {
   onTimeoutRef.current = onTimeout;
 
   // Track start time for elapsedMs
-  const startTimeRef = useRef(Date.now());
+  const startTimeRef = useRef(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
