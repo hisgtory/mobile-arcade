@@ -1,6 +1,20 @@
-// Re-export shared tube-puzzle types from watersort
-export { TUBE_CAPACITY } from '@arcade/lib-watersort';
-export type { Tube, BoardState, PourMove } from '@arcade/lib-watersort';
+// ─── Constants ───────────────────────────────────────────
+export const TUBE_CAPACITY = 4;
+
+// ─── Game Types ──────────────────────────────────────────
+/** A tube is an array of color indices (0-based). Index 0 = bottom. */
+export type Tube = number[];
+
+export interface BoardState {
+  tubes: Tube[];
+  numColors: number;
+}
+
+export interface PourMove {
+  from: number;
+  to: number;
+  count: number; // how many segments poured
+}
 
 export const DEFAULT_WIDTH = 390;
 export const DEFAULT_HEIGHT = 560;

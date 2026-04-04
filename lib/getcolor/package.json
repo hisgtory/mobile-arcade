@@ -17,7 +17,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@arcade/lib-watersort": "workspace:*",
     "phaser": "^3.80.0"
   },
   "devDependencies": {
