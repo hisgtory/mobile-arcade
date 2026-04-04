@@ -83,7 +83,7 @@ export const GAMES: GameInfo[] = [
     description: 'Fill hex lines with block pieces!',
     icon: '⬡',
     category: 'puzzle',
-    color: '#10B981',
+    color: '#8B5CF6',
     webPath: '/games/hexaaway/v1',
     isNew: true,
   },
