@@ -77,6 +77,17 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'getcolor',
+    name: 'Get Color',
+    description: 'Sort colors before time runs out!',
+    icon: '🎨',
+    category: 'puzzle',
+    color: '#1E1B4B',
+    webPath: '/games/getcolor/v1',
+    stageCount: 10,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

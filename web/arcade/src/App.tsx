@@ -33,9 +33,7 @@ import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
 // ─── GetColor ───
-import { ClearScreen as GetColorClear } from './games/getcolor/ClearScreen';
-import { HUD as GetColorHUD } from './games/getcolor/HUD';
-import { useGame as useGetColorGame, type GameResult as GetColorResult } from './games/getcolor/useGame';
+import { getColorRoutes } from './games/getcolor/routes';
 
 const PlayLayout = styled('div', {
   width: '100%',
@@ -306,63 +304,6 @@ function TicTacToePlayRoute() {
   );
 }
 
-// ─── GetColor Routes ──────────────────────────────────
-
-function GetColorTitleRoute() {
-  const navigate = useNavigate();
-  globalStyles();
-  return (
-    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#1a1a2e' }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#FFFFFF', letterSpacing: -1 }}>Get Color</h1>
-      <p style={{ fontSize: 16, color: '#9CA3AF' }}>Sort colors before time runs out!</p>
-      <button
-        onClick={() => navigate('/games/getcolor/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#4ECDC4', color: '#1a1a2e', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
-        Play
-      </button>
-    </PlayLayout>
-  );
-}
-
-function GetColorStageRoute() {
-  const { stageId } = useParams();
-  const navigate = useNavigate();
-  const stage = parseInt(stageId || '1', 10);
-  const [playKey, setPlayKey] = useState(0);
-  const [gameResult, setGameResult] = useState<GetColorResult | null>(null);
-  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
-
-  const handleClear = useCallback((r: GetColorResult) => {
-    if (!isRN) { setGameResult(r); setScreen('clear'); }
-  }, []);
-  const handleTimeout = useCallback((r: GetColorResult) => {
-    if (!isRN) { setGameResult(r); setScreen('clear'); }
-  }, []);
-  const handleNext = useCallback(() => {
-    navigate(`/games/getcolor/v1/stage/${stage + 1}`, { replace: true });
-    setPlayKey((k) => k + 1); setScreen('playing');
-  }, [navigate, stage]);
-  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
-  const handleHome = useCallback(() => navigate('/games/getcolor/v1', { replace: true }), [navigate]);
-
-  if (screen === 'clear' && gameResult) {
-    return <GetColorClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
-  }
-
-  return <GetColorPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onTimeout={handleTimeout} />;
-}
-
-function GetColorPlaying({ stage, onClear, onTimeout }: { stage: number; onClear: (r: GetColorResult) => void; onTimeout: (r: GetColorResult) => void }) {
-  const { containerRef, score, moves, timerSec, doUndo, doRestart } = useGetColorGame({ stage, onClear, onTimeout });
-  return (
-    <PlayLayout css={{ backgroundColor: '#1a1a2e' }}>
-      <GetColorHUD stage={stage} score={score} moves={moves} timerSec={timerSec} onUndo={doUndo} onRestart={doRestart} />
-      <GameCanvas ref={containerRef} />
-    </PlayLayout>
-  );
-}
-
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -390,8 +331,7 @@ export function App() {
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
       {/* GetColor */}
-      <Route path="/games/getcolor/v1" element={<GetColorTitleRoute />} />
-      <Route path="/games/getcolor/v1/stage/:stageId" element={<GetColorStageRoute />} />
+      {getColorRoutes()}
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

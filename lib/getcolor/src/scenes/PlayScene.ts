@@ -136,22 +136,20 @@ export class PlayScene extends Phaser.Scene {
     if (this.timerEvent) this.timerEvent.destroy();
     this.timerEvent = null;
 
-    // Flash timer red
+    // Emit timeout immediately
+    this.game.events.emit('stage-timeout', {
+      score: this.score,
+      moves: this.moves,
+      stage: this.config.stage ?? 1,
+    });
+
+    // Flash timer red (visual only)
     this.tweens.add({
       targets: this.timerText,
       alpha: 0,
       duration: 300,
       yoyo: true,
       repeat: 3,
-    });
-
-    // Emit timeout (game over)
-    this.time.delayedCall(800, () => {
-      this.game.events.emit('stage-timeout', {
-        score: this.score,
-        moves: this.moves,
-        stage: this.config.stage ?? 1,
-      });
     });
   }
 
@@ -268,6 +266,8 @@ export class PlayScene extends Phaser.Scene {
 
   private onTubeTap(idx: number) {
     if (this.phase !== 'idle') return;
+
+    this.game.events.emit('tube-tapped');
 
     if (this.selectedTube === null) {
       // Select source tube
@@ -404,6 +404,7 @@ export class PlayScene extends Phaser.Scene {
     if (isTubeSolved(dstTube) && !this.solvedTubes.has(move.to)) {
       this.solvedTubes.add(move.to);
       this.score += 100;
+      this.game.events.emit('tube-solved');
       this.celebrateTube(move.to);
     }
 
@@ -420,6 +421,15 @@ export class PlayScene extends Phaser.Scene {
       const timeBonus = this.remainingSec * this.timerConfig.bonusPerSecLeft;
       this.score += timeBonus;
       this.emitState();
+
+      // Emit stage-clear immediately
+      this.game.events.emit('stage-clear', {
+        score: this.score,
+        moves: this.moves,
+        stage: this.config.stage ?? 1,
+        timeBonus,
+        secondsLeft: this.remainingSec,
+      });
 
       this.time.delayedCall(600, () => {
         this.celebrateWin();
@@ -476,7 +486,7 @@ export class PlayScene extends Phaser.Scene {
     const w = DEFAULT_WIDTH * this.dpr;
     const h = DEFAULT_HEIGHT * this.dpr;
 
-    // Confetti burst
+    // Confetti burst (visual only — stage-clear already emitted)
     for (let i = 0; i < 30; i++) {
       const colors = [0xff6b6b, 0x4ecdc4, 0x45b7d1, 0xfed766, 0xa06cd5, 0xff9a76];
       const color = colors[Math.floor(Math.random() * colors.length)];
@@ -502,17 +512,6 @@ export class PlayScene extends Phaser.Scene {
         onComplete: () => p.destroy(),
       });
     }
-
-    // Emit stage clear with time bonus info
-    this.time.delayedCall(1200, () => {
-      this.game.events.emit('stage-clear', {
-        score: this.score,
-        moves: this.moves,
-        stage: this.config.stage ?? 1,
-        timeBonus: this.remainingSec * this.timerConfig.bonusPerSecLeft,
-        secondsLeft: this.remainingSec,
-      });
-    });
   }
 
   // ─── Undo ─────────────────────────────────────────────
@@ -541,7 +540,11 @@ export class PlayScene extends Phaser.Scene {
   // ─── Events ───────────────────────────────────────────
 
   private emitState() {
-    this.game.events.emit('score-update', { score: this.score });
-    this.game.events.emit('moves-update', { moves: this.moves });
+    this.game.events.emit('state-update', {
+      score: this.score,
+      moves: this.moves,
+      phase: this.phase,
+      timeLeft: this.remainingSec,
+    });
   }
 }
