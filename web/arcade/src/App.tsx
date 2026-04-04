@@ -12,6 +12,7 @@ import './games/number10/routes';
 import './games/sudoku/routes';
 import './games/blockpuzzle/routes';
 import './games/found3-react/routes';
+import './games/blockcrush/routes';
 import './games/woodoku/routes';
 
 import { getRegisteredRoutes } from './router';

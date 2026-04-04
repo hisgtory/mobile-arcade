@@ -130,6 +130,16 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'blockcrush',
+    name: 'Block Crush',
+    description: 'Tap groups of same-colored blocks!',
+    icon: '💥',
+    category: 'puzzle',
+    color: '#F43F5E',
+    webPath: '/games/blockcrush/v1',
+    isNew: true,
+  },
+  {
     id: 'woodoku',
     name: 'Woodoku Blast',
     description: '9×9 wood block puzzle with region clears!',
