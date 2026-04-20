@@ -15,12 +15,15 @@ export type Board = TileType[][];
 export function createBoard(config: StageConfig): Board {
   const { rows, cols, typeCount } = config;
   let board: Board;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 100;
 
   do {
     board = Array.from({ length: rows }, () =>
       Array.from({ length: cols }, () => Math.floor(Math.random() * typeCount)),
     );
-  } while (findAllMatches(board).length > 0);
+    attempts++;
+  } while (findAllMatches(board).length > 0 && attempts < MAX_ATTEMPTS);
 
   return board;
 }

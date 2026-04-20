@@ -1,5 +1,11 @@
 # Progress — Development Timeline
 
+## Current Structure Snapshot
+
+- Current: `lib/{game} -> web/arcade -> rn`
+- Legacy: `found3/rn`은 초기 전용 앱으로 남아 있으나 deprecated
+- Documentation baseline updated on 2026-04-21
+
 ## 2026-03-27 (Day 1)
 
 ### Infrastructure
@@ -38,7 +44,7 @@
 - WebView 브릿지 프로토콜 설계 + 구현 (Phase 1~3)
 - ITEM_USED 브릿지 메시지 추가
 
-### RN App (`found3/rn`)
+### RN App (`found3/rn`) [legacy]
 - Expo 전환 (SDK 54)
 - RN 네이티브 타이틀 화면
 - WebView 프리로드
@@ -86,6 +92,16 @@
 - React Router로 모든 게임 라우팅
 - 공유 에셋 (`/assets/tiles/`, `/assets/audio/`)
 - `allowedHosts: true` + Bonjour hostname
+
+---
+
+## 2026-04-21
+
+### Documentation
+- 루트 문서를 현재 구조 기준으로 정리
+- 구조 기준 문서 `knowledge/project-structure.md` 추가
+- Knowledge index `knowledge/README.md` 추가
+- 요구사항/진행 문서에서 `found3/rn`을 현재 구조처럼 읽히는 표현 정리
 
 ### Issue-Driven Development
 - CLAUDE.md에 이슈 기반 개발 워크플로우 추가

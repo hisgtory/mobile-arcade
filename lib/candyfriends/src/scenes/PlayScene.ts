@@ -15,6 +15,7 @@ import { getStageConfig } from '../logic/stage';
 import {
   createBoard,
   swap,
+  isAdjacent,
   findAllMatches,
   removeCells,
   applyGravity,
@@ -58,6 +59,7 @@ export class PlayScene extends Phaser.Scene {
 
   init(data: { stage?: number; gameConfig?: GameConfig }): void {
     this.stageNum = data?.stage ?? 1;
+    // TODO: Improve config passing — use Phaser registry or scene data instead of (game as any)
     this.gameConfig = data?.gameConfig ?? (this.game as any).__candyfriendsConfig;
   }
 
@@ -198,6 +200,7 @@ export class PlayScene extends Phaser.Scene {
 
   private async trySwap(a: CellPos, b: CellPos): Promise<void> {
     if (this.phase !== GamePhase.PLAYING) return;
+    if (!isAdjacent(a, b)) return;
     this.phase = GamePhase.ANIMATING;
 
     const tileA = this.tileGrid[a.row][a.col]!;
@@ -278,15 +281,18 @@ export class PlayScene extends Phaser.Scene {
 
     this.emitScore();
 
+    // Remove from data immediately to stay in sync with visuals
+    removeCells(this.board, allCells);
+
     // Animate destroy
     const destroyPromises = allCells.map(
       ({ row, col }) =>
         new Promise<void>((res) => {
           const tile = this.tileGrid[row][col];
           if (tile) {
+            this.tileGrid[row][col] = null;
             tile.animateDestroy(() => {
               tile.destroy();
-              this.tileGrid[row][col] = null;
               res();
             });
           } else {
@@ -295,9 +301,6 @@ export class PlayScene extends Phaser.Scene {
         }),
     );
     await Promise.all(destroyPromises);
-
-    // Remove from data
-    removeCells(this.board, allCells);
 
     // Gravity
     const gravityMoves = applyGravity(this.board);
@@ -384,6 +387,10 @@ export class PlayScene extends Phaser.Scene {
       this.bgm.destroy();
       this.bgm = undefined;
     }
+    this.game.events.off('score-update');
+    this.game.events.off('moves-update');
+    this.game.events.off('stage-clear');
+    this.game.events.off('game-over');
     this.tileGrid = [];
   }
 }

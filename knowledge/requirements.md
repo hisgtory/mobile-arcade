@@ -1,9 +1,21 @@
+# Requirements
+
+현재 기준 요구사항 문서. 구조 설명은 단일 Arcade 앱 기준으로 유지한다.
+
+## Architecture Baseline
+
+- 모노레포 구조: `lib/{game}` → `web/arcade` → `rn`
+- `rn`이 현재 기준 단일 모바일 앱
+- `web/arcade`가 현재 기준 단일 웹 서빙 엔트리
+- `found3/rn`은 deprecated 레거시 경로로 간주
+
+---
+
 # Requirements — found3
 
 ## Game Concept
 
 - **found3**: 3개씩 같은 그림 퍼즐을 찾아 없애서 모든 타일을 클리어하는 게임
-- 모노레포 구조: `lib/{game}` → `web/{game}` → `{game}/rn` 파이프라인
 
 ## Portfolio Strategy
 
@@ -87,6 +99,7 @@
 - 각 게임은 WebView로 로딩 (게임 브라우저 + WebView 런처)
 - kocket 스타일 글로벌 헤더 (뒤로가기 + 타이틀 중앙 정렬)
 - 게임 카탈로그: `rn/src/data/games.ts`에서 관리 (후에 서버 API로 교체 가능)
+- 웹 서빙 엔트리: `web/arcade/`
 
 ## Business Strategy
 - CPI 1번으로 유저가 N개 게임에 노출 (게임별 앱 대비 효율적)

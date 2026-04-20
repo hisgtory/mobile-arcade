@@ -4,14 +4,17 @@
 
 ### Decision
 ```
-lib/{game}  →  web/{game}  →  {game}/rn
-(Phaser.io)   (React+Stitches) (RN WebView)
+lib/{game}  →  web/arcade  →  rn
+(Phaser.io)   (Unified Web)   (RN WebView)
 ```
 
 ### Details
 - `lib/{game}`: 순수 게임 로직 (Phaser.io)
-- `web/{game}`: React 웹 래핑 (Vite + Stitches)
-- `{game}/rn`: React Native WebView 래핑 (Expo)
+- `web/arcade`: 통합 React 웹 앱 (Vite + Stitches + React Router)
+- `rn`: 단일 React Native WebView 앱 (Expo)
+
+### Legacy Note
+- `web/found3`, `web/crunch3`, `found3/rn` 같은 게임별 앱/웹 패키지는 남아 있을 수 있으나 현재 기준 구조는 아님
 
 ### Rationale
 코드 재사용 극대화, 게임별 독립 배포. 하나의 게임 로직으로 웹/앱 동시 서빙.

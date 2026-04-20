@@ -13,14 +13,10 @@ export interface TileData {
   type: TileType;
   row: number;
   col: number;
-  /** Special tile created by 4+ matches */
-  special?: 'line_h' | 'line_v' | 'bomb';
 }
 
 export interface MatchResult {
   cells: CellPos[];
-  /** If 4+, indicates special tile to create */
-  special?: 'line_h' | 'line_v' | 'bomb';
 }
 
 export interface SwapResult {
