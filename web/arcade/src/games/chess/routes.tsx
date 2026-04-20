@@ -9,9 +9,9 @@ import { useGame as useChessGame } from './useGame';
 import type { Difficulty } from '@arcade/lib-chess';
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string }[] = [
-  { value: 'easy', label: 'Easy', desc: 'Random moves' },
-  { value: 'medium', label: 'Medium', desc: 'Greedy capture' },
-  { value: 'hard', label: 'Hard', desc: 'Greedy (v2 soon)' },
+  { value: 'easy', label: 'Easy', desc: 'Beginner' },
+  { value: 'medium', label: 'Medium', desc: 'Casual' },
+  { value: 'hard', label: 'Hard', desc: 'Challenging' },
 ];
 
 function ChessHomeRoute() {
