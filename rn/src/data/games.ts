@@ -78,6 +78,16 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'chess',
+    name: 'Chess',
+    description: 'Classic chess vs AI — full rules.',
+    icon: '♛',
+    category: 'strategy',
+    color: '#374151',
+    webPath: '/games/chess/v1',
+    isNew: true,
+  },
+  {
     id: 'number10',
     name: 'Make 10',
     description: 'Drag numbers that sum to 10!',
