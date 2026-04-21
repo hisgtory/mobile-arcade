@@ -46,6 +46,39 @@ const PlayLayout = styled('div', {
   overflow: 'hidden',
 });
 
+const GameTitle = styled('h1', {
+  fontSize: 48,
+  fontWeight: 800,
+  color: '#111827',
+  letterSpacing: -1,
+  variants: {
+    size: {
+      large: { fontSize: 48 },
+      medium: { fontSize: 36 },
+    },
+  },
+});
+
+const GameDescription = styled('p', {
+  fontSize: 16,
+  color: '#6B7280',
+});
+
+const PrimaryButton = styled('button', {
+  marginTop: 32,
+  backgroundColor: '#2563EB',
+  color: '#fff',
+  border: 'none',
+  padding: '16px 48px',
+  borderRadius: 16,
+  fontSize: 20,
+  fontWeight: 700,
+  cursor: 'pointer',
+  '&:hover': {
+    backgroundColor: '#1D4ED8',
+  },
+});
+
 const isRN = typeof window !== 'undefined' && typeof window.ReactNativeWebView !== 'undefined';
 
 // ─── Found3 Routes ─────────────────────────────────────
@@ -284,14 +317,11 @@ function SlideMatchTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Sliding Match</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Slide rows & columns to match 3!</p>
-      <button
-        onClick={() => navigate('/games/slidematch/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
+      <GameTitle>Sliding Match</GameTitle>
+      <GameDescription>Slide rows & columns to match 3!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/slidematch/v1/stage/1')}>
         Play
-      </button>
+      </PrimaryButton>
       <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
     </PlayLayout>
   );
