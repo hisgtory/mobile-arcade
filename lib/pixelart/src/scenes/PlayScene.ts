@@ -30,6 +30,8 @@ export class PlayScene extends Phaser.Scene {
   private numberTexts: Phaser.GameObjects.Text[][] = [];
   private paletteContainer!: Phaser.GameObjects.Container;
   private paletteButtons: Phaser.GameObjects.Container[] = [];
+  private paletteBadgeTexts: Map<number, Phaser.GameObjects.Text> = new Map();
+  private paletteChecks: Map<number, Phaser.GameObjects.Container> = new Map();
 
   // Drag paint
   private isPainting = false;
@@ -51,6 +53,9 @@ export class PlayScene extends Phaser.Scene {
     this.selectedColor = this.usedColors[0] || 1;
     this.phase = 'idle';
 
+    this.paletteBadgeTexts.clear();
+    this.paletteChecks.clear();
+
     this.gridContainer = this.add.container(0, 0);
     this.paletteContainer = this.add.container(0, 0);
 
@@ -59,6 +64,8 @@ export class PlayScene extends Phaser.Scene {
     this.drawPalette();
     this.setupInput();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -226,14 +233,16 @@ export class PlayScene extends Phaser.Scene {
         });
         badgeText.setOrigin(0.5, 0.5);
         container.add(badgeText);
+        this.paletteBadgeTexts.set(colorIdx, badgeText);
       }
 
       // Checkmark for completed colors
-      if (remaining === 0) {
+      if (remaining === 0 || true) { // Always create check container but toggle visibility
+        const checkContainer = this.add.container(0, 0);
         const checkBg = this.add.graphics();
         checkBg.fillStyle(0x000000, 0.3);
         checkBg.fillCircle(0, 0, btnSize / 2 - 2 * this.dpr);
-        container.add(checkBg);
+        checkContainer.add(checkBg);
 
         const check = this.add.text(0, 0, '✓', {
           fontSize: `${Math.floor(btnSize * 0.5)}px`,
@@ -242,7 +251,10 @@ export class PlayScene extends Phaser.Scene {
           fontStyle: 'bold',
         });
         check.setOrigin(0.5, 0.5);
-        container.add(check);
+        checkContainer.add(check);
+        container.add(checkContainer);
+        checkContainer.setVisible(remaining === 0);
+        this.paletteChecks.set(colorIdx, checkContainer);
       }
 
       // Hit area
@@ -304,11 +316,14 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private tryFillCell(row: number, col: number) {
+    const cell = this.board.cells[row]?.[col];
+    if (!cell || cell.targetColor === 0) return; // Ignore empty cells
+
     const result = fillCell(this.board, row, col, this.selectedColor);
 
     if (result.correct) {
       this.updateCell(row, col);
-      this.drawPalette(); // Update remaining counts
+      this.updatePaletteBadge(this.selectedColor);
       this.emitState();
 
       // Check completion
@@ -316,7 +331,7 @@ export class PlayScene extends Phaser.Scene {
         this.phase = 'celebrating';
         this.time.delayedCall(400, () => this.celebrateWin());
       }
-    } else if (!result.alreadyFilled && !result.correct) {
+    } else if (!result.alreadyFilled) {
       // Wrong color — shake feedback
       this.shakeCell(row, col);
     }
@@ -331,7 +346,7 @@ export class PlayScene extends Phaser.Scene {
     const y = this.gridOffsetY + row * s;
     const hex = parseInt(PALETTE[cell.targetColor - 1].replace('#', ''), 16);
 
-    // Animate fill
+    // Update graphics
     const g = this.cellGraphics[row][col];
     g.clear();
     g.fillStyle(hex, 1);
@@ -355,6 +370,21 @@ export class PlayScene extends Phaser.Scene {
     this.numberTexts[row][col].setText('');
   }
 
+  private updatePaletteBadge(colorIdx: number) {
+    const remaining = getRemainingForColor(this.board, colorIdx);
+    const txt = this.paletteBadgeTexts.get(colorIdx);
+    if (txt) {
+      txt.setText(String(remaining));
+      if (remaining === 0) {
+        // Hide badge container
+        txt.parentContainer.setVisible(false);
+        // Show check container
+        const check = this.paletteChecks.get(colorIdx);
+        if (check) check.setVisible(true);
+      }
+    }
+  }
+
   private shakeCell(row: number, col: number) {
     const g = this.cellGraphics[row][col];
     if (!g) return;
@@ -375,10 +405,44 @@ export class PlayScene extends Phaser.Scene {
 
   private onColorSelect(colorIdx: number) {
     if (this.phase !== 'idle') return;
+
+    // Ignore if already completed
+    if (getRemainingForColor(this.board, colorIdx) === 0) return;
+
     this.selectedColor = colorIdx;
     this.game.events.emit('color-select', { color: colorIdx });
-    this.drawGrid(); // Redraw to update highlights
-    this.drawPalette(); // Redraw to update selection
+    
+    this.updateGridHighlights();
+    this.drawPalette(); // Simple enough to redraw selection rings
+  }
+
+  private updateGridHighlights() {
+    const s = this.cellSize;
+    for (let r = 0; r < this.board.rows; r++) {
+      for (let c = 0; c < this.board.cols; c++) {
+        const cell = this.board.cells[r][c];
+        const g = this.cellGraphics[r][c];
+        const txt = this.numberTexts[r][c];
+        if (!cell.filled && cell.targetColor > 0) {
+          const x = this.gridOffsetX + c * s;
+          const y = this.gridOffsetY + r * s;
+          g.clear();
+          g.fillStyle(0xffffff, 1);
+          g.fillRect(x, y, s, s);
+          g.lineStyle(1 * this.dpr, 0xe5e7eb, 1);
+          g.strokeRect(x, y, s, s);
+
+          if (cell.targetColor === this.selectedColor) {
+            const selHex = parseInt(PALETTE[this.selectedColor - 1].replace('#', ''), 16);
+            g.fillStyle(selHex, 0.12);
+            g.fillRect(x, y, s, s);
+            txt.setColor(PALETTE[this.selectedColor - 1]);
+          } else {
+            txt.setColor('#6B7280');
+          }
+        }
+      }
+    }
   }
 
   // ─── Win Celebration ──────────────────────────────────
@@ -437,5 +501,17 @@ export class PlayScene extends Phaser.Scene {
     this.game.events.emit('score-update', {
       score: this.board.filledCells * 10,
     });
+  }
+
+  shutdown() {
+    this.tweens.killAll();
+    this.cellGraphics.forEach(row => row.forEach(g => g.destroy()));
+    this.cellGraphics = [];
+    this.numberTexts.forEach(row => row.forEach(t => t.destroy()));
+    this.numberTexts = [];
+    this.paletteButtons.forEach(b => b.destroy());
+    this.paletteButtons = [];
+    this.paletteBadgeTexts.clear();
+    this.paletteChecks.clear();
   }
 }

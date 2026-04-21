@@ -19,6 +19,9 @@ export function useGame({ stage, onClear }: UseGameOptions) {
   const [score, setScore] = useState(0);
   const [progress, setProgress] = useState(0);
 
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
 
   useEffect(() => {
@@ -38,14 +41,14 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     game.events.on('stage-clear', (data: { score: number; stage: number; progress: number }) => {
       const result = { score: data.score, stage: data.stage, progress: data.progress, cleared: true };
       stageComplete({ stage: data.stage, score: data.score, cleared: true });
-      onClear?.(result);
+      onClearRef.current?.(result);
     });
 
     return () => {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear]);
+  }, [stage]);
 
   const doRestart = useCallback(() => {
     if (!gameRef.current) return;

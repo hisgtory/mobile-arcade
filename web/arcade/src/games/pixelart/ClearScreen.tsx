@@ -1,5 +1,6 @@
 import { styled } from '../../styles/stitches.config';
 import type { GameResult } from './useGame';
+import { TOTAL_STAGES } from '@arcade/lib-pixelart';
 
 const Overlay = styled('div', {
   display: 'flex',
@@ -73,10 +74,11 @@ interface ClearScreenProps {
 }
 
 export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScreenProps) {
+  const isAllClear = stage >= TOTAL_STAGES;
   return (
     <Overlay>
-      <Emoji>🎨</Emoji>
-      <Title>Masterpiece!</Title>
+      <Emoji>{isAllClear ? '🏆' : '🎨'}</Emoji>
+      <Title>{isAllClear ? 'All Clear!' : 'Masterpiece!'}</Title>
       <Card>
         <StatRow>
           <Label>Stage</Label>
@@ -87,12 +89,14 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
           <Value>{result.score.toLocaleString()}</Value>
         </StatRow>
       </Card>
-      <Button
-        css={{ backgroundColor: '$primary', color: '#fff' }}
-        onClick={onNext}
-      >
-        Next Stage
-      </Button>
+      {!isAllClear && (
+        <Button
+          css={{ backgroundColor: '$primary', color: '#fff' }}
+          onClick={onNext}
+        >
+          Next Stage
+        </Button>
+      )}
       <Button
         css={{ backgroundColor: '#fff', color: '$text', border: '1px solid $gray200' }}
         onClick={onRetry}
