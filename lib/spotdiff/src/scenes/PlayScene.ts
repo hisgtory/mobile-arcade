@@ -142,6 +142,8 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Drawing ──────────────────────────────────────────
@@ -366,7 +368,9 @@ export class PlayScene extends Phaser.Scene {
         alpha: 0,
         duration: 1000 + Math.random() * 500,
         ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          if (p && p.active) p.destroy();
+        },
       });
     }
 
@@ -404,5 +408,15 @@ export class PlayScene extends Phaser.Scene {
       this.timerEvent = null;
     }
     this.scene.restart({ config: this.config, dpr: this.dpr });
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
+    if (this.timerEvent) {
+      this.timerEvent.destroy();
+      this.timerEvent = null;
+    }
+    this.foundMarkers.forEach((m) => m.destroy());
+    this.foundMarkers = [];
   }
 }
