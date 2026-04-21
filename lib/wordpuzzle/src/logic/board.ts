@@ -8,8 +8,8 @@ const WORD_POOL: string[][] = [
    '소리', '마음', '바람', '지구', '달빛', '눈물', '시간', '세상', '우리', '가을',
    '겨울', '봄날', '여름', '산책', '공원', '도시', '학교', '친구', '가족', '미래'],
   // 3-letter words
-  ['사랑해', '고마워', '행복해', '아름다', '즐거운', '따뜻한', '나비야', '무지개',
-   '해바라', '초콜릿', '아이스', '캔디야', '피아노', '기타야', '드럼이', '음악이'],
+  ['행복함', '고마움', '무지개', '피아노', '바이올', '기차역', '도서관', '비행기',
+   '해바라기', '코끼리', '강아지', '고양이', '토끼야', '다람쥐', '부엉이', '호랑이'],
 ];
 
 // ─── Stage Definitions ────────────────────────────────────
@@ -22,7 +22,7 @@ const STAGE_CONFIGS: StageConfig[] = [
   { stage: 4, gridSize: 5, words: ['햇빛', '소리', '마음'] },
   { stage: 5, gridSize: 5, words: ['바람', '지구', '달빛'] },
   // Medium (5×5, 4 words)
-  { stage: 6, gridSize: 5, words: ['사과', '눈물', '시간', '세상'] },
+  { stage: 6, gridSize: 5, words: ['사과', '바람', '시간', '세상'] },
   { stage: 7, gridSize: 5, words: ['우리', '가을', '겨울', '봄날'] },
   { stage: 8, gridSize: 5, words: ['여름', '산책', '공원', '도시'] },
   { stage: 9, gridSize: 5, words: ['학교', '친구', '가족', '미래'] },
@@ -31,19 +31,30 @@ const STAGE_CONFIGS: StageConfig[] = [
 
 export function getStageConfig(stage: number): StageConfig {
   if (stage <= STAGE_CONFIGS.length) return STAGE_CONFIGS[stage - 1];
-  // Beyond defined stages: generate from pool
-  const gridSize = 5;
-  const numWords = Math.min(3 + Math.floor((stage - 1) / 5), 5);
-  const pool = WORD_POOL[0];
+  
+  // Beyond stage 10: generate dynamically
+  // Stage 11-20: 5x5, 4 words (mix of 2-3 letters)
+  // Stage 21-30: 6x6, 5 words (mostly 3 letters)
+  const isHard = stage > 20;
+  const gridSize = isHard ? 6 : 5;
+  const numWords = isHard ? 5 : 4;
+  
+  const pool2 = WORD_POOL[0];
+  const pool3 = WORD_POOL[1];
+  
   const words: string[] = [];
-  const used = new Set<number>();
+  const used = new Set<string>();
+  
   while (words.length < numWords) {
-    const idx = Math.floor(Math.random() * pool.length);
-    if (!used.has(idx)) {
-      used.add(idx);
-      words.push(pool[idx]);
+    const use3 = Math.random() > (isHard ? 0.3 : 0.6);
+    const pool = use3 ? pool3 : pool2;
+    const word = pool[Math.floor(Math.random() * pool.length)];
+    if (!used.has(word)) {
+      used.add(word);
+      words.push(word);
     }
   }
+  
   return { stage, gridSize, words };
 }
 
@@ -161,7 +172,28 @@ export function createBoard(config: StageConfig): BoardState {
     }
   }
 
-  throw new Error(`Failed to create board after ${maxAttempts} attempts`);
+  // Graceful fallback for emergency instead of throwing
+  return createEmergencyBoard(config);
+}
+
+function createEmergencyBoard(config: StageConfig): BoardState {
+  const { gridSize, words } = config;
+  const grid: string[][] = Array.from({ length: gridSize }, () =>
+    Array.from({ length: gridSize }, () => randomKoreanChar()),
+  );
+  const placements: WordPlacement[] = [];
+  
+  // Just place one word as a bare minimum fallback
+  const word = words[0];
+  const chars = [...word];
+  const cells: { row: number; col: number }[] = [];
+  for (let i = 0; i < Math.min(chars.length, gridSize); i++) {
+    grid[0][i] = chars[i];
+    cells.push({ row: 0, col: i });
+  }
+  placements.push({ word, cells, found: false });
+
+  return { grid, gridSize, placements, numWords: 1 };
 }
 
 // ─── Word Check ──────────────────────────────────────────

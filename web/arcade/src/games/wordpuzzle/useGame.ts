@@ -21,6 +21,9 @@ export function useGame({ stage, onClear }: UseGameOptions) {
   const [foundWords, setFoundWords] = useState(0);
   const [totalWords, setTotalWords] = useState(0);
 
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
 
   useEffect(() => {
@@ -43,14 +46,14 @@ export function useGame({ stage, onClear }: UseGameOptions) {
     game.events.on('stage-clear', (data: { score: number; foundWords: number; totalWords: number; stage: number }) => {
       const result = { score: data.score, foundWords: data.foundWords, totalWords: data.totalWords, stage: data.stage, cleared: true };
       stageComplete({ stage: data.stage, score: data.score, cleared: true });
-      onClear?.(result);
+      onClearRef.current?.(result);
     });
 
     return () => {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear]);
+  }, [stage]);
 
   const doHint = useCallback(() => {
     if (!gameRef.current) return;

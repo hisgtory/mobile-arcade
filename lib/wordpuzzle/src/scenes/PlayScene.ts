@@ -25,6 +25,7 @@ export class PlayScene extends Phaser.Scene {
   private phase: GamePhase = 'idle';
   private score = 0;
   private foundCount = 0;
+  private hintsUsed = 0;
   private wordListTexts: Phaser.GameObjects.Text[] = [];
 
   constructor() {
@@ -32,8 +33,9 @@ export class PlayScene extends Phaser.Scene {
   }
 
   init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
+    // TODO: Use Phaser registry or scene data for better type safety
+    this.config = data.config ?? (this.game as any).__wordpuzzleConfig ?? {};
+    this.dpr = data.dpr ?? (this.game as any).__dpr ?? 1;
   }
 
   create() {
@@ -44,10 +46,13 @@ export class PlayScene extends Phaser.Scene {
     this.phase = 'idle';
     this.score = 0;
     this.foundCount = 0;
+    this.hintsUsed = 0;
 
     this.drawBoard();
     this.drawWordList();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -416,6 +421,7 @@ export class PlayScene extends Phaser.Scene {
 
   public useHint() {
     if (this.phase !== 'idle' && this.phase !== 'selecting') return;
+    if (this.hintsUsed >= 3) return; // Limit to 3 hints
 
     // Find first unfound word
     const unfound = this.board.placements.find((p) => !p.found);
@@ -440,8 +446,12 @@ export class PlayScene extends Phaser.Scene {
       alpha: 0,
       duration: 1500,
       ease: 'Cubic.easeOut',
-      onComplete: () => hint.destroy(),
+      onComplete: () => {
+        if (hint && hint.active) hint.destroy();
+      },
     });
+
+    this.hintsUsed++;
   }
 
   public restart() {
@@ -456,5 +466,13 @@ export class PlayScene extends Phaser.Scene {
       found: this.foundCount,
       total: this.board.numWords,
     });
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
+    this.cellContainers.forEach((row) => row.forEach((c) => c.destroy()));
+    this.cellContainers = [];
+    this.wordListTexts.forEach((t) => t.destroy());
+    this.wordListTexts = [];
   }
 }
