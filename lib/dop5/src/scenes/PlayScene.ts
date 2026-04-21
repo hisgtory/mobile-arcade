@@ -31,7 +31,7 @@ export class PlayScene extends Phaser.Scene {
   private targetH = 0;
 
   // Cover layer
-  private coverGraphics!: Phaser.GameObjects.Graphics;
+  private eraserGraphics!: Phaser.GameObjects.Graphics;
   private eraseTexture!: Phaser.GameObjects.RenderTexture;
   private isPointerDown = false;
   private score = 0;
@@ -41,8 +41,9 @@ export class PlayScene extends Phaser.Scene {
   }
 
   init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
+    // TODO: Use Phaser registry or scene data for better type safety
+    this.config = data.config ?? (this.game as any).__dop5Config ?? {};
+    this.dpr = data.dpr ?? (this.game as any).__dpr ?? 1;
   }
 
   create() {
@@ -88,8 +89,9 @@ export class PlayScene extends Phaser.Scene {
     // Create the cover layer (solid colored overlay that gets erased)
     this.createCoverLayer();
 
-    // Draw target hint (subtle border)
-    this.drawTargetHint();
+    // Eraser graphics for reuse (optimization)
+    this.eraserGraphics = this.add.graphics();
+    this.eraserGraphics.setVisible(false);
 
     // Input
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
@@ -110,6 +112,8 @@ export class PlayScene extends Phaser.Scene {
     });
 
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   private isLightBg(): boolean {
@@ -198,26 +202,29 @@ export class PlayScene extends Phaser.Scene {
     graphics.strokeRect(this.targetX, this.targetY, this.targetW, this.targetH);
     graphics.setDepth(0);
   }
+private handleErase(px: number, py: number) {
+  if (this.phase === 'celebrating') return;
 
-  private handleErase(px: number, py: number) {
-    if (this.phase === 'celebrating') return;
+  const scale = this.dpr;
+  const radius = ERASER_RADIUS * scale;
 
-    const scale = this.dpr;
-    const radius = ERASER_RADIUS * scale;
+  // Erase from the render texture (make it transparent)
+  this.eraserGraphics.clear();
+  this.eraserGraphics.fillStyle(0xffffff, 1);
+  this.eraserGraphics.fillCircle(px, py, radius);
 
-    // Erase from the render texture (make it transparent)
-    const eraser = this.add.graphics();
-    eraser.fillStyle(0xffffff, 1);
-    eraser.fillCircle(px, py, radius);
+  this.eraseTexture.erase(this.eraserGraphics, 0, 0);
 
-    this.eraseTexture.erase(eraser, 0, 0);
-    eraser.destroy();
+  // Check if erase is within target area (plus radius buffer)
+  const localX = px - this.targetX;
+  const localY = py - this.targetY;
 
-    // Check if erase is within target area
-    const localX = px - this.targetX;
-    const localY = py - this.targetY;
-
-    // Erase the grid even for touches near the target (radius overlap)
+  if (
+    localX > -radius &&
+    localX < this.targetW + radius &&
+    localY > -radius &&
+    localY < this.targetH + radius
+  ) {
     eraseAt(
       this.eraseGrid,
       localX,
@@ -226,6 +233,7 @@ export class PlayScene extends Phaser.Scene {
       this.targetW,
       this.targetH,
     );
+  }
 
     // Update score based on erase percent
     const percent = getErasePercent(this.eraseGrid);
@@ -330,7 +338,9 @@ export class PlayScene extends Phaser.Scene {
         alpha: 0,
         duration: 1000 + Math.random() * 500,
         ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          if (p && p.active) p.destroy();
+        },
       });
     }
   }
@@ -343,5 +353,10 @@ export class PlayScene extends Phaser.Scene {
     const percent = getErasePercent(this.eraseGrid);
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('erase-update', { erasePercent: percent });
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
+    this.eraserGraphics?.destroy();
   }
 }
