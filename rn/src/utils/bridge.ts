@@ -70,6 +70,13 @@ const RESPONSE_TYPE_MAP: Record<BridgeRequestType, BridgeResponseType> = {
   GAME_OVER: 'ACK',
 };
 
+const HAPTIC_PATTERNS: Record<string, { style: Haptics.ImpactFeedbackStyle; count: number }> = {
+  'chess-piece-tapped': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+  'chess-capture': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+  'chess-check': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+  'chess-checkmate': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+};
+
 // ─── BridgeHost ─────────────────────────────────────────────
 
 export class BridgeHost {
@@ -215,7 +222,16 @@ export class BridgeHost {
       medium: Haptics.ImpactFeedbackStyle.Medium,
       heavy: Haptics.ImpactFeedbackStyle.Heavy,
     };
-    await Haptics.impactAsync(impactMap[style] ?? Haptics.ImpactFeedbackStyle.Medium);
+
+    const pattern = HAPTIC_PATTERNS[style];
+    if (pattern) {
+      for (let i = 0; i < pattern.count; i++) {
+        await Haptics.impactAsync(pattern.style);
+      }
+    } else {
+      await Haptics.impactAsync(impactMap[style] ?? Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     this.sendResponse(msg.msgId, 'ACK', 'ack');
   }
 

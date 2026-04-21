@@ -77,6 +77,16 @@ export const GAMES: GameInfo[] = [
     webPath: '/games/tictactoe/v1/play',
     isNew: true,
   },
+  {
+    id: 'chess',
+    name: 'Chess',
+    description: 'Classic chess vs AI - full rules.',
+    icon: '♛',
+    category: 'strategy',
+    color: '#374151',
+    webPath: '/games/chess/v1',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

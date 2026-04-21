@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { styled } from './styles/stitches.config';
 import { globalStyles } from './styles/global';
 
@@ -31,6 +31,25 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
+import { HUD as ChessHUD } from './games/chess/HUD';
+import { useGame as useChessGame } from './games/chess/useGame';
+import type { Difficulty as ChessDifficulty } from '@arcade/lib-chess';
+
+const CHESS_DIFFICULTY_OPTIONS: {
+  value: ChessDifficulty;
+  label: string;
+  desc: string;
+}[] = [
+  { value: 'easy', label: 'Easy', desc: 'Beginner' },
+  { value: 'medium', label: 'Medium', desc: 'Casual' },
+  { value: 'hard', label: 'Hard', desc: 'Greedy AI' },
+];
+
+function parseChessDifficulty(value: string | null): ChessDifficulty {
+  return CHESS_DIFFICULTY_OPTIONS.some((option) => option.value === value)
+    ? (value as ChessDifficulty)
+    : 'medium';
+}
 
 const PlayLayout = styled('div', {
   width: '100%',
@@ -301,6 +320,78 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Chess Routes ──────────────────────────────────────
+
+function ChessTitleRoute() {
+  const navigate = useNavigate();
+  const [selected, setSelected] = useState<ChessDifficulty>('medium');
+
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 20, padding: 20 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Chess</h1>
+      <p style={{ fontSize: 16, color: '#6B7280', textAlign: 'center' }}>Classic chess vs AI with full core rules.</p>
+      <div style={{ display: 'flex', gap: 12, width: '100%', maxWidth: 340, justifyContent: 'center' }}>
+        {CHESS_DIFFICULTY_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            onClick={() => setSelected(option.value)}
+            style={{
+              flex: 1,
+              padding: '16px 8px',
+              borderRadius: 16,
+              border: selected === option.value ? '2px solid #2563EB' : '2px solid #E5E7EB',
+              backgroundColor: selected === option.value ? '#EFF6FF' : '#fff',
+              cursor: 'pointer',
+              textAlign: 'center',
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#111827' }}>{option.label}</div>
+            <div style={{ fontSize: 11, color: '#6B7280', marginTop: 4 }}>{option.desc}</div>
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => navigate(`/games/chess/v1/play?difficulty=${selected}`)}
+        style={{ marginTop: 12, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '18px 56px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+      <p style={{ fontSize: 13, color: '#9CA3AF' }}>You play White vs AI Black</p>
+    </PlayLayout>
+  );
+}
+
+function ChessPlayRoute() {
+  const [params] = useSearchParams();
+  const difficulty = parseChessDifficulty(params.get('difficulty'));
+  const {
+    containerRef,
+    turn,
+    status,
+    playerWins,
+    aiWins,
+    draws,
+    whiteMaterial,
+    blackMaterial,
+  } = useChessGame({ difficulty });
+
+  return (
+    <PlayLayout>
+      <ChessHUD
+        turn={turn}
+        status={status}
+        playerWins={playerWins}
+        aiWins={aiWins}
+        draws={draws}
+        whiteMaterial={whiteMaterial}
+        blackMaterial={blackMaterial}
+      />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── Root ──────────────────────────────────────────────
 
 export function App() {
@@ -326,6 +417,10 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* Chess */}
+      <Route path="/games/chess/v1" element={<ChessTitleRoute />} />
+      <Route path="/games/chess/v1/play" element={<ChessPlayRoute />} />
 
       {/* Default */}
       <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />

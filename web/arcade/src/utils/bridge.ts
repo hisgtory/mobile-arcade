@@ -29,3 +29,7 @@ export function stageComplete(data: {
 }): void {
   sendToRN(data.cleared ? 'STAGE_CLEAR' : 'GAME_OVER', data);
 }
+
+export function haptic(style: string): void {
+  sendToRN('HAPTIC', { style });
+}
