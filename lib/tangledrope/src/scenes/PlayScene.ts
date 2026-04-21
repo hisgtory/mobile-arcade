@@ -22,7 +22,8 @@ export class PlayScene extends Phaser.Scene {
   private dpr = 1;
 
   // Visual
-  private pinGraphics: Phaser.GameObjects.Container[] = [];
+  private pinGraphics: Map<number, Phaser.GameObjects.Container> = new Map();
+  private pinsById: Map<number, Pin> = new Map();
   private ropeGraphics!: Phaser.GameObjects.Graphics;
   private dragPin: number | null = null;
   private phase: GamePhase = 'idle';
@@ -43,6 +44,11 @@ export class PlayScene extends Phaser.Scene {
     const stage = this.config.stage ?? 1;
     const stageConfig = getStageConfig(stage);
     this.board = createBoard(stageConfig, this.dpr);
+
+    // Map pins for O(1) lookup
+    this.pinsById.clear();
+    this.board.pins.forEach(p => this.pinsById.set(p.id, p));
+
     this.phase = 'idle';
     this.moves = 0;
     this.moveHistory = [];
@@ -56,6 +62,8 @@ export class PlayScene extends Phaser.Scene {
     this.createPins();
     this.updateIntersections();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Drawing ──────────────────────────────────────────
@@ -63,7 +71,7 @@ export class PlayScene extends Phaser.Scene {
   private createPins() {
     // Clear previous
     this.pinGraphics.forEach(c => c.destroy());
-    this.pinGraphics = [];
+    this.pinGraphics.clear();
 
     const scale = this.dpr;
     const r = PIN_RADIUS * scale;
@@ -104,7 +112,7 @@ export class PlayScene extends Phaser.Scene {
       // Enable container drag
       this.input.setDraggable(hitArea);
 
-      this.pinGraphics.push(container);
+      this.pinGraphics.set(pin.id, container);
     });
   }
 
@@ -115,8 +123,8 @@ export class PlayScene extends Phaser.Scene {
     const lineWidth = 3 * scale;
 
     this.board.ropes.forEach(rope => {
-      const pinA = this.board.pins.find(p => p.id === rope.pinA)!;
-      const pinB = this.board.pins.find(p => p.id === rope.pinB)!;
+      const pinA = this.pinsById.get(rope.pinA)!;
+      const pinB = this.pinsById.get(rope.pinB)!;
 
       const color = ROPE_COLORS[rope.colorIndex % ROPE_COLORS.length];
       const hex = parseInt(color.replace('#', ''), 16);
@@ -139,12 +147,12 @@ export class PlayScene extends Phaser.Scene {
     this.dragPin = pinId;
     this.phase = 'dragging';
 
-    const pin = this.board.pins.find(p => p.id === pinId)!;
+    const pin = this.pinsById.get(pinId)!;
     // Save position for undo
     this.moveHistory.push({ pinId, x: pin.x, y: pin.y });
 
     // Scale up the dragged pin
-    const container = this.pinGraphics[pinId];
+    const container = this.pinGraphics.get(pinId);
     if (container) {
       this.tweens.add({
         targets: container,
@@ -169,12 +177,12 @@ export class PlayScene extends Phaser.Scene {
     const y = Math.max(pad, Math.min(h - pad, dragY));
 
     // Update pin position in data
-    const pin = this.board.pins.find(p => p.id === pinId)!;
+    const pin = this.pinsById.get(pinId)!;
     pin.x = x;
     pin.y = y;
 
     // Update visual position
-    const container = this.pinGraphics[pinId];
+    const container = this.pinGraphics.get(pinId);
     if (container) {
       container.setPosition(x, y);
     }
@@ -190,7 +198,7 @@ export class PlayScene extends Phaser.Scene {
     this.moves++;
 
     // Scale back down
-    const container = this.pinGraphics[pinId];
+    const container = this.pinGraphics.get(pinId);
     if (container) {
       this.tweens.add({
         targets: container,
@@ -229,14 +237,15 @@ export class PlayScene extends Phaser.Scene {
     this.ropeGraphics.clear();
     const lineWidth = 3 * scale;
     this.board.ropes.forEach(rope => {
-      const pinA = this.board.pins.find(p => p.id === rope.pinA)!;
-      const pinB = this.board.pins.find(p => p.id === rope.pinB)!;
+      const pinA = this.pinsById.get(rope.pinA)!;
+      const pinB = this.pinsById.get(rope.pinB)!;
       this.ropeGraphics.lineStyle(lineWidth + 1 * scale, 0x22c55e, 1);
       this.ropeGraphics.lineBetween(pinA.x, pinA.y, pinB.x, pinB.y);
     });
 
     // Bounce all pins
-    this.pinGraphics.forEach((container, idx) => {
+    let idx = 0;
+    this.pinGraphics.forEach((container) => {
       this.tweens.add({
         targets: container,
         scaleX: 1.3,
@@ -246,6 +255,7 @@ export class PlayScene extends Phaser.Scene {
         yoyo: true,
         ease: 'Back.easeOut',
       });
+      idx++;
     });
 
     // Confetti
@@ -271,17 +281,21 @@ export class PlayScene extends Phaser.Scene {
         alpha: 0,
         duration: 1000 + Math.random() * 500,
         ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          if (p && p.active) p.destroy();
+        },
       });
     }
 
     // Emit stage clear
     this.time.delayedCall(1200, () => {
-      this.game.events.emit('stage-clear', {
-        score: this.calculateScore(),
-        moves: this.moves,
-        stage: this.config.stage ?? 1,
-      });
+      if (this.scene.isActive()) {
+        this.game.events.emit('stage-clear', {
+          score: this.calculateScore(),
+          moves: this.moves,
+          stage: this.config.stage ?? 1,
+        });
+      }
     });
   }
 
@@ -300,11 +314,11 @@ export class PlayScene extends Phaser.Scene {
   public undo() {
     if (this.phase !== 'idle' || this.moveHistory.length === 0) return;
     const prev = this.moveHistory.pop()!;
-    const pin = this.board.pins.find(p => p.id === prev.pinId)!;
+    const pin = this.pinsById.get(prev.pinId)!;
     pin.x = prev.x;
     pin.y = prev.y;
 
-    const container = this.pinGraphics[prev.pinId];
+    const container = this.pinGraphics.get(prev.pinId);
     if (container) {
       this.tweens.add({
         targets: container,
@@ -318,9 +332,16 @@ export class PlayScene extends Phaser.Scene {
     this.moves = Math.max(0, this.moves - 1);
 
     this.time.delayedCall(220, () => {
+      if (!this.scene.isActive()) return;
       this.drawRopes();
       this.updateIntersections();
       this.emitState();
+
+      // Check win after undo
+      if (isWon(this.board.pins, this.board.ropes)) {
+        this.phase = 'celebrating';
+        this.celebrateWin();
+      }
     });
   }
 
@@ -333,5 +354,11 @@ export class PlayScene extends Phaser.Scene {
   private emitState() {
     this.game.events.emit('moves-update', { moves: this.moves });
     this.game.events.emit('intersections-update', { intersections: this.intersections });
+  }
+
+  shutdown() {
+    this.tweens.killAll();
+    this.pinGraphics.clear();
+    this.pinsById.clear();
   }
 }

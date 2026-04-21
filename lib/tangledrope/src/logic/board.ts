@@ -40,6 +40,9 @@ function onSegment(pi: Point, pj: Point, pk: Point): boolean {
 // ─── Count Intersections ─────────────────────────────────
 
 export function countIntersections(pins: Pin[], ropes: Rope[]): number {
+  const pinMap = new Map<number, Pin>();
+  pins.forEach(p => pinMap.set(p.id, p));
+
   let count = 0;
   for (let i = 0; i < ropes.length; i++) {
     for (let j = i + 1; j < ropes.length; j++) {
@@ -49,10 +52,10 @@ export function countIntersections(pins: Pin[], ropes: Rope[]): number {
       if (r1.pinA === r2.pinA || r1.pinA === r2.pinB ||
           r1.pinB === r2.pinA || r1.pinB === r2.pinB) continue;
 
-      const p1 = pins.find(p => p.id === r1.pinA)!;
-      const p2 = pins.find(p => p.id === r1.pinB)!;
-      const p3 = pins.find(p => p.id === r2.pinA)!;
-      const p4 = pins.find(p => p.id === r2.pinB)!;
+      const p1 = pinMap.get(r1.pinA)!;
+      const p2 = pinMap.get(r1.pinB)!;
+      const p3 = pinMap.get(r2.pinA)!;
+      const p4 = pinMap.get(r2.pinB)!;
 
       if (segmentsIntersect(p1, p2, p3, p4)) {
         count++;
@@ -84,27 +87,21 @@ export function createBoard(config: StageConfig, dpr: number): BoardState {
   const { pinCount, ropeCount } = config;
   const w = DEFAULT_WIDTH * dpr;
   const h = DEFAULT_HEIGHT * dpr;
-  const cx = w / 2;
-  const cy = h / 2;
   const pad = PADDING * dpr;
-  const radius = Math.min(w, h) / 2 - pad;
 
-  const maxAttempts = 100;
+  const maxAttempts = 200;
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    // Place pins in a circle (this is the "solution" layout)
     const pins: Pin[] = [];
     for (let i = 0; i < pinCount; i++) {
-      const angle = (2 * Math.PI * i) / pinCount - Math.PI / 2;
       pins.push({
         id: i,
-        x: cx + Math.cos(angle) * radius,
-        y: cy + Math.sin(angle) * radius,
+        x: pad + Math.random() * (w - pad * 2),
+        y: pad + Math.random() * (h - pad * 2),
         colorIndex: i % 10,
       });
     }
 
-    // Create ropes - connect neighbors + some cross-connections
     const ropes: Rope[] = [];
     const usedPairs = new Set<string>();
 
@@ -116,49 +113,38 @@ export function createBoard(config: StageConfig, dpr: number): BoardState {
       return true;
     };
 
-    // Connect adjacent pins
+    // Connect adjacent pins (forming a loop)
     for (let i = 0; i < pinCount; i++) {
       addRope(i, (i + 1) % pinCount, i % 10);
     }
 
-    // Add extra ropes for more complexity
+    // Add extra ropes
     let extraAttempts = 0;
     while (ropes.length < ropeCount && extraAttempts < 200) {
       extraAttempts++;
       const a = Math.floor(Math.random() * pinCount);
-      let b = Math.floor(Math.random() * pinCount);
+      const b = Math.floor(Math.random() * pinCount);
       if (a === b) continue;
-      // Prefer non-adjacent for more interesting tangles
-      if (Math.abs(a - b) === 1 || Math.abs(a - b) === pinCount - 1) {
-        if (Math.random() < 0.5) continue;
-      }
       addRope(a, b, ropes.length % 10);
     }
 
-    // Now scramble pin positions to create tangles
+    // Scramble pins to ensure intersections
     const scrambled = scramblePins(pins, w, h, pad);
-
-    // Check that we have intersections (tangled)
-    const intersections = countIntersections(scrambled, ropes);
-    if (intersections > 0) {
+    if (countIntersections(scrambled, ropes) > 0) {
       return { pins: scrambled, ropes };
     }
   }
 
-  // Fallback: just return a scrambled board even if it's already solved
-  // (shouldn't happen with enough pins/ropes)
+  // Final fallback: just retry with a simple square/diamond if needed, 
+  // but with 200 attempts it's extremely unlikely to get 0 intersections.
+  // We'll just return the last attempt.
   const pins: Pin[] = [];
   for (let i = 0; i < pinCount; i++) {
-    pins.push({
-      id: i,
-      x: pad + Math.random() * (w - pad * 2),
-      y: pad + Math.random() * (h - pad * 2),
-      colorIndex: i % 10,
-    });
+    pins.push({ id: i, x: pad + Math.random() * (w - pad * 2), y: pad + Math.random() * (h - pad * 2), colorIndex: i % 10 });
   }
   const ropes: Rope[] = [];
-  for (let i = 0; i < Math.min(ropeCount, pinCount); i++) {
-    ropes.push({ id: i, pinA: i, pinB: (i + 1) % pinCount, colorIndex: i % 10 });
+  for (let i = 0; i < ropeCount; i++) {
+    ropes.push({ id: i, pinA: Math.floor(Math.random() * pinCount), pinB: Math.floor(Math.random() * pinCount), colorIndex: i % 10 });
   }
   return { pins, ropes };
 }
