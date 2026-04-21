@@ -72,9 +72,7 @@ export class PlayScene extends Phaser.Scene {
     this.input.on('pointerup', () => this.onPointerUp());
 
     // Clean up on shutdown
-    this.events.once('shutdown', () => {
-      this.input.removeAllListeners();
-    });
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -238,7 +236,6 @@ export class PlayScene extends Phaser.Scene {
       const prevIdx = this.board.path[this.board.path.length - 2];
       if (targetIdx === prevIdx) {
         this.board = undoMove(this.board);
-        this.moves++;
         this.drawBoard();
         this.emitState();
         return;
@@ -310,7 +307,6 @@ export class PlayScene extends Phaser.Scene {
   public undo() {
     if (this.phase !== 'drawing' || this.board.path.length <= 1) return;
     this.board = undoMove(this.board);
-    this.moves++;
     this.drawBoard();
     this.emitState();
   }
@@ -324,5 +320,10 @@ export class PlayScene extends Phaser.Scene {
   private emitState() {
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('moves-update', { moves: this.moves });
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
+    this.input.removeAllListeners();
   }
 }
