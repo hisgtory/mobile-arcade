@@ -440,6 +440,7 @@ export class PlayScene extends Phaser.Scene {
   // ─── UTILS ──────────────────────────────────────────────
 
   shutdown(): void {
+    this.tweens.killAll();
     this.input.off('pointerdown');
     this.input.off('pointermove');
     this.input.off('pointerup');
