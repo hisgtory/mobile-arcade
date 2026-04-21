@@ -24,7 +24,7 @@ const PLANK_COLOR = 0xdeb887; // burlywood
 const PLANK_BORDER = 0xa0522d; // sienna
 const BOARD_BG = 0xf5f0e8;
 
-type GamePhase = 'idle' | 'animating' | 'celebrating';
+type GamePhase = 'idle' | 'animating' | 'celebrating' | 'gameover';
 
 export class PlayScene extends Phaser.Scene {
   private board!: BoardState;
@@ -36,10 +36,8 @@ export class PlayScene extends Phaser.Scene {
   private score = 0;
   private moves = 0;
 
-  // Containers
-  private plankContainer!: Phaser.GameObjects.Container;
-  private screwContainer!: Phaser.GameObjects.Container;
-  private holeContainer!: Phaser.GameObjects.Container;
+  // Track screw graphics for individual interaction (e.g. shake)
+  private screwGraphicsMap: Map<number, Phaser.GameObjects.Graphics> = new Map();
 
   constructor() {
     super({ key: 'PlayScene' });
@@ -58,9 +56,12 @@ export class PlayScene extends Phaser.Scene {
     this.moveHistory = [];
     this.score = 0;
     this.moves = 0;
+    this.screwGraphicsMap.clear();
 
     this.drawAll();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -245,6 +246,8 @@ export class PlayScene extends Phaser.Scene {
     const offsetX = w * 0.075;
     const offsetY = 30 * s;
 
+    this.screwGraphicsMap.clear();
+
     // Sort screws by plank layer so top screws are drawn last
     const sortedScrews = [...this.board.screws]
       .filter((sc) => !sc.removed)
@@ -264,6 +267,7 @@ export class PlayScene extends Phaser.Scene {
       const canRemove = canRemoveScrew(this.board, screw.id);
 
       const g = this.add.graphics();
+      this.screwGraphicsMap.set(screw.id, g);
 
       // Screw shadow
       g.fillStyle(0x000000, 0.12);
@@ -347,7 +351,8 @@ export class PlayScene extends Phaser.Scene {
         this.phase = 'celebrating';
         this.time.delayedCall(400, () => this.celebrateWin());
       } else if (isStuck(this.board)) {
-        // Game stuck — emit game over
+        // Game stuck — block input and emit game over
+        this.phase = 'gameover';
         this.time.delayedCall(600, () => {
           this.game.events.emit('game-over', {
             score: this.score,
@@ -355,16 +360,30 @@ export class PlayScene extends Phaser.Scene {
             stage: this.config.stage ?? 1,
           });
         });
-        this.phase = 'idle';
       } else {
         this.phase = 'idle';
       }
     });
   }
 
-  private shakeScrew(_screwId: number) {
-    // Quick camera shake to give feedback
-    this.cameras.main.shake(150, 0.005);
+  private shakeScrew(screwId: number) {
+    const g = this.screwGraphicsMap.get(screwId);
+    if (g) {
+      const ox = g.x;
+      this.tweens.add({
+        targets: g,
+        x: ox + 3 * this.dpr,
+        duration: 50,
+        yoyo: true,
+        repeat: 2,
+        onComplete: () => {
+          g.x = ox;
+        },
+      });
+    } else {
+      // Fallback to camera shake if graphics not found
+      this.cameras.main.shake(150, 0.003);
+    }
   }
 
   // ─── Celebration ──────────────────────────────────────
@@ -397,16 +416,20 @@ export class PlayScene extends Phaser.Scene {
         alpha: 0,
         duration: 1000 + Math.random() * 500,
         ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          if (p && p.active) p.destroy();
+        },
       });
     }
 
     this.time.delayedCall(1200, () => {
-      this.game.events.emit('stage-clear', {
-        score: this.score,
-        moves: this.moves,
-        stage: this.config.stage ?? 1,
-      });
+      if (this.scene.isActive()) {
+        this.game.events.emit('stage-clear', {
+          score: this.score,
+          moves: this.moves,
+          stage: this.config.stage ?? 1,
+        });
+      }
     });
   }
 
@@ -431,5 +454,10 @@ export class PlayScene extends Phaser.Scene {
   private emitState() {
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('moves-update', { moves: this.moves });
+  }
+
+  shutdown() {
+    this.tweens.killAll();
+    this.screwGraphicsMap.clear();
   }
 }

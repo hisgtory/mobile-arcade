@@ -6,86 +6,128 @@ export function createBoard(config: StageConfig): BoardState {
   const { numPlanks, numColors, screwsPerColor } = config;
   const totalScrews = numColors * screwsPerColor;
 
-  // Build screw list: screwsPerColor of each color
-  const colorList: number[] = [];
-  for (let c = 0; c < numColors; c++) {
-    for (let i = 0; i < screwsPerColor; i++) {
-      colorList.push(c);
+  for (let attempt = 0; attempt < 100; attempt++) {
+    // Build screw list: screwsPerColor of each color
+    const colorList: number[] = [];
+    for (let c = 0; c < numColors; c++) {
+      for (let i = 0; i < screwsPerColor; i++) {
+        colorList.push(c);
+      }
+    }
+
+    // Shuffle screws
+    for (let i = colorList.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [colorList[i], colorList[j]] = [colorList[j], colorList[i]];
+    }
+
+    // Distribute screws across planks
+    const screwsPerPlank = Math.ceil(totalScrews / numPlanks);
+    const planks: Plank[] = [];
+    const screws: Screw[] = [];
+    let screwIdx = 0;
+
+    // Layout planks in a staggered pattern
+    const plankAngles = [0, -15, 12, -8, 18, -12, 10, -18, 5, -10];
+
+    for (let p = 0; p < numPlanks; p++) {
+      const slotsInThisPlank = Math.min(screwsPerPlank, totalScrews - screwIdx);
+      const plankWidth = 60 + slotsInThisPlank * 40;
+      const plankHeight = 28;
+
+      // Stagger planks across the board area
+      const col = p % 3;
+      const row = Math.floor(p / 3);
+      const baseX = 80 + col * 100;
+      const baseY = 80 + row * 90;
+
+      const angle = plankAngles[p % plankAngles.length];
+
+      const screwSlots: (number | null)[] = [];
+
+      for (let s = 0; s < slotsInThisPlank; s++) {
+        if (screwIdx < colorList.length) {
+          const screw: Screw = {
+            id: screwIdx,
+            color: colorList[screwIdx],
+            plankId: p,
+            slotIndex: s,
+            removed: false,
+          };
+          screws.push(screw);
+          screwSlots.push(screwIdx);
+          screwIdx++;
+        } else {
+          screwSlots.push(null);
+        }
+      }
+
+      planks.push({
+        id: p,
+        x: baseX,
+        y: baseY,
+        width: plankWidth,
+        height: plankHeight,
+        angle,
+        layer: p, // later planks are on top
+        screwSlots,
+      });
+    }
+
+    // Create holes: one for each screw, grouped by color
+    const holes: Hole[] = [];
+    for (let c = 0; c < numColors; c++) {
+      for (let i = 0; i < screwsPerColor; i++) {
+        holes.push({
+          id: c * screwsPerColor + i,
+          color: c,
+          filled: false,
+          screwId: null,
+        });
+      }
+    }
+
+    const board = { screws, planks, holes, numColors };
+    if (!isStuck(board)) {
+      return board;
     }
   }
 
-  // Shuffle screws
-  for (let i = colorList.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [colorList[i], colorList[j]] = [colorList[j], colorList[i]];
-  }
+  // Final fallback to the last attempt if no solvable board found
+  // (In practice, 100 attempts should be plenty)
+  return tryGenerateEmergencyBoard(config);
+}
 
-  // Distribute screws across planks
-  const screwsPerPlank = Math.ceil(totalScrews / numPlanks);
-  const planks: Plank[] = [];
+function tryGenerateEmergencyBoard(config: StageConfig): BoardState {
+  // Simple non-stuck distribution: planks don't overlap much
+  const { numPlanks, numColors, screwsPerColor } = config;
+  const totalScrews = numColors * screwsPerColor;
   const screws: Screw[] = [];
-  let screwIdx = 0;
-
-  // Layout planks in a staggered pattern
-  const plankAngles = [0, -15, 12, -8, 18, -12, 10, -18, 5, -10];
+  const planks: Plank[] = [];
+  const holes: Hole[] = [];
 
   for (let p = 0; p < numPlanks; p++) {
-    const slotsInThisPlank = Math.min(screwsPerPlank, totalScrews - screwIdx);
-    const plankWidth = 60 + slotsInThisPlank * 40;
-    const plankHeight = 28;
-
-    // Stagger planks across the board area
-    const col = p % 3;
-    const row = Math.floor(p / 3);
-    const baseX = 80 + col * 100;
-    const baseY = 80 + row * 90;
-
-    const angle = plankAngles[p % plankAngles.length];
-
+    const slots = Math.ceil(totalScrews / numPlanks);
     const screwSlots: (number | null)[] = [];
-
-    for (let s = 0; s < slotsInThisPlank; s++) {
-      if (screwIdx < colorList.length) {
-        const screw: Screw = {
-          id: screwIdx,
-          color: colorList[screwIdx],
-          plankId: p,
-          slotIndex: s,
-          removed: false,
-        };
-        screws.push(screw);
-        screwSlots.push(screwIdx);
-        screwIdx++;
+    for (let s = 0; s < slots; s++) {
+      const id = p * slots + s;
+      if (id < totalScrews) {
+        screws.push({ id, color: id % numColors, plankId: p, slotIndex: s, removed: false });
+        screwSlots.push(id);
       } else {
         screwSlots.push(null);
       }
     }
-
+    // Place planks in a diagonal non-overlapping line
     planks.push({
-      id: p,
-      x: baseX,
-      y: baseY,
-      width: plankWidth,
-      height: plankHeight,
-      angle,
-      layer: p, // later planks are on top
-      screwSlots,
+      id: p, x: 100 + p * 40, y: 100 + p * 40, width: 100, height: 28, angle: 0, layer: p, screwSlots
     });
   }
-
-  // Create holes: one for each screw, grouped by color
-  const holes: Hole[] = [];
   for (let c = 0; c < numColors; c++) {
     for (let i = 0; i < screwsPerColor; i++) {
-      holes.push({
-        id: c * screwsPerColor + i,
-        color: c,
-        filled: false,
-        screwId: null,
-      });
+      holes.push({ id: c * screwsPerColor + i, color: c, filled: false, screwId: null });
     }
   }
-
   return { screws, planks, holes, numColors };
 }
 
@@ -113,7 +155,11 @@ export function canRemoveScrew(board: BoardState, screwId: number): boolean {
 
     // Check if this other plank still has screws (if all screws removed, plank is gone)
     const hasActiveScrews = otherPlank.screwSlots.some(
-      (sid) => sid !== null && !board.screws[sid].removed,
+      (sid) => {
+        if (sid === null) return false;
+        const s = board.screws[sid];
+        return s && !s.removed;
+      }
     );
     if (!hasActiveScrews) continue;
 

@@ -79,7 +79,7 @@ export function getStageConfig(stage: number): StageConfig {
     { stage: 10, numPlanks: 7, numColors: 6, screwsPerColor: 3 },
   ];
   if (stage <= configs.length) return configs[stage - 1];
-  const numColors = Math.min(6 + Math.floor((stage - 10) / 2), 8);
+  const numColors = Math.min(6 + Math.floor((stage - 10) / 2), SCREW_COLORS.length);
   const numPlanks = Math.min(7 + Math.floor((stage - 10) / 3), 10);
   return { stage, numPlanks, numColors, screwsPerColor: 3 };
 }
