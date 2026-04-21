@@ -24,6 +24,11 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const [timeLeft, setTimeLeft] = useState(stageConfig.timeLimit);
   const [targetScore] = useState(stageConfig.targetScore);
 
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -44,20 +49,28 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     });
 
     game.events.on('stage-clear', (data: { score: number; timeUsed: number }) => {
-      stageComplete({ stage, score: data.score, cleared: true });
-      onClear?.({ score: data.score, timeUsed: data.timeUsed, cleared: true });
+      try {
+        stageComplete({ stage, score: data.score, cleared: true });
+      } catch (e) {
+        console.error('Bridge error:', e);
+      }
+      onClearRef.current?.({ score: data.score, timeUsed: data.timeUsed, cleared: true });
     });
 
     game.events.on('game-over', (data: { score: number }) => {
-      stageComplete({ stage, score: data.score, cleared: false });
-      onGameOver?.({ score: data.score, cleared: false });
+      try {
+        stageComplete({ stage, score: data.score, cleared: false });
+      } catch (e) {
+        console.error('Bridge error:', e);
+      }
+      onGameOverRef.current?.({ score: data.score, cleared: false });
     });
 
     return () => {
       destroyGame(game);
       gameRef.current = null;
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   return {
     containerRef,
