@@ -14,6 +14,11 @@ interface UseGameOptions {
 export function useGame({ onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(0);
+  const onGameOverRef = useRef(onGameOver);
+
+  useEffect(() => {
+    onGameOverRef.current = onGameOver;
+  }, [onGameOver]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -28,13 +33,13 @@ export function useGame({ onGameOver }: UseGameOptions) {
 
     game.events.on('game-over', (data: { score: number }) => {
       stageComplete({ stage: 0, score: data.score, cleared: false });
-      onGameOver?.({ score: data.score, cleared: false });
+      onGameOverRef.current?.({ score: data.score, cleared: false });
     });
 
     return () => {
       destroyGame(game);
     };
-  }, [onGameOver]);
+  }, []);
 
   return { containerRef, score };
 }

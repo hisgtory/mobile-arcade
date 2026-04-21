@@ -24,9 +24,10 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
       antialias: true,
       roundPixels: true,
     },
-    scene: [PlayScene],
+    scene: [],
   });
 
+  game.scene.add('PlayScene', PlayScene);
   (game as any).__starrynightConfig = config;
   (game as any).__dpr = dpr;
   game.scene.start('PlayScene', { gameConfig: config });

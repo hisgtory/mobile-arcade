@@ -29,7 +29,7 @@ const GRID_BG_COLOR = 0x0f172a;
 
 export class PlayScene extends Phaser.Scene {
   private gameConfig?: GameConfig;
-  private phase: GamePhase = GamePhase.PLAYING;
+  public phase: GamePhase = GamePhase.PLAYING;
   private board!: Board;
   private score: number = 0;
   private consecutiveClears: number = 0; // combo counter
@@ -60,6 +60,7 @@ export class PlayScene extends Phaser.Scene {
     this.phase = GamePhase.PLAYING;
     this.board = createBoard();
     this.score = 0;
+    this.consecutiveClears = 0;
 
     this.cameras.main.setBackgroundColor('#0f172a');
 
@@ -223,6 +224,8 @@ export class PlayScene extends Phaser.Scene {
         this.consecutiveClears++;
         const cleared = clearLines(this.board, lines);
         const lineCount = lines.rows.length + lines.cols.length;
+        
+        // Base score for placing the piece + bonus for cleared lines
         const clearScore = calcClearScore(lineCount, cleared.length) * Math.max(1, this.consecutiveClears);
         this.score += clearScore + placed.length;
 
@@ -274,6 +277,7 @@ export class PlayScene extends Phaser.Scene {
         });
       } else {
         this.consecutiveClears = 0;
+        // Just the base score for placing the piece
         this.score += placed.length;
       }
 
@@ -420,6 +424,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.tweens.killAll();
     this.pieceSlots = [];
     this.gridCells = [];
     this.highlightRects = [];
@@ -473,6 +478,7 @@ class PieceSlot {
     this.container.add(hitArea);
 
     hitArea.on('dragstart', (_pointer: Phaser.Input.Pointer) => {
+      if ((this.scene as PlayScene).phase !== GamePhase.PLAYING) return;
       this.onDragStart?.();
     });
 
