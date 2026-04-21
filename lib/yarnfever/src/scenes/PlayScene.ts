@@ -67,6 +67,8 @@ export class PlayScene extends Phaser.Scene {
     this.drawBoard();
     this.setupInput();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -290,7 +292,9 @@ export class PlayScene extends Phaser.Scene {
         alpha: 0,
         duration: 1000 + Math.random() * 500,
         ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          if (p && p.active) p.destroy();
+        },
       });
     }
 
@@ -316,5 +320,13 @@ export class PlayScene extends Phaser.Scene {
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('crossings-update', { crossings: this.crossings });
     this.game.events.emit('moves-update', { moves: this.moves });
+  }
+
+  shutdown() {
+    this.tweens.killAll();
+    this.nodeGraphics.forEach((n) => n.destroy());
+    this.nodeGraphics = [];
+    this.edgeGraphics?.destroy();
+    this.edgeGraphics = null;
   }
 }
