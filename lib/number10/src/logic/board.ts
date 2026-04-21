@@ -80,7 +80,6 @@ export function hasValidMove(cells: Cell[]): boolean {
   // Check all rectangles with O(1) sum lookup
   for (let r1 = 0; r1 < ROWS; r1++) {
     for (let c1 = 0; c1 < COLS; c1++) {
-      if (grid[r1][c1] === 0) continue; // skip empty starts
       for (let r2 = r1; r2 < ROWS; r2++) {
         for (let c2 = c1; c2 < COLS; c2++) {
           const s = rectSum(r1, c1, r2, c2);

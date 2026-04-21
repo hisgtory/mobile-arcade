@@ -29,7 +29,7 @@ const NUM_COLORS = [
 
 export class PlayScene extends Phaser.Scene {
   private cells: Cell[] = [];
-  private config!: GameConfig;
+  private gameConfig?: GameConfig;
   private dpr = 1;
 
   private cellSize = 0;
@@ -44,7 +44,9 @@ export class PlayScene extends Phaser.Scene {
   private isDragging = false;
   private dragStartCol = 0;
   private dragStartRow = 0;
-  private selectionRect?: Phaser.GameObjects.Graphics;
+  private lastEndCol = 0;
+  private lastEndRow = 0;
+  private selectionRect!: Phaser.GameObjects.Graphics;
   private cellTexts: Phaser.GameObjects.Text[] = [];
   private cellBgs: Phaser.GameObjects.Rectangle[] = [];
 
@@ -52,9 +54,10 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    this.gameConfig = this.game.registry.get('number10Config') as GameConfig;
+    this.dpr = this.game.registry.get('dpr') || 1;
   }
 
   create() {
@@ -84,9 +87,15 @@ export class PlayScene extends Phaser.Scene {
       this.cells = createGrid();
     } while (!hasValidMove(this.cells));
 
+    // Drawing layer
+    this.selectionRect = this.add.graphics();
+    this.selectionRect.setDepth(50);
+
     this.drawGrid();
     this.setupInput();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Grid Drawing ─────────────────────────────────────
@@ -161,7 +170,8 @@ export class PlayScene extends Phaser.Scene {
   private updateSelection(endCol: number, endRow: number) {
     this.lastEndCol = endCol;
     this.lastEndRow = endRow;
-    if (this.selectionRect) this.selectionRect.destroy();
+    
+    this.selectionRect.clear();
 
     const selected = getCellsInRect(this.cells, this.dragStartCol, this.dragStartRow, endCol, endRow);
     const isValid = checkSum(selected);
@@ -177,32 +187,26 @@ export class PlayScene extends Phaser.Scene {
     const rw = (maxC - minC + 1) * cs;
     const rh = (maxR - minR + 1) * cs;
 
-    const g = this.add.graphics();
     const color = isValid ? VALID_COLOR : INVALID_COLOR;
-    g.fillStyle(color, 0.15);
-    g.fillRect(rx, ry, rw, rh);
-    g.lineStyle(2 * this.dpr, color, 0.6);
-    g.strokeRect(rx, ry, rw, rh);
-    g.setDepth(50);
-    this.selectionRect = g;
+    this.selectionRect.fillStyle(color, 0.15);
+    this.selectionRect.fillRect(rx, ry, rw, rh);
+    this.selectionRect.lineStyle(2 * this.dpr, color, 0.6);
+    this.selectionRect.strokeRect(rx, ry, rw, rh);
   }
 
   private clearSelection() {
     if (this.selectionRect) {
-      this.selectionRect.destroy();
-      this.selectionRect = undefined;
+      this.selectionRect.clear();
     }
   }
 
   // ─── Match Logic ──────────────────────────────────────
 
   private tryMatch() {
-    // Find current selection bounds from last known drag
     const selected = getCellsInRect(
       this.cells,
       this.dragStartCol,
       this.dragStartRow,
-      // We need to store the last end col/row
       this.lastEndCol,
       this.lastEndRow,
     );
@@ -230,9 +234,6 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  private lastEndCol = 0;
-  private lastEndRow = 0;
-
   private animateClear(cleared: Cell[]) {
     const cs = this.cellSize;
 
@@ -247,12 +248,16 @@ export class PlayScene extends Phaser.Scene {
         alpha: 0,
         scale: 1.2,
         duration: 300,
-        onComplete: () => flash.destroy(),
+        onComplete: () => {
+          if (flash && flash.active) flash.destroy();
+        },
       });
     }
 
     // Redraw grid after animation
-    this.time.delayedCall(100, () => this.drawGrid());
+    this.time.delayedCall(100, () => {
+      if (this.scene.isActive()) this.drawGrid();
+    });
   }
 
 
@@ -324,7 +329,7 @@ export class PlayScene extends Phaser.Scene {
       .setInteractive()
       .setAlpha(0.001)
       .setDepth(204);
-    hitArea.on('pointerdown', () => this.scene.restart({ config: this.config, dpr: this.dpr }));
+    hitArea.on('pointerdown', () => this.scene.restart());
 
     // Emit result
     this.game.events.emit('game-over', {
@@ -342,5 +347,16 @@ export class PlayScene extends Phaser.Scene {
       total: TOTAL_CELLS,
       remaining: remainingCount(this.cells),
     });
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
+    this.cellBgs.forEach((b) => b.destroy());
+    this.cellBgs = [];
+    this.cellTexts.forEach((t) => t.destroy());
+    this.cellTexts = [];
+    if (this.selectionRect) {
+      this.selectionRect.destroy();
+    }
   }
 }
