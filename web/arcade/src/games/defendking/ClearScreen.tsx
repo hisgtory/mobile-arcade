@@ -1,5 +1,6 @@
 import { styled } from '../../styles/stitches.config';
 import type { GameResult } from './useGame';
+import { TOTAL_STAGES } from '@arcade/lib-defendking';
 
 const Container = styled('div', {
   width: '100%',
@@ -85,10 +86,11 @@ interface ClearScreenProps {
 }
 
 export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScreenProps) {
+  const isAllClear = result.cleared && stage >= TOTAL_STAGES;
   return (
     <Container>
       <Title cleared={result.cleared}>
-        {result.cleared ? 'Stage Clear!' : 'Game Over'}
+        {isAllClear ? 'All Clear!' : result.cleared ? 'Stage Clear!' : 'Game Over'}
       </Title>
       <StatsCard>
         <StatRow>
@@ -102,10 +104,13 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
       </StatsCard>
       <ButtonGroup>
         {result.cleared ? (
-          <Button variant="primary" onClick={onNext}>Next Stage</Button>
+          !isAllClear && <Button variant="primary" onClick={onNext}>Next Stage</Button>
         ) : (
           <Button variant="primary" onClick={onRetry}>Retry</Button>
         )}
+        <Button variant="secondary" onClick={onRetry}>
+          {isAllClear ? 'Play Again' : 'Retry'}
+        </Button>
         <Button variant="secondary" onClick={onHome}>Home</Button>
       </ButtonGroup>
     </Container>

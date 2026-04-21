@@ -55,6 +55,7 @@ interface BlockInfo {
 export class PlayScene extends Phaser.Scene {
   private gameConfig?: GameConfig;
   private stageConfig?: StageConfig;
+  private stageNum: number = 1;
   private phase: GamePhase = GamePhase.READY;
   private dpr: number = 1;
 
@@ -81,19 +82,21 @@ export class PlayScene extends Phaser.Scene {
   private heroGraphics!: Phaser.GameObjects.Container;
 
   private settleCounter: number = 0;
-  private createdAt: number = 0;
+  private startTime: number = 0;
 
   constructor() {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { gameConfig?: GameConfig; stageConfig?: StageConfig }): void {
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__defendkingConfig;
-    this.stageConfig = data?.stageConfig ?? (this.game as any).__stageConfig;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    const gameConfig = this.game.registry.get('defendkingConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
   }
 
   create(): void {
-    this.dpr = (this.game as any).__dpr || 1;
+    this.dpr = this.game.registry.get('dpr') || 1;
     this.areaW = this.scale.width;
     this.areaH = this.scale.height;
     this.groundY = this.areaH * 0.94;
@@ -106,7 +109,7 @@ export class PlayScene extends Phaser.Scene {
     this.projectile = null;
     this.settleCounter = 0;
     this.trajectoryDots = [];
-    this.createdAt = Date.now();
+    this.startTime = this.time.now;
 
     this.slingshotX = this.areaW * 0.15;
     this.slingshotY = this.groundY - 40 * this.dpr;
@@ -118,6 +121,8 @@ export class PlayScene extends Phaser.Scene {
     this.setupInput();
     this.setupCollisions();
     this.emitScoreUpdate();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ==================== DRAWING ====================
@@ -519,7 +524,7 @@ export class PlayScene extends Phaser.Scene {
     const velBx = bodyB.velocity?.x ?? 0;
     const velBy = bodyB.velocity?.y ?? 0;
     const relVel = Math.sqrt((velAx - velBx) ** 2 + (velAy - velBy) ** 2);
-    const inGrace = Date.now() - this.createdAt < STARTUP_GRACE_MS;
+    const inGrace = this.time.now - this.startTime < STARTUP_GRACE_MS;
 
     for (const enemy of this.enemies) {
       if (!enemy.alive) continue;
@@ -536,15 +541,14 @@ export class PlayScene extends Phaser.Scene {
     for (const block of this.blockInfos) {
       if (!block.alive) continue;
       if (block.body === bodyA || block.body === bodyB) {
-        const other = block.body === bodyA ? bodyB : bodyA;
-        if (other.label === 'projectile') {
-          const threshold =
-            block.type === 'ice' ? ICE_DESTRUCTION_THRESHOLD :
-            block.type === 'wood' ? WOOD_DESTRUCTION_THRESHOLD :
-            STONE_DESTRUCTION_THRESHOLD;
-          if (relVel > threshold) {
-            this.destroyBlock(block);
-          }
+        const threshold =
+          block.type === 'ice' ? ICE_DESTRUCTION_THRESHOLD :
+          block.type === 'wood' ? WOOD_DESTRUCTION_THRESHOLD :
+          STONE_DESTRUCTION_THRESHOLD;
+        
+        // Destroy on any collision with enough force
+        if (relVel > threshold) {
+          this.destroyBlock(block);
         }
       }
     }
@@ -866,6 +870,18 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.tweens.killAll();
+    // Explicitly clean up Matter bodies
+    this.enemies.forEach(e => {
+      if (e.body) this.matter.world.remove(e.body);
+    });
+    this.blockInfos.forEach(b => {
+      if (b.body) this.matter.world.remove(b.body);
+    });
+    if (this.projectile) {
+      this.matter.world.remove(this.projectile.body);
+    }
+    
     this.enemies = [];
     this.blockInfos = [];
     this.trajectoryDots = [];

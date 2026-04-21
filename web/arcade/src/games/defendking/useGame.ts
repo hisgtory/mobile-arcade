@@ -20,14 +20,19 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const [ammoLeft, setAmmoLeft] = useState(0);
   const [enemiesLeft, setEnemiesLeft] = useState(0);
 
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
+
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const game = createGame(
-      containerRef.current,
-      { onClear: () => {}, onGameOver: () => {} },
-      { stage },
-    );
+    const game = createGame(containerRef.current, {
+      stage,
+      onClear: () => {},
+      onGameOver: () => {},
+    });
 
     game.events.on('score-update', (data: { score: number; ammoLeft: number; enemiesLeft: number }) => {
       setScore(data.score);
@@ -37,18 +42,18 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
     game.events.on('stage-clear', (data: { score: number; stage: number }) => {
       stageComplete({ stage: data.stage, score: data.score, cleared: true });
-      onClear?.({ score: data.score, cleared: true, stage: data.stage });
+      onClearRef.current?.({ score: data.score, cleared: true, stage: data.stage });
     });
 
     game.events.on('game-over', (data: { score: number; stage: number }) => {
       stageComplete({ stage: data.stage, score: data.score, cleared: false });
-      onGameOver?.({ score: data.score, cleared: false, stage: data.stage });
+      onGameOverRef.current?.({ score: data.score, cleared: false, stage: data.stage });
     });
 
     return () => {
       destroyGame(game);
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   return { containerRef, score, ammoLeft, enemiesLeft };
 }

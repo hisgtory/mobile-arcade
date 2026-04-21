@@ -6,9 +6,9 @@ import { DEFAULT_WIDTH, DEFAULT_HEIGHT } from './types';
 export function createGame(
   parent: HTMLElement,
   config?: GameConfig,
-  stageConfig?: StageConfig,
 ): Phaser.Game {
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const startStage = config?.stage ?? 1;
 
   const game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -33,13 +33,14 @@ export function createGame(
       antialias: true,
       roundPixels: true,
     },
-    scene: [PlayScene],
+    scene: [],
   });
 
-  (game as any).__defendkingConfig = config;
-  (game as any).__stageConfig = stageConfig;
-  (game as any).__dpr = dpr;
-  game.scene.start('PlayScene', { gameConfig: config, stageConfig });
+  game.registry.set('defendkingConfig', config);
+  game.registry.set('dpr', dpr);
+
+  game.scene.add('PlayScene', PlayScene);
+  game.scene.start('PlayScene', { stage: startStage });
 
   return game;
 }

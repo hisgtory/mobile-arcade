@@ -8,6 +8,7 @@ export enum GamePhase {
 }
 
 export interface GameConfig {
+  stage?: number;
   onClear?: () => void;
   onGameOver?: () => void;
 }

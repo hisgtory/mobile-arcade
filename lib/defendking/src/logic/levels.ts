@@ -106,3 +106,5 @@ export const levels: LevelData[] = [
     ],
   },
 ];
+
+export const TOTAL_STAGES = levels.length;
