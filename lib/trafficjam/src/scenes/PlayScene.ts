@@ -54,6 +54,8 @@ export class PlayScene extends Phaser.Scene {
     this.drawGrid();
     this.drawVehicles();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -341,5 +343,10 @@ export class PlayScene extends Phaser.Scene {
   private emitState() {
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('moves-update', { moves: this.moves });
+  }
+
+  shutdown() {
+    this.tweens.killAll();
+    this.vehicleObjects.clear();
   }
 }
