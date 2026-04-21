@@ -24,7 +24,8 @@ export type PuzzleAnswer =
   | { type: 'wait'; duration: number }
   | { type: 'input'; value: string }
   | { type: 'tap_count'; count: number }
-  | { type: 'drag'; targetId: string };
+  | { type: 'drag'; targetId: string }
+  | { type: 'sequence'; sequence: string[] };
 
 export interface PuzzleElement {
   id: string;
@@ -162,7 +163,7 @@ const STAGES: PuzzleConfig[] = [
     puzzleType: 'sequence',
     hintText: '숫자의 크기? 글자의 크기?',
     timeLimit: 30,
-    answer: { type: 'tap_target', targetId: 'seq_correct' },
+    answer: { type: 'sequence', sequence: ['1', '8', '10'] },
     explanation: '글자 크기가 아니라 숫자 크기 순서였어요!',
     elements: [
       { id: 'num_10', type: 'text', x: 0.25, y: 0.42, props: { value: '10', fontSize: 20 } },

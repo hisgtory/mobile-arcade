@@ -19,6 +19,13 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [attempts, setAttempts] = useState(0);
   const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
+  const onClearRef = useRef(onClear);
+  const onGameOverRef = useRef(onGameOver);
+
+  useEffect(() => {
+    onClearRef.current = onClear;
+    onGameOverRef.current = onGameOver;
+  }, [onClear, onGameOver]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -33,20 +40,20 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     game.events.on('stage-clear', (data: { score: number; attempts: number; stage: number }) => {
       const result = { score: data.score, attempts: data.attempts, stage: data.stage, cleared: true };
       stageComplete({ stage: data.stage, score: data.score, cleared: true });
-      onClear?.(result);
+      onClearRef.current?.(result);
     });
 
     game.events.on('game-over', (data: { attempts: number; stage: number; reason: string }) => {
       const result = { score: 0, attempts: data.attempts, stage: data.stage, cleared: false };
       stageComplete({ stage: data.stage, score: 0, cleared: false });
-      onGameOver?.(result);
+      onGameOverRef.current?.(result);
     });
 
     return () => {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   const doHint = useCallback(() => {
     if (!gameRef.current) return;

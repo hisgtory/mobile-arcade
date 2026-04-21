@@ -43,36 +43,25 @@ export function checkAnswer(
   action: PlayerAction,
 ): boolean {
   const answer = puzzle.config.puzzle.answer;
-  puzzle.attempts++;
 
   switch (answer.type) {
     case 'tap_target':
-      if (action.type === 'tap' && action.targetId === answer.targetId) {
-        puzzle.solved = true;
-        return true;
-      }
-      return false;
+      return action.type === 'tap' && action.targetId === answer.targetId;
 
     case 'wait':
-      if (action.type === 'wait') {
-        puzzle.solved = true;
-        return true;
-      }
-      return false;
+      return action.type === 'wait';
 
     case 'input':
-      if (action.type === 'input' && action.value === answer.value) {
-        puzzle.solved = true;
-        return true;
-      }
-      return false;
+      return action.type === 'input' && action.value === answer.value;
 
     case 'tap_count':
       return false;
 
     case 'drag':
-      if (action.type === 'drag' && action.targetId === answer.targetId) {
-        puzzle.solved = true;
+      return action.type === 'drag' && action.targetId === answer.targetId;
+
+    case 'sequence':
+      if (action.type === 'tap' && action.targetId === 'seq_correct') {
         return true;
       }
       return false;

@@ -312,21 +312,23 @@ export class PlayScene extends Phaser.Scene {
       this.interactiveElements.set(a.id, txt);
     });
 
-    // Hit area over "아래" in the question text
-    const qBounds = this.questionText.getBounds();
-    const hitW = 50 * s;
-    const hitH = 30 * s;
-    const hitX = qBounds.x + hitW / 2 + 5 * s;
-    const hitY = qBounds.y + qBounds.height / 2;
-    const targetHit = this.add
-      .rectangle(hitX, hitY, hitW, hitH)
-      .setInteractive({ useHandCursor: true })
-      .setAlpha(0.001);
-    targetHit.on('pointerdown', () =>
-      this.onAction({ type: 'tap', targetId: 'word_아래' }),
-    );
-    this.puzzleContainer.add(targetHit);
-    this.interactiveElements.set('word_아래', targetHit);
+    // Hit area over "아래" in the question text — delay to ensure bounds are correct
+    this.time.delayedCall(100, () => {
+      const qBounds = this.questionText.getBounds();
+      const hitW = 50 * s;
+      const hitH = 30 * s;
+      const hitX = qBounds.x + hitW / 2 + 5 * s;
+      const hitY = qBounds.y + qBounds.height / 2;
+      const targetHit = this.add
+        .rectangle(hitX, hitY, hitW, hitH)
+        .setInteractive({ useHandCursor: true })
+        .setAlpha(0.001);
+      targetHit.on('pointerdown', () =>
+        this.onAction({ type: 'tap', targetId: 'word_아래' }),
+      );
+      this.puzzleContainer.add(targetHit);
+      this.interactiveElements.set('word_아래', targetHit);
+    });
   }
 
   // Stage 4: "이 중 가장 작은 것은?" — tap "작은" in question
@@ -358,21 +360,23 @@ export class PlayScene extends Phaser.Scene {
       this.interactiveElements.set(c.id, hitArea);
     });
 
-    // Hit area over "작은" in question
-    const qBounds = this.questionText.getBounds();
-    const hitW = 50 * s;
-    const hitH = 30 * s;
-    const hitX = qBounds.x + qBounds.width * 0.5;
-    const hitY = qBounds.y + qBounds.height / 2;
-    const targetHit = this.add
-      .rectangle(hitX, hitY, hitW, hitH)
-      .setInteractive({ useHandCursor: true })
-      .setAlpha(0.001);
-    targetHit.on('pointerdown', () =>
-      this.onAction({ type: 'tap', targetId: 'question_작은' }),
-    );
-    this.puzzleContainer.add(targetHit);
-    this.interactiveElements.set('question_작은', targetHit);
+    // Hit area over "작은" in question — delay to ensure bounds are correct
+    this.time.delayedCall(100, () => {
+      const qBounds = this.questionText.getBounds();
+      const hitW = 50 * s;
+      const hitH = 30 * s;
+      const hitX = qBounds.x + qBounds.width * 0.5;
+      const hitY = qBounds.y + qBounds.height / 2;
+      const targetHit = this.add
+        .rectangle(hitX, hitY, hitW, hitH)
+        .setInteractive({ useHandCursor: true })
+        .setAlpha(0.001);
+      targetHit.on('pointerdown', () =>
+        this.onAction({ type: 'tap', targetId: 'question_작은' }),
+      );
+      this.puzzleContainer.add(targetHit);
+      this.interactiveElements.set('question_작은', targetHit);
+    });
   }
 
   // Stage 5: "삼각형은 몇 개일까요?" — 7 overlapping triangles
@@ -748,17 +752,22 @@ export class PlayScene extends Phaser.Scene {
         if (this.phase === 'wrong') {
           this.phase = 'waiting';
           this.feedbackContainer.removeAll(true);
+          // Reset startTime so the wait duration doesn't exceed remaining time
+          this.puzzleState.startTime = Date.now();
           this.setupWaitPuzzle();
         }
       });
+      this.emitState();
       return;
     }
 
     const isCorrect = checkAnswer(this.puzzleState, action);
+    this.puzzleState.attempts++;
     this.attemptsText.setText(`시도: ${this.puzzleState.attempts}`);
     this.emitState();
 
     if (isCorrect) {
+      this.puzzleState.solved = true;
       this.onCorrect();
     } else {
       this.showWrongFeedback();
@@ -945,11 +954,25 @@ export class PlayScene extends Phaser.Scene {
   }
 
   // ─── Public API ────────────────────────────────────
-
-  public showHint() {
-    const answer = this.stageConfig.puzzle.answer;
-    if (answer.type === 'tap_target') {
-      const target = this.interactiveElements.get(answer.targetId);
+public showHint() {
+  const answer = this.stageConfig.puzzle.answer;
+  if (answer.type === 'tap_target') {
+    const target = this.interactiveElements.get(answer.targetId);
+    if (target) {
+      this.tweens.add({
+        targets: target,
+        alpha: 0.5,
+        duration: 200,
+        yoyo: true,
+        repeat: 2,
+      });
+    }
+  } else if (answer.type === 'sequence') {
+    // Highlight the next item in the sequence
+    const nextIdx = this.puzzleState.sequenceProgress.length;
+    if (nextIdx < answer.sequence.length) {
+      const nextVal = answer.sequence[nextIdx];
+      const target = this.interactiveElements.get(`num_${nextVal}`);
       if (target) {
         this.tweens.add({
           targets: target,
@@ -959,8 +982,9 @@ export class PlayScene extends Phaser.Scene {
           repeat: 2,
         });
       }
-    } else if (answer.type === 'wait') {
-      const w = DEFAULT_WIDTH * this.dpr;
+    }
+  } else if (answer.type === 'wait') {
+    const w = DEFAULT_WIDTH * this.dpr;
       const h = DEFAULT_HEIGHT * this.dpr;
       const s = this.dpr;
       const hint = this.add

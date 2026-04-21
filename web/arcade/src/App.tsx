@@ -46,6 +46,39 @@ const PlayLayout = styled('div', {
   overflow: 'hidden',
 });
 
+const GameTitle = styled('h1', {
+  fontSize: 48,
+  fontWeight: 800,
+  color: '#111827',
+  letterSpacing: -1,
+  variants: {
+    size: {
+      large: { fontSize: 48 },
+      medium: { fontSize: 36 },
+    },
+  },
+});
+
+const GameDescription = styled('p', {
+  fontSize: 16,
+  color: '#6B7280',
+});
+
+const PrimaryButton = styled('button', {
+  marginTop: 32,
+  backgroundColor: '#2563EB',
+  color: '#fff',
+  border: 'none',
+  padding: '16px 48px',
+  borderRadius: 16,
+  fontSize: 20,
+  fontWeight: 700,
+  cursor: 'pointer',
+  '&:hover': {
+    backgroundColor: '#1D4ED8',
+  },
+});
+
 const isRN = typeof window !== 'undefined' && typeof window.ReactNativeWebView !== 'undefined';
 
 // ─── Found3 Routes ─────────────────────────────────────
@@ -108,14 +141,11 @@ function Crunch3TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Crunch 3</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Swipe & match 3 to crush!</p>
-      <button
-        onClick={() => navigate('/games/crunch3/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
+      <GameTitle>Crunch 3</GameTitle>
+      <GameDescription>Swipe & match 3 to crush!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/crunch3/v1/stage/1')}>
         Play
-      </button>
+      </PrimaryButton>
       <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
     </PlayLayout>
   );
@@ -166,14 +196,11 @@ function BlockRushTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Block Rush</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Fill lines to clear the board!</p>
-      <button
-        onClick={() => navigate('/games/blockrush/v1/play')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
+      <GameTitle>Block Rush</GameTitle>
+      <GameDescription>Fill lines to clear the board!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/blockrush/v1/play')}>
         Play
-      </button>
+      </PrimaryButton>
     </PlayLayout>
   );
 }
@@ -230,14 +257,11 @@ function WaterSortTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Water Sort</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Sort the colors into tubes!</p>
-      <button
-        onClick={() => navigate('/games/watersort/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
+      <GameTitle>Water Sort</GameTitle>
+      <GameDescription>Sort the colors into tubes!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/watersort/v1/stage/1')}>
         Play
-      </button>
+      </PrimaryButton>
     </PlayLayout>
   );
 }
@@ -284,14 +308,11 @@ function TicTacToeTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tic Tac Toe</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Beat the AI in classic XO!</p>
-      <button
-        onClick={() => navigate('/games/tictactoe/v1/play')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
+      <GameTitle>Tic Tac Toe</GameTitle>
+      <GameDescription>Beat the AI in classic XO!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/tictactoe/v1/play')}>
         Play
-      </button>
+      </PrimaryButton>
     </PlayLayout>
   );
 }
@@ -313,14 +334,11 @@ function TrickyPrankTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tricky Prank</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Think outside the box! 🧩</p>
-      <button
-        onClick={() => navigate('/games/trickyprank/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
+      <GameTitle>Tricky Prank</GameTitle>
+      <GameDescription>Think outside the box! 🧩</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/trickyprank/v1/stage/1')}>
         Play
-      </button>
+      </PrimaryButton>
     </PlayLayout>
   );
 }
