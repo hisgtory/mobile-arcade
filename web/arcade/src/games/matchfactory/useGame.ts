@@ -17,6 +17,13 @@ interface UseGameOptions {
 export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const gameRef = useRef<Phaser.Game | null>(null);
+  const onClearRef = useRef(onClear);
+  const onGameOverRef = useRef(onGameOver);
+
+  useEffect(() => {
+    onClearRef.current = onClear;
+    onGameOverRef.current = onGameOver;
+  }, [onClear, onGameOver]);
 
   const stageConfig = getStageConfig(stage);
   const [score, setScore] = useState(0);
@@ -51,19 +58,19 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
     game.events.on('stage-clear', (data: { score: number; movesUsed: number }) => {
       stageComplete({ stage, score: data.score, cleared: true });
-      onClear?.({ score: data.score, movesUsed: data.movesUsed, cleared: true });
+      onClearRef.current?.({ score: data.score, movesUsed: data.movesUsed, cleared: true });
     });
 
     game.events.on('game-over', (data: { score: number }) => {
       stageComplete({ stage, score: data.score, cleared: false });
-      onGameOver?.({ score: data.score, cleared: false });
+      onGameOverRef.current?.({ score: data.score, cleared: false });
     });
 
     return () => {
       destroyGame(game);
       gameRef.current = null;
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   return {
     containerRef,

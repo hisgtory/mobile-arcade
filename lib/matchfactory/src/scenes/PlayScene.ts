@@ -61,6 +61,7 @@ export class PlayScene extends Phaser.Scene {
 
   init(data: { stage?: number; gameConfig?: GameConfig }): void {
     this.stageNum = data?.stage ?? 1;
+    // TODO: Use Phaser registry or scene data for better type safety
     this.gameConfig = data?.gameConfig ?? (this.game as any).__matchfactoryConfig;
   }
 
@@ -75,6 +76,13 @@ export class PlayScene extends Phaser.Scene {
   create(): void {
     const dpr = (this.game as any).__dpr || 1;
     const { width, height } = this.scale;
+
+    // Stop existing BGM if any (to prevent duplication on restart)
+    if (this.bgm) {
+      this.bgm.stop();
+      this.bgm.destroy();
+      this.bgm = undefined;
+    }
 
     // Reset state
     this.phase = GamePhase.PLAYING;
@@ -293,15 +301,18 @@ export class PlayScene extends Phaser.Scene {
     this.emitScore();
     this.emitOrders();
 
+    // Remove from data immediately to stay in sync
+    removeCells(this.board, allCells);
+
     // Animate destroy
     const destroyPromises = allCells.map(
       ({ row, col }) =>
         new Promise<void>((res) => {
           const tile = this.tileGrid[row][col];
           if (tile) {
+            this.tileGrid[row][col] = null;
             tile.animateDestroy(() => {
               tile.destroy();
-              this.tileGrid[row][col] = null;
               res();
             });
           } else {
@@ -311,14 +322,12 @@ export class PlayScene extends Phaser.Scene {
     );
     await Promise.all(destroyPromises);
 
-    // Remove from data
-    removeCells(this.board, allCells);
-
     // Gravity
     const gravityMoves = applyGravity(this.board);
 
-    // Animate gravity
-    const gravityPromises = gravityMoves.map(({ from, to }) => {
+    // Animate gravity - process in order to ensure tileGrid consistency
+    const gravityPromises: Promise<void>[] = [];
+    for (const { from, to } of gravityMoves) {
       const tile = this.tileGrid[from.row][from.col];
       if (tile) {
         this.tileGrid[from.row][from.col] = null;
@@ -326,10 +335,9 @@ export class PlayScene extends Phaser.Scene {
         tile.gridRow = to.row;
         tile.gridCol = to.col;
         const pos = this.gridToPixel(to.row, to.col);
-        return new Promise<void>((res) => tile.animateMoveTo(pos.x, pos.y, () => res()));
+        gravityPromises.push(new Promise<void>((res) => tile.animateMoveTo(pos.x, pos.y, () => res())));
       }
-      return Promise.resolve();
-    });
+    }
     await Promise.all(gravityPromises);
 
     // Fill empty

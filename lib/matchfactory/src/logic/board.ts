@@ -15,12 +15,15 @@ export type Board = TileType[][];
 export function createBoard(config: StageConfig): Board {
   const { rows, cols, typeCount } = config;
   let board: Board;
+  let attempts = 0;
+  const MAX_ATTEMPTS = 1000;
 
   do {
     board = Array.from({ length: rows }, () =>
       Array.from({ length: cols }, () => Math.floor(Math.random() * typeCount)),
     );
-  } while (findAllMatches(board).length > 0);
+    attempts++;
+  } while (findAllMatches(board).length > 0 && attempts < MAX_ATTEMPTS);
 
   return board;
 }
@@ -37,9 +40,6 @@ export function findAllMatches(board: Board): CellPos[][] {
   const rows = board.length;
   const cols = board[0].length;
   const matches: CellPos[][] = [];
-  const visited = new Set<string>();
-
-  const key = (r: number, c: number) => `${r},${c}`;
 
   // Horizontal
   for (let r = 0; r < rows; r++) {
@@ -52,10 +52,6 @@ export function findAllMatches(board: Board): CellPos[][] {
       if (len >= 3) {
         const cells: CellPos[] = [];
         for (let i = c; i < end; i++) {
-          const k = key(r, i);
-          if (!visited.has(k)) {
-            visited.add(k);
-          }
           cells.push({ row: r, col: i });
         }
         matches.push(cells);
@@ -65,7 +61,6 @@ export function findAllMatches(board: Board): CellPos[][] {
   }
 
   // Vertical
-  visited.clear();
   for (let c = 0; c < cols; c++) {
     for (let r = 0; r <= rows - 3; r++) {
       const t = board[r][c];
