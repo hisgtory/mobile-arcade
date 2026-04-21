@@ -64,166 +64,167 @@ export const CAR_COLORS: readonly string[] = [
 ] as const;
 
 // ─── Stage Definitions ───────────────────────────────────
-export function getStageConfig(stage: number): StageConfig {
-  const stages: StageConfig[] = [
-    // Stage 1: Simple — 2 blockers
-    {
-      stage: 1,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 2, length: 3, dir: 'V', isPlayer: false },
-        { id: 2, row: 0, col: 4, length: 2, dir: 'V', isPlayer: false },
-      ],
-    },
-    // Stage 2: Medium — 4 blockers
-    {
-      stage: 2,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 1, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 0, length: 2, dir: 'V', isPlayer: false },
-        { id: 2, row: 0, col: 3, length: 3, dir: 'V', isPlayer: false },
-        { id: 3, row: 4, col: 0, length: 3, dir: 'H', isPlayer: false },
-        { id: 4, row: 1, col: 5, length: 2, dir: 'V', isPlayer: false },
-      ],
-    },
-    // Stage 3: Medium — 5 blockers with trucks
-    {
-      stage: 3,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 2, length: 2, dir: 'V', isPlayer: false },
-        { id: 2, row: 0, col: 4, length: 2, dir: 'H', isPlayer: false },
-        { id: 3, row: 3, col: 2, length: 3, dir: 'V', isPlayer: false },
-        { id: 4, row: 4, col: 4, length: 2, dir: 'V', isPlayer: false },
-        { id: 5, row: 5, col: 0, length: 2, dir: 'H', isPlayer: false },
-      ],
-    },
-    // Stage 4: Harder — 6 blockers
-    {
-      stage: 4,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 0, length: 2, dir: 'V', isPlayer: false },
-        { id: 2, row: 0, col: 2, length: 3, dir: 'H', isPlayer: false },
-        { id: 3, row: 1, col: 4, length: 3, dir: 'V', isPlayer: false },
-        { id: 4, row: 3, col: 1, length: 2, dir: 'V', isPlayer: false },
-        { id: 5, row: 3, col: 3, length: 2, dir: 'H', isPlayer: false },
-        { id: 6, row: 5, col: 0, length: 3, dir: 'H', isPlayer: false },
-      ],
-    },
-    // Stage 5: Hard — 8 blockers
-    {
-      stage: 5,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 1, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 0, length: 2, dir: 'H', isPlayer: false },
-        { id: 2, row: 0, col: 3, length: 3, dir: 'V', isPlayer: false },
-        { id: 3, row: 1, col: 0, length: 2, dir: 'V', isPlayer: false },
-        { id: 4, row: 1, col: 1, length: 2, dir: 'V', isPlayer: false },
-        { id: 5, row: 3, col: 0, length: 3, dir: 'H', isPlayer: false },
-        { id: 6, row: 3, col: 4, length: 3, dir: 'V', isPlayer: false },
-        { id: 7, row: 4, col: 1, length: 2, dir: 'H', isPlayer: false },
-        { id: 8, row: 5, col: 3, length: 2, dir: 'H', isPlayer: false },
-      ],
-    },
-    // Stage 6: Very Hard — 9 blockers
-    {
-      stage: 6,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 0, length: 3, dir: 'H', isPlayer: false },
-        { id: 2, row: 0, col: 4, length: 3, dir: 'V', isPlayer: false },
-        { id: 3, row: 1, col: 1, length: 2, dir: 'V', isPlayer: false },
-        { id: 4, row: 1, col: 3, length: 2, dir: 'V', isPlayer: false },
-        { id: 5, row: 3, col: 0, length: 2, dir: 'V', isPlayer: false },
-        { id: 6, row: 3, col: 2, length: 2, dir: 'H', isPlayer: false },
-        { id: 7, row: 4, col: 3, length: 3, dir: 'H', isPlayer: false },
-        { id: 8, row: 5, col: 0, length: 2, dir: 'H', isPlayer: false },
-        { id: 9, row: 5, col: 4, length: 2, dir: 'H', isPlayer: false },
-      ],
-    },
-    // Stage 7
-    {
-      stage: 7,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 2, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 0, length: 2, dir: 'V', isPlayer: false },
-        { id: 2, row: 0, col: 1, length: 2, dir: 'H', isPlayer: false },
-        { id: 3, row: 0, col: 4, length: 2, dir: 'V', isPlayer: false },
-        { id: 4, row: 1, col: 2, length: 2, dir: 'V', isPlayer: false },
-        { id: 5, row: 2, col: 5, length: 3, dir: 'V', isPlayer: false },
-        { id: 6, row: 3, col: 0, length: 2, dir: 'H', isPlayer: false },
-        { id: 7, row: 3, col: 3, length: 2, dir: 'V', isPlayer: false },
-        { id: 8, row: 4, col: 1, length: 2, dir: 'V', isPlayer: false },
-        { id: 9, row: 5, col: 2, length: 3, dir: 'H', isPlayer: false },
-      ],
-    },
-    // Stage 8
-    {
-      stage: 8,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 0, length: 2, dir: 'H', isPlayer: false },
-        { id: 2, row: 0, col: 3, length: 2, dir: 'V', isPlayer: false },
-        { id: 3, row: 0, col: 5, length: 3, dir: 'V', isPlayer: false },
-        { id: 4, row: 1, col: 0, length: 2, dir: 'V', isPlayer: false },
-        { id: 5, row: 1, col: 1, length: 2, dir: 'H', isPlayer: false },
-        { id: 6, row: 2, col: 4, length: 2, dir: 'V', isPlayer: false },
-        { id: 7, row: 3, col: 1, length: 3, dir: 'H', isPlayer: false },
-        { id: 8, row: 4, col: 0, length: 2, dir: 'V', isPlayer: false },
-        { id: 9, row: 4, col: 2, length: 2, dir: 'V', isPlayer: false },
-        { id: 10, row: 5, col: 3, length: 3, dir: 'H', isPlayer: false },
-      ],
-    },
-    // Stage 9
-    {
-      stage: 9,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 1, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 0, length: 3, dir: 'V', isPlayer: false },
-        { id: 2, row: 0, col: 1, length: 2, dir: 'H', isPlayer: false },
-        { id: 3, row: 0, col: 3, length: 2, dir: 'V', isPlayer: false },
-        { id: 4, row: 1, col: 4, length: 2, dir: 'H', isPlayer: false },
-        { id: 5, row: 2, col: 4, length: 3, dir: 'V', isPlayer: false },
-        { id: 6, row: 3, col: 0, length: 2, dir: 'H', isPlayer: false },
-        { id: 7, row: 3, col: 2, length: 2, dir: 'V', isPlayer: false },
-        { id: 8, row: 4, col: 3, length: 2, dir: 'V', isPlayer: false },
-        { id: 9, row: 5, col: 0, length: 3, dir: 'H', isPlayer: false },
-        { id: 10, row: 5, col: 4, length: 2, dir: 'H', isPlayer: false },
-      ],
-    },
-    // Stage 10
-    {
-      stage: 10,
-      exit: { row: 2, col: 5, side: 'right' },
-      cars: [
-        { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
-        { id: 1, row: 0, col: 0, length: 2, dir: 'V', isPlayer: false },
-        { id: 2, row: 0, col: 1, length: 3, dir: 'H', isPlayer: false },
-        { id: 3, row: 0, col: 5, length: 2, dir: 'V', isPlayer: false },
-        { id: 4, row: 1, col: 1, length: 2, dir: 'V', isPlayer: false },
-        { id: 5, row: 1, col: 4, length: 2, dir: 'V', isPlayer: false },
-        { id: 6, row: 2, col: 3, length: 3, dir: 'V', isPlayer: false },
-        { id: 7, row: 3, col: 0, length: 2, dir: 'V', isPlayer: false },
-        { id: 8, row: 3, col: 4, length: 2, dir: 'H', isPlayer: false },
-        { id: 9, row: 4, col: 1, length: 2, dir: 'H', isPlayer: false },
-        { id: 10, row: 5, col: 0, length: 3, dir: 'H', isPlayer: false },
-        { id: 11, row: 5, col: 3, length: 2, dir: 'V', isPlayer: false },
-      ],
-    },
-  ];
+const STAGES: StageConfig[] = [
+  // Stage 1: Simple — 2 blockers
+  {
+    stage: 1,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 2, length: 3, dir: 'V', isPlayer: false },
+      { id: 2, row: 0, col: 4, length: 2, dir: 'V', isPlayer: false },
+    ],
+  },
+  // Stage 2: Medium — 4 blockers
+  {
+    stage: 2,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 1, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 0, length: 2, dir: 'V', isPlayer: false },
+      { id: 2, row: 0, col: 3, length: 3, dir: 'V', isPlayer: false },
+      { id: 3, row: 4, col: 0, length: 3, dir: 'H', isPlayer: false },
+      { id: 4, row: 1, col: 5, length: 2, dir: 'V', isPlayer: false },
+    ],
+  },
+  // Stage 3: Medium — 5 blockers with trucks
+  {
+    stage: 3,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 2, length: 2, dir: 'V', isPlayer: false },
+      { id: 2, row: 0, col: 4, length: 2, dir: 'H', isPlayer: false },
+      { id: 3, row: 3, col: 2, length: 3, dir: 'V', isPlayer: false },
+      { id: 4, row: 4, col: 4, length: 2, dir: 'V', isPlayer: false },
+      { id: 5, row: 5, col: 0, length: 2, dir: 'H', isPlayer: false },
+    ],
+  },
+  // Stage 4: Harder — 6 blockers
+  {
+    stage: 4,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 0, length: 2, dir: 'V', isPlayer: false },
+      { id: 2, row: 0, col: 2, length: 3, dir: 'H', isPlayer: false },
+      { id: 3, row: 1, col: 4, length: 3, dir: 'V', isPlayer: false },
+      { id: 4, row: 3, col: 1, length: 2, dir: 'V', isPlayer: false },
+      { id: 5, row: 4, col: 3, length: 2, dir: 'H', isPlayer: false }, // Fixed overlap
+      { id: 6, row: 5, col: 0, length: 3, dir: 'H', isPlayer: false },
+    ],
+  },
+  // Stage 5: Hard — 8 blockers
+  {
+    stage: 5,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 1, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 0, length: 2, dir: 'H', isPlayer: false },
+      { id: 2, row: 0, col: 3, length: 3, dir: 'V', isPlayer: false },
+      { id: 3, row: 1, col: 0, length: 2, dir: 'V', isPlayer: false },
+      { id: 4, row: 0, col: 1, length: 2, dir: 'V', isPlayer: false }, // Fixed overlap
+      { id: 5, row: 3, col: 0, length: 3, dir: 'H', isPlayer: false },
+      { id: 6, row: 3, col: 4, length: 3, dir: 'V', isPlayer: false },
+      { id: 7, row: 4, col: 1, length: 2, dir: 'H', isPlayer: false },
+      { id: 8, row: 5, col: 1, length: 2, dir: 'H', isPlayer: false }, // Fixed overlap
+    ],
+  },
+  // Stage 6: Very Hard — 9 blockers
+  {
+    stage: 6,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 0, length: 3, dir: 'H', isPlayer: false },
+      { id: 2, row: 0, col: 4, length: 3, dir: 'V', isPlayer: false },
+      { id: 3, row: 0, col: 1, length: 2, dir: 'V', isPlayer: false }, // Fixed overlap
+      { id: 4, row: 1, col: 3, length: 2, dir: 'V', isPlayer: false },
+      { id: 5, row: 3, col: 0, length: 2, dir: 'V', isPlayer: false },
+      { id: 6, row: 3, col: 2, length: 2, dir: 'H', isPlayer: false },
+      { id: 7, row: 4, col: 3, length: 3, dir: 'H', isPlayer: false },
+      { id: 8, row: 5, col: 0, length: 2, dir: 'H', isPlayer: false },
+      { id: 9, row: 5, col: 4, length: 2, dir: 'H', isPlayer: false },
+    ],
+  },
+  // Stage 7
+  {
+    stage: 7,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 2, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 0, length: 2, dir: 'V', isPlayer: false },
+      { id: 2, row: 0, col: 1, length: 2, dir: 'H', isPlayer: false },
+      { id: 3, row: 0, col: 4, length: 2, dir: 'V', isPlayer: false },
+      { id: 4, row: 0, col: 2, length: 2, dir: 'V', isPlayer: false }, // Fixed overlap
+      { id: 5, row: 2, col: 5, length: 3, dir: 'V', isPlayer: false },
+      { id: 6, row: 3, col: 0, length: 2, dir: 'H', isPlayer: false },
+      { id: 7, row: 3, col: 3, length: 2, dir: 'V', isPlayer: false },
+      { id: 8, row: 4, col: 1, length: 2, dir: 'V', isPlayer: false },
+      { id: 9, row: 5, col: 2, length: 3, dir: 'H', isPlayer: false },
+    ],
+  },
+  // Stage 8
+  {
+    stage: 8,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 0, length: 2, dir: 'H', isPlayer: false },
+      { id: 2, row: 0, col: 3, length: 2, dir: 'V', isPlayer: false },
+      { id: 3, row: 0, col: 5, length: 3, dir: 'V', isPlayer: false },
+      { id: 4, row: 3, col: 0, length: 2, dir: 'V', isPlayer: false }, // Fixed overlap
+      { id: 5, row: 1, col: 1, length: 2, dir: 'H', isPlayer: false },
+      { id: 6, row: 2, col: 4, length: 2, dir: 'V', isPlayer: false },
+      { id: 7, row: 3, col: 1, length: 3, dir: 'H', isPlayer: false },
+      { id: 8, row: 4, col: 0, length: 2, dir: 'V', isPlayer: false },
+      { id: 9, row: 4, col: 2, length: 2, dir: 'V', isPlayer: false },
+      { id: 10, row: 5, col: 3, length: 3, dir: 'H', isPlayer: false },
+    ],
+  },
+  // Stage 9
+  {
+    stage: 9,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 1, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 0, length: 3, dir: 'V', isPlayer: false },
+      { id: 2, row: 0, col: 1, length: 2, dir: 'H', isPlayer: false },
+      { id: 3, row: 0, col: 3, length: 2, dir: 'V', isPlayer: false },
+      { id: 4, row: 1, col: 4, length: 2, dir: 'H', isPlayer: false },
+      { id: 5, row: 2, col: 4, length: 3, dir: 'V', isPlayer: false },
+      { id: 6, row: 3, col: 0, length: 2, dir: 'H', isPlayer: false },
+      { id: 7, row: 3, col: 2, length: 2, dir: 'V', isPlayer: false },
+      { id: 8, row: 4, col: 3, length: 2, dir: 'V', isPlayer: false },
+      { id: 9, row: 5, col: 0, length: 3, dir: 'H', isPlayer: false },
+      { id: 10, row: 5, col: 4, length: 2, dir: 'H', isPlayer: false },
+    ],
+  },
+  // Stage 10
+  {
+    stage: 10,
+    exit: { row: 2, col: 5, side: 'right' },
+    cars: [
+      { id: 0, row: 2, col: 0, length: 2, dir: 'H', isPlayer: true },
+      { id: 1, row: 0, col: 0, length: 2, dir: 'V', isPlayer: false },
+      { id: 2, row: 0, col: 1, length: 3, dir: 'H', isPlayer: false },
+      { id: 3, row: 0, col: 5, length: 2, dir: 'V', isPlayer: false },
+      { id: 4, row: 0, col: 4, length: 2, dir: 'V', isPlayer: false }, // Fixed overlap
+      { id: 5, row: 1, col: 4, length: 2, dir: 'V', isPlayer: false },
+      { id: 6, row: 2, col: 3, length: 3, dir: 'V', isPlayer: false },
+      { id: 7, row: 3, col: 0, length: 2, dir: 'V', isPlayer: false },
+      { id: 8, row: 3, col: 4, length: 2, dir: 'H', isPlayer: false },
+      { id: 9, row: 4, col: 1, length: 2, dir: 'H', isPlayer: false },
+      { id: 10, row: 5, col: 0, length: 3, dir: 'H', isPlayer: false },
+      { id: 11, row: 4, col: 4, length: 2, dir: 'V', isPlayer: false }, // Fixed bounds & overlap
+    ],
+  },
+];
 
-  if (stage <= stages.length) return stages[stage - 1];
-  // Beyond stage 10: cycle through with shuffled IDs
-  const base = stages[(stage - 1) % stages.length];
-  return { ...base, stage };
+export const TOTAL_STAGES = STAGES.length;
+
+export function getStageConfig(stage: number): StageConfig {
+  const n = Number.isFinite(stage) ? stage : 1;
+  const idx = Math.max(0, Math.min(n - 1, STAGES.length - 1));
+  return { ...STAGES[idx], stage: n };
 }

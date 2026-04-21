@@ -1,5 +1,6 @@
 import { styled } from '../../styles/stitches.config';
 import type { GameResult } from './useGame';
+import { TOTAL_STAGES } from '@arcade/lib-carout';
 
 const Overlay = styled('div', {
   display: 'flex',
@@ -69,9 +70,10 @@ interface ClearScreenProps {
 }
 
 export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScreenProps) {
+  const isAllClear = result.cleared && stage >= TOTAL_STAGES;
   return (
     <Overlay>
-      <Title>{result.cleared ? 'Stage Clear!' : 'Game Over'}</Title>
+      <Title>{isAllClear ? '🏆 All Clear!' : '🎉 Stage Clear!'}</Title>
       <Card>
         <StatRow>
           <Label>Stage</Label>
@@ -86,7 +88,7 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
           <Value>{result.moves}</Value>
         </StatRow>
       </Card>
-      {result.cleared && (
+      {!isAllClear && (
         <Button
           css={{ backgroundColor: '$primary', color: '#fff' }}
           onClick={onNext}
@@ -95,10 +97,10 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
         </Button>
       )}
       <Button
-        css={{ backgroundColor: '#fff', color: '$text', border: '1px solid $gray200' }}
+        css={{ backgroundColor: '#fff', color: '$text', border: '1px solid', borderColor: '$gray200' }}
         onClick={onRetry}
       >
-        Retry
+        {isAllClear ? 'Play Again' : 'Retry'}
       </Button>
       <Button
         css={{ backgroundColor: 'transparent', color: '$textMuted', fontSize: 16 }}

@@ -38,17 +38,23 @@ export class PlayScene extends Phaser.Scene {
   private dragOrigPos = 0;
   private dragRange = { min: 0, max: 0 };
 
+  private stageNum: number = 1;
+  private gameConfig?: GameConfig;
+
   constructor() {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    const gameConfig = this.game.registry.get('caroutConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
   }
 
   create() {
-    const stage = this.config.stage ?? 1;
+    this.dpr = this.game.registry.get('dpr') || 1;
+    const stage = this.stageNum;
     const stageConfig = getStageConfig(stage);
     this.board = createBoard(stageConfig);
     this.phase = 'idle';
@@ -59,6 +65,8 @@ export class PlayScene extends Phaser.Scene {
     this.drawBoard();
     this.setupInput();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Input Setup (once) ───────────────────────────────
@@ -193,6 +201,7 @@ export class PlayScene extends Phaser.Scene {
     const body = this.add.graphics();
     body.fillStyle(colorHex, 1);
     body.fillRoundedRect(0, 0, w, h, radius);
+    container.add(body);
 
     // Highlight strip (top/left light reflection)
     const hl = this.add.graphics();
@@ -202,6 +211,7 @@ export class PlayScene extends Phaser.Scene {
     } else {
       hl.fillRoundedRect(2 * scale, 4 * scale, w * 0.3, h - 8 * scale, radius / 2);
     }
+    container.add(hl);
 
     // Windows for player car
     if (car.isPlayer) {
@@ -217,9 +227,6 @@ export class PlayScene extends Phaser.Scene {
       }
       container.add(win);
     }
-
-    container.add(body);
-    container.add(hl);
     container.setPosition(x, y);
     container.setSize(w, h);
 
@@ -439,7 +446,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   public restart() {
-    this.scene.restart({ config: this.config, dpr: this.dpr });
+    this.scene.restart({ stage: this.stageNum });
   }
 
   // ─── Events ───────────────────────────────────────────
@@ -447,5 +454,12 @@ export class PlayScene extends Phaser.Scene {
   private emitState() {
     this.game.events.emit('score-update', { score: this.calcScore() });
     this.game.events.emit('moves-update', { moves: this.moves });
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
+    this.carSprites.forEach((s) => s.destroy());
+    this.carSprites.clear();
+    if (this.gridContainer) this.gridContainer.destroy();
   }
 }
