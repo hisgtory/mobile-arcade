@@ -99,7 +99,7 @@ export function ClearScreen({ result, stage, onNext, onRetry, onHome }: ClearScr
         </Button>
       )}
       <Button
-        css={{ backgroundColor: '#fff', color: '$text', border: '1px solid $gray200' }}
+        css={{ backgroundColor: '#fff', color: '$text', border: '1px solid', borderColor: '$gray200' }}
         onClick={onRetry}
       >
         Retry

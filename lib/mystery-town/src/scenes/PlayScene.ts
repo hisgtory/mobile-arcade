@@ -41,6 +41,8 @@ export class PlayScene extends Phaser.Scene {
   private phase: Phase = 'idle';
   private score = 0;
   private moves = 0;
+  private combo = 1;
+  private lastMergeTime = 0;
 
   // Grid rendering
   private cellSize = 0;
@@ -57,8 +59,9 @@ export class PlayScene extends Phaser.Scene {
   }
 
   init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
+    // TODO: Use Phaser registry or scene data for better type safety
+    this.config = data.config ?? (this.game as any).__mysteryTownConfig ?? {};
+    this.dpr = data.dpr ?? (this.game as any).__dpr ?? 1;
   }
 
   create() {
@@ -68,16 +71,23 @@ export class PlayScene extends Phaser.Scene {
     this.phase = 'idle';
     this.score = 0;
     this.moves = 0;
+    this.combo = 1;
+    this.lastMergeTime = 0;
     this.dragFrom = null;
 
     this.calculateLayout();
-    this.drawBoard();
+    
+    // Initial draw
+    this.cellGraphics = [];
+    this.drawBoard(true);
     this.emitState();
 
     // Input handlers
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => this.onPointerDown(p));
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => this.onPointerMove(p));
     this.input.on('pointerup', (p: Phaser.Input.Pointer) => this.onPointerUp(p));
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -137,18 +147,26 @@ export class PlayScene extends Phaser.Scene {
 
   // ─── Drawing ──────────────────────────────────────────
 
-  private drawBoard() {
-    this.cellGraphics.forEach((c) => c.destroy());
-    this.cellGraphics = [];
-
+  private drawBoard(initial = false) {
     const { cells, cols, rows } = this.board;
     const radius = 8 * this.dpr;
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const idx = r * cols + c;
+        const val = cells[idx];
+        
+        let container: Phaser.GameObjects.Container;
+        if (initial) {
+          const rect = this.getCellRect(idx);
+          container = this.add.container(rect.x + rect.w / 2, rect.y + rect.h / 2);
+          this.cellGraphics.push(container);
+        } else {
+          container = this.cellGraphics[idx];
+          container.removeAll(true);
+        }
+
         const rect = this.getCellRect(idx);
-        const container = this.add.container(rect.x + rect.w / 2, rect.y + rect.h / 2);
 
         // Cell background
         const bg = this.add.graphics();
@@ -158,7 +176,6 @@ export class PlayScene extends Phaser.Scene {
         bg.strokeRoundedRect(-rect.w / 2, -rect.h / 2, rect.w, rect.h, radius);
         container.add(bg);
 
-        const val = cells[idx];
         if (val !== null) {
           // Item background (colored)
           const colorHex = parseInt(ITEM_COLORS[val - 1].replace('#', ''), 16);
@@ -195,8 +212,6 @@ export class PlayScene extends Phaser.Scene {
             container.add(highlight);
           }
         }
-
-        this.cellGraphics.push(container);
       }
     }
   }
@@ -274,12 +289,23 @@ export class PlayScene extends Phaser.Scene {
     this.phase = 'merging';
     this.moves++;
 
+    // Time-based combo (2s window)
+    const now = Date.now();
+    if (now - this.lastMergeTime < 2000) {
+      this.combo = 1.5;
+    } else {
+      this.combo = 1;
+    }
+    this.lastMergeTime = now;
+
     const { clueCreated } = executeMerge(this.board, { fromIdx, toIdx, newLevel });
 
     // Score
-    this.score += SCORE_MERGE;
-    if (newLevel >= 3) this.score += SCORE_HIGH_LEVEL_BONUS;
-    if (clueCreated) this.score += SCORE_CLUE_BONUS;
+    let gained = SCORE_MERGE;
+    if (newLevel >= 3) gained += SCORE_HIGH_LEVEL_BONUS;
+    if (clueCreated) gained += SCORE_CLUE_BONUS;
+    
+    this.score += Math.round(gained * this.combo);
 
     this.drawBoard();
     this.animateMerge(toIdx, newLevel, clueCreated);
@@ -506,5 +532,11 @@ export class PlayScene extends Phaser.Scene {
 
   public restart() {
     this.scene.restart({ config: this.config, dpr: this.dpr });
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
+    this.cellGraphics.forEach((c) => c.destroy());
+    this.cellGraphics = [];
   }
 }
