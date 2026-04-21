@@ -202,6 +202,7 @@ export class PlayScene extends Phaser.Scene {
 
   init(data: { stage?: number; gameConfig?: GameConfig }): void {
     this.stageNum = data?.stage ?? 1;
+    // TODO: Use Phaser registry or scene data for better type safety
     this.gameConfig = data?.gameConfig ?? (this.game as any).__toonblastConfig;
   }
 
@@ -261,6 +262,8 @@ export class PlayScene extends Phaser.Scene {
     // Emit initial state
     this.emitMoves();
     this.emitScore();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── COORDINATE HELPERS ──────────────────────────────
@@ -595,6 +598,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.tweens.killAll();
     this.blockGrid = [];
     this.highlightedCells = [];
   }
