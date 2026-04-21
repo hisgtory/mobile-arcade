@@ -5,14 +5,15 @@
  */
 
 import Phaser from 'phaser';
-import { PRODUCT_IMAGES, type ProductType } from '../types';
+import { PRODUCT_IMAGES, PRODUCT_EMOJIS, type ProductType } from '../types';
 
 export class ProductTile extends Phaser.GameObjects.Container {
   public productType: ProductType;
   public gridRow: number;
   public gridCol: number;
   private bg: Phaser.GameObjects.Rectangle;
-  private icon: Phaser.GameObjects.Image;
+  private icon?: Phaser.GameObjects.Image;
+  private emojiText?: Phaser.GameObjects.Text;
   private tileSize: number;
 
   constructor(
@@ -36,12 +37,21 @@ export class ProductTile extends Phaser.GameObjects.Container {
     this.bg.setStrokeStyle(1.5, 0xf9a8d4, 0.6);
     this.add(this.bg);
 
-    // Icon
+    // Icon (try Image, fallback to Emoji)
     const imageKey = PRODUCT_IMAGES[type % PRODUCT_IMAGES.length];
-    this.icon = scene.add.image(0, 0, imageKey);
     const iconSize = Math.min(size * 0.7, 40);
-    this.icon.setDisplaySize(iconSize, iconSize);
-    this.add(this.icon);
+
+    if (scene.textures.exists(imageKey)) {
+      this.icon = scene.add.image(0, 0, imageKey);
+      this.icon.setDisplaySize(iconSize, iconSize);
+      this.add(this.icon);
+    } else {
+      const emoji = PRODUCT_EMOJIS[type % PRODUCT_EMOJIS.length];
+      this.emojiText = scene.add.text(0, 0, emoji, {
+        fontSize: `${Math.round(iconSize * 0.8)}px`,
+      }).setOrigin(0.5);
+      this.add(this.emojiText);
+    }
 
     this.setSize(size, size);
     this.setInteractive();
@@ -51,7 +61,12 @@ export class ProductTile extends Phaser.GameObjects.Container {
   updateType(type: ProductType): void {
     this.productType = type;
     const imageKey = PRODUCT_IMAGES[type % PRODUCT_IMAGES.length];
-    this.icon.setTexture(imageKey);
+    
+    if (this.icon && this.scene.textures.exists(imageKey)) {
+      this.icon.setTexture(imageKey);
+    } else if (this.emojiText) {
+      this.emojiText.setText(PRODUCT_EMOJIS[type % PRODUCT_EMOJIS.length]);
+    }
   }
 
   /** Highlight tile as matchable */

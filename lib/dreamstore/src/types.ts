@@ -59,3 +59,7 @@ export const PRODUCT_IMAGES: string[] = [
   'cake_matcha',
   'icecream_2scoops',
 ];
+
+export const PRODUCT_EMOJIS: string[] = [
+  '🍰', '🍵', '☕', '🥐', '🍦', '🍧', '🍫', '🧋', '🍵', '🍨'
+];

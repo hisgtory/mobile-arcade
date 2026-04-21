@@ -67,9 +67,11 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { stage?: number; gameConfig?: GameConfig }): void {
-    this.stageNum = data?.stage ?? 1;
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__dreamstoreConfig;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    const gameConfig = this.game.registry.get('dreamstoreConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
   }
 
   preload(): void {
@@ -81,7 +83,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr = this.game.registry.get('dpr') || 1;
     const { width, height } = this.scale;
 
     // Reset state
@@ -160,9 +162,22 @@ export class PlayScene extends Phaser.Scene {
     this.emitScore();
     this.emitTime();
 
-    // BGM
-    this.bgm = this.sound.add('bgm1', { loop: true, volume: 0.2 });
-    this.bgm.play();
+    // Stop existing BGM if any
+    if (this.bgm) {
+      this.bgm.stop();
+      this.bgm.destroy();
+      this.bgm = undefined;
+    }
+
+    // BGM with error handling
+    try {
+      this.bgm = this.sound.add('bgm1', { loop: true, volume: 0.2 });
+      this.bgm.play();
+    } catch (e) {
+      console.warn('Failed to play BGM:', e);
+    }
+
+    this.events.on('shutdown', this.shutdown, this);
 
     this.input.once('pointerdown', () => {
       if ((this.sound as Phaser.Sound.WebAudioSoundManager).context?.state === 'suspended') {
@@ -280,7 +295,10 @@ export class PlayScene extends Phaser.Scene {
       const idx = fulfillItem(this.currentOrder, product);
 
       if (idx === -1) {
-        // Wrong product — shake feedback
+        // Wrong product — shake feedback and reset combo
+        this.combo = 0;
+        this.emitScore();
+
         this.tweens.add({
           targets: tile,
           x: tile.x + 4,
@@ -368,8 +386,8 @@ export class PlayScene extends Phaser.Scene {
       this.updateHighlights();
     }
 
-    const p = this.phase as string;
-    if (p !== GamePhase.CLEAR && p !== GamePhase.GAME_OVER) {
+    const currentPhase = this.phase as GamePhase;
+    if (currentPhase !== GamePhase.CLEAR && currentPhase !== GamePhase.GAME_OVER) {
       this.phase = GamePhase.PLAYING;
     }
   }
@@ -441,6 +459,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.tweens.killAll();
     if (this.bgm) {
       this.bgm.stop();
       this.bgm.destroy();
