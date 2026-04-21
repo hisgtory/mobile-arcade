@@ -55,6 +55,8 @@ export class PlayScene extends Phaser.Scene {
 
     this.drawBoard();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -314,8 +316,7 @@ export class PlayScene extends Phaser.Scene {
       duration: 400,
       ease: 'Cubic.easeIn',
       onComplete: () => {
-        container.destroy();
-        this.carContainers.delete(carId);
+        // Explicit cleanup will be handled by drawBoard() in onMoveComplete()
         this.onMoveComplete();
       },
     });
@@ -401,5 +402,13 @@ export class PlayScene extends Phaser.Scene {
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('moves-update', { moves: this.moves });
     this.game.events.emit('cars-update', { remaining: remainingCars(this.board), total: this.board.cars.length });
+  }
+
+  shutdown() {
+    this.tweens.killAll();
+    this.carContainers.forEach((c) => {
+      if (c && c.active) c.destroy();
+    });
+    this.carContainers.clear();
   }
 }

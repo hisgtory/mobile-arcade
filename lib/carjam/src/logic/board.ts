@@ -4,7 +4,22 @@ import type { Car, BoardState, Direction, StageConfig } from '../types';
 
 export function createBoard(config: StageConfig): BoardState {
   const cars: Car[] = config.cars.map((c) => ({ ...c, exited: false }));
-  return { cars, cols: config.cols, rows: config.rows };
+  const board = { cars, cols: config.cols, rows: config.rows };
+
+  // Development validation: check for overlapping cars
+  const occupancy = new Map<string, number>();
+  for (const car of cars) {
+    const cells = getCarCells(car);
+    for (const [r, c] of cells) {
+      const key = `${r},${c}`;
+      if (occupancy.has(key)) {
+        console.warn(`Stage ${config.stage}: Car ${car.id} overlaps with Car ${occupancy.get(key)} at (${r},${c})`);
+      }
+      occupancy.set(key, car.id);
+    }
+  }
+
+  return board;
 }
 
 // ─── Occupancy Grid ──────────────────────────────────────
@@ -65,7 +80,6 @@ export function canCarMove(board: BoardState, carId: number): boolean {
 /** Get the cells the car needs to pass through to exit the board */
 export function getExitPath(car: Car, board: BoardState): [number, number][] {
   const path: [number, number][] = [];
-  const isHorizontal = car.direction === 'left' || car.direction === 'right';
 
   switch (car.direction) {
     case 'right': {

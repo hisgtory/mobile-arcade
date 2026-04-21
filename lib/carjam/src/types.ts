@@ -194,7 +194,7 @@ const STAGES: StageConfig[] = [
         { id: 7, row: 4, col: 1, length: 2, direction: 'down', colorIndex: 6 },
         { id: 8, row: 5, col: 3, length: 2, direction: 'left', colorIndex: 7 },
         { id: 9, row: 5, col: 0, length: 1, direction: 'up', colorIndex: 8 },
-                { id: 10, row: 2, col: 4, length: 1, direction: 'up', colorIndex: 9 },
+        { id: 10, row: 2, col: 4, length: 1, direction: 'up', colorIndex: 9 },
       ],
     },
   ];
