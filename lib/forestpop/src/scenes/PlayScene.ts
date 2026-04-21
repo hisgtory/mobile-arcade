@@ -21,6 +21,7 @@ import {
   fillEmpty,
   calcPopScore,
   hasValidMoves,
+  shuffleBoard,
   type Board,
 } from '../logic/board';
 import { Tile } from '../objects/Tile';
@@ -38,6 +39,7 @@ export class PlayScene extends Phaser.Scene {
   private combo: number = 0;
   private movesLeft: number = 0;
   private movesUsed: number = 0;
+  private lastPopTime: number = 0;
 
   // Visual grid
   private tileGrid: (Tile | null)[][] = [];
@@ -54,6 +56,7 @@ export class PlayScene extends Phaser.Scene {
 
   init(data: { stage?: number; gameConfig?: GameConfig }): void {
     this.stageNum = data?.stage ?? 1;
+    // TODO: Use Phaser registry or scene data for better type safety
     this.gameConfig = data?.gameConfig ?? (this.game as any).__forestpopConfig;
   }
 
@@ -66,6 +69,7 @@ export class PlayScene extends Phaser.Scene {
     this.score = 0;
     this.combo = 0;
     this.movesUsed = 0;
+    this.lastPopTime = 0;
     this.highlightedCells = [];
 
     // Load stage
@@ -111,6 +115,8 @@ export class PlayScene extends Phaser.Scene {
     // Emit initial state
     this.emitMoves();
     this.emitScore();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── COORDINATE HELPERS ──────────────────────────────
@@ -171,10 +177,18 @@ export class PlayScene extends Phaser.Scene {
     this.phase = GamePhase.ANIMATING;
     this.clearHighlight();
 
-    // Consume a move and reset combo for this tap
+    // Time-based combo: 2 second window
+    const now = Date.now();
+    if (now - this.lastPopTime < 2000) {
+      this.combo++;
+    } else {
+      this.combo = 1;
+    }
+    this.lastPopTime = now;
+
+    // Consume a move
     this.movesLeft--;
     this.movesUsed++;
-    this.combo = 1;
     this.emitMoves();
 
     // Calculate score
@@ -248,43 +262,24 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private async reshuffleBoard(): Promise<void> {
-    // Animate all tiles out
-    const allTiles: Tile[] = [];
+    // Shuffle the board data
+    shuffleBoard(this.board);
+
+    // Animate all tiles moving to new positions
+    const movePromises: Promise<void>[] = [];
     for (let r = 0; r < this.stageConfig.rows; r++) {
       for (let c = 0; c < this.stageConfig.cols; c++) {
         const tile = this.tileGrid[r][c];
-        if (tile) allTiles.push(tile);
+        if (tile) {
+          // Re-sync Tile color with board data
+          tile.updateType(this.board[r][c]);
+          const pos = this.gridToPixel(r, c);
+          movePromises.push(new Promise<void>((res) => tile.animateMoveTo(pos.x, pos.y, () => res())));
+        }
       }
     }
 
-    await Promise.all(
-      allTiles.map(
-        (tile) =>
-          new Promise<void>((res) => {
-            this.tweens.add({
-              targets: tile,
-              alpha: 0,
-              duration: 150,
-              onComplete: () => { tile.destroy(); res(); },
-            });
-          }),
-      ),
-    );
-
-    // Recreate board
-    this.board = createBoard(this.stageConfig);
-    this.tileGrid = [];
-    for (let r = 0; r < this.stageConfig.rows; r++) {
-      this.tileGrid[r] = [];
-      for (let c = 0; c < this.stageConfig.cols; c++) {
-        const { x, y } = this.gridToPixel(r, c);
-        const tile = new Tile(this, x, y, this.board[r][c], r, c, this.tileSize);
-        this.tileGrid[r][c] = tile;
-        this.setupTileInput(tile);
-        tile.animateSpawn();
-      }
-    }
-
+    await Promise.all(movePromises);
     await this.delay(300);
   }
 
@@ -330,6 +325,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.tweens.killAll();
     this.tileGrid = [];
     this.highlightedCells = [];
   }

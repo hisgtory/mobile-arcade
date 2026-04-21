@@ -140,3 +140,35 @@ export function hasValidMoves(board: Board, minGroupSize: number): boolean {
 
   return false;
 }
+
+/** Reshuffle existing tiles on the board */
+export function shuffleBoard(board: Board): void {
+  const rows = board.length;
+  const cols = board[0].length;
+  const tiles: TileType[] = [];
+
+  // Collect all tiles
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (board[r][c] !== EMPTY) {
+        tiles.push(board[r][c]);
+      }
+    }
+  }
+
+  // Shuffle collected tiles
+  for (let i = tiles.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [tiles[i], tiles[j]] = [tiles[j], tiles[i]];
+  }
+
+  // Put tiles back
+  let idx = 0;
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (board[r][c] !== EMPTY) {
+        board[r][c] = tiles[idx++];
+      }
+    }
+  }
+}
