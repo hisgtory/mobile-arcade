@@ -8,7 +8,7 @@ export function generateBoard(config: StageConfig): TileData[] {
 
   if (total % 2 !== 0 || total % typeCount !== 0 || (total / typeCount) % 2 !== 0) {
     throw new Error(
-      `Invalid stage config: ${total} tiles with ${typeCount} types — total must be even, divisible by typeCount, and each type must have an even count`,
+      `Invalid stage config: total ${total} tiles with ${typeCount} types results in ${(total / typeCount)} tiles per type. Each type must have an even count to form pairs.`,
     );
   }
 

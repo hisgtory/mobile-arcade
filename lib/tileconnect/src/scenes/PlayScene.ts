@@ -47,6 +47,7 @@ const MAX_TILE_APPEAR_DELAY_MS = 600;
 export class PlayScene extends Phaser.Scene {
   private gameConfig?: GameConfig;
   private stageConfig!: StageConfig;
+  private stageNum: number = 1;
   private phase: GamePhase = GamePhase.PLAYING;
 
   // Board state
@@ -82,8 +83,11 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { gameConfig?: GameConfig }): void {
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__tileconnectConfig;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    const gameConfig = this.game.registry.get('tileconnectConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
   }
 
   preload(): void {
@@ -94,7 +98,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.dpr = (this.game as any).__dpr || 1;
+    this.dpr = this.game.registry.get('dpr') || 1;
     const { width, height } = this.scale;
 
     const stageNum = this.gameConfig?.stage ?? 1;
@@ -155,6 +159,8 @@ export class PlayScene extends Phaser.Scene {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       this.handleTap(pointer.x, pointer.y);
     });
+
+    this.events.on('shutdown', this.shutdown, this);
 
     // Timer update
     this.time.addEvent({
@@ -346,9 +352,14 @@ export class PlayScene extends Phaser.Scene {
     }
     this.lastMatchTime = now;
 
-    // Score
-    const pairScore = BASE_PAIR_SCORE + Math.max(0, this.combo - 1) * COMBO_BONUS;
+    // Score: BASE + COMBO + LINE BONUS (+50 for 0-bend/direct line)
+    const isDirect = path.length === 2;
+    const pairScore = BASE_PAIR_SCORE + Math.max(0, this.combo - 1) * COMBO_BONUS + (isDirect ? 50 : 0);
     this.score += pairScore;
+
+    // Survival: Time bonus (+3s on match)
+    const timeBonusMs = 3000;
+    this.startTime += timeBonusMs; // Effectively pushes back start time to increase remaining duration
 
     // Draw path line
     this.drawPath(path);
@@ -543,6 +554,12 @@ export class PlayScene extends Phaser.Scene {
   private stageClear(): void {
     this.phase = GamePhase.CLEAR;
 
+    // Clear bonus (+500) and time bonus (remainingSec * 10)
+    this.score += 500;
+    const remainingSec = Math.max(0, (this.stageConfig.timeLimit * 1000 - this.elapsedMs) / 1000);
+    this.score += Math.round(remainingSec * 10);
+    this.emitScore();
+
     this.cameras.main.flash(400, 255, 255, 200);
 
     // Emit events
@@ -666,6 +683,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.tweens.killAll();
     this.tileContainers = [];
     this.selectionHighlight = null;
     this.pathGraphics = null;
