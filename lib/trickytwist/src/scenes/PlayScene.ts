@@ -477,7 +477,9 @@ export class PlayScene extends Phaser.Scene {
         alpha: 0,
         duration: 1000 + Math.random() * 500,
         ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          if (p && p.active) p.destroy();
+        },
       });
     }
 
@@ -498,6 +500,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown() {
+    this.tweens.killAll();
     this.timerEvent?.remove();
     this.timerEvent = null;
     this.choiceButtons.forEach((b) => b.destroy());
