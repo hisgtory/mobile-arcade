@@ -8,12 +8,6 @@
 import type { StageConfig, ItemData, ItemType } from '../types';
 import { ITEM_IMAGES } from '../types';
 
-let idCounter = 0;
-
-function nextId(): string {
-  return `item-${++idCounter}`;
-}
-
 /** Shuffle array in-place (Fisher-Yates) */
 function shuffle<T>(arr: T[]): T[] {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -37,12 +31,13 @@ export function generateBoard(config: StageConfig): {
   const itemCount = Math.min(totalItems, cols * rows);
 
   // Pick which types to use from all available
-  const availableTypes = Array.from({ length: Math.min(typeCount, ITEM_IMAGES.length) }, (_, i) => i);
+  const maxTypes = Math.min(typeCount, ITEM_IMAGES.length);
+  const availableTypes = Array.from({ length: maxTypes }, (_, i) => i);
   shuffle(availableTypes);
 
   // Pick target types (first N shuffled types)
-  const targetTypes = availableTypes.slice(0, targetCount);
-  const distractorTypes = availableTypes.slice(targetCount);
+  const targetTypes = availableTypes.slice(0, Math.min(targetCount, availableTypes.length));
+  const distractorTypes = availableTypes.slice(targetTypes.length);
 
   // Build items list: one of each target type, fill rest with distractors
   const itemTypes: ItemType[] = [];
@@ -53,13 +48,13 @@ export function generateBoard(config: StageConfig): {
   }
 
   // Fill rest with distractors
-  const remaining = itemCount - targetCount;
+  const remaining = itemCount - targetTypes.length;
   for (let i = 0; i < remaining; i++) {
     if (distractorTypes.length > 0) {
       itemTypes.push(distractorTypes[i % distractorTypes.length]);
     } else {
-      // fallback: use non-target types
-      itemTypes.push(availableTypes[targetCount + (i % Math.max(1, availableTypes.length - targetCount))]);
+      // fallback: reuse a random type if no distractors left
+      itemTypes.push(availableTypes[i % availableTypes.length]);
     }
   }
 
@@ -76,6 +71,7 @@ export function generateBoard(config: StageConfig): {
 
   const items: ItemData[] = [];
   const assignedTargetTypes = new Set<ItemType>();
+  let localIdCounter = 0;
 
   for (let i = 0; i < itemCount; i++) {
     const pos = positions[i];
@@ -87,7 +83,7 @@ export function generateBoard(config: StageConfig): {
     }
 
     items.push({
-      id: nextId(),
+      id: `item-${++localIdCounter}`,
       type,
       x: pos.x,
       y: pos.y,

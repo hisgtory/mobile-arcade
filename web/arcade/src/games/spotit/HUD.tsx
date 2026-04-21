@@ -86,6 +86,7 @@ interface HUDProps {
   stage: number;
   score: number;
   foundCount: number;
+  foundTypes: Set<number>;
   targetCount: number;
   remainingMs: number;
   targetTypes: ItemType[];
@@ -121,7 +122,7 @@ export function HUD({ stage, score, foundCount, targetCount, remainingMs, target
         {targetTypes.map((type, i) => {
           const imgKey = ITEM_IMAGES[type % ITEM_IMAGES.length];
           return (
-            <TargetIcon key={i} found={i < foundCount}>
+            <TargetIcon key={i} found={foundTypes.has(type)}>
               <TargetImg src={`/assets/tiles/${imgKey}.png`} alt={imgKey} />
             </TargetIcon>
           );

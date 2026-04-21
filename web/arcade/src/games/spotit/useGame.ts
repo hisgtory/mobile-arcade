@@ -20,11 +20,16 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
   const stageConfig = getStageConfig(stage);
   const [score, setScore] = useState(0);
-  const [foundCount, setFoundCount] = useState(0);
+  const [foundTypes, setFoundTypes] = useState<Set<number>>(new Set());
   const [targetCount] = useState(stageConfig.targetCount);
   const [targetTypes, setTargetTypes] = useState<ItemType[]>([]);
   const [remainingMs, setRemainingMs] = useState(stageConfig.timeLimit * 1000);
   const [hintCount, setHintCount] = useState(3);
+
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -36,9 +41,9 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     });
     gameRef.current = game;
 
-    game.events.on('item-found', (data: { foundCount: number; targetCount: number; score: number }) => {
+    game.events.on('item-found', (data: { foundCount: number; targetCount: number; score: number; foundTypes: number[] }) => {
       setScore(data.score);
-      setFoundCount(data.foundCount);
+      setFoundTypes(new Set(data.foundTypes));
     });
 
     game.events.on('wrong-tap', (data: { score: number }) => {
@@ -55,19 +60,19 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
     game.events.on('stage-clear', (data: { score: number; elapsedMs: number }) => {
       stageComplete({ stage, score: data.score, elapsedMs: data.elapsedMs, cleared: true });
-      onClear?.({ score: data.score, elapsedMs: data.elapsedMs, cleared: true });
+      onClearRef.current?.({ score: data.score, elapsedMs: data.elapsedMs, cleared: true });
     });
 
     game.events.on('game-over', (data: { score: number; elapsedMs: number }) => {
       stageComplete({ stage, score: data.score, elapsedMs: data.elapsedMs, cleared: false });
-      onGameOver?.({ score: data.score, elapsedMs: data.elapsedMs, cleared: false });
+      onGameOverRef.current?.({ score: data.score, elapsedMs: data.elapsedMs, cleared: false });
     });
 
     return () => {
       destroyGame(game);
       gameRef.current = null;
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   const doHint = () => {
     if (hintCount <= 0) return;
@@ -81,7 +86,8 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   return {
     containerRef,
     score,
-    foundCount,
+    foundCount: foundTypes.size,
+    foundTypes,
     targetCount,
     targetTypes,
     remainingMs,

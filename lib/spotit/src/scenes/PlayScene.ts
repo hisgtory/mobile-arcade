@@ -45,9 +45,10 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { stage?: number; gameConfig?: GameConfig }): void {
-    this.stageNum = data?.stage ?? 1;
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__spotitConfig;
+  init(data: { stage?: number }): void {
+    const gameConfig = this.game.registry.get('spotitConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
   }
 
   preload(): void {
@@ -58,7 +59,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr = this.game.registry.get('dpr') || 1;
     const { width, height } = this.scale;
 
     // Reset state
@@ -110,14 +111,16 @@ export class PlayScene extends Phaser.Scene {
       this.itemObjects.push(item);
     }
 
-    // Start timer
-    this.startTime = Date.now();
+    // Start timer using scene clock
+    this.startTime = this.time.now;
     this.timerEvent = this.time.addEvent({
       delay: 200,
       loop: true,
       callback: this.onTimerTick,
       callbackScope: this,
     });
+
+    this.events.on('shutdown', this.shutdown, this);
 
     // Emit initial state
     this.emitItemFound();
@@ -180,7 +183,7 @@ export class PlayScene extends Phaser.Scene {
   private onTimerTick(): void {
     if (this.phase !== GamePhase.PLAYING) return;
 
-    this.elapsedMs = Date.now() - this.startTime;
+    this.elapsedMs = this.time.now - this.startTime;
     const remainingMs = Math.max(0, this.stageConfig.timeLimit * 1000 - this.elapsedMs);
 
     this.game.events.emit('time-update', {
@@ -199,7 +202,7 @@ export class PlayScene extends Phaser.Scene {
   private stageClear(): void {
     this.phase = GamePhase.CLEAR;
     if (this.timerEvent) this.timerEvent.remove();
-    this.elapsedMs = Date.now() - this.startTime;
+    this.elapsedMs = this.time.now - this.startTime;
 
     // Time bonus
     if (this.stageConfig.timeLimit > 0) {
@@ -218,7 +221,7 @@ export class PlayScene extends Phaser.Scene {
   private gameOver(): void {
     this.phase = GamePhase.GAME_OVER;
     if (this.timerEvent) this.timerEvent.remove();
-    this.elapsedMs = Date.now() - this.startTime;
+    this.elapsedMs = this.time.now - this.startTime;
 
     this.gameConfig?.onGameOver?.();
     this.game.events.emit('game-over', {
@@ -230,10 +233,15 @@ export class PlayScene extends Phaser.Scene {
   // ─── EMITTERS ──────────────────────────────────────────
 
   private emitItemFound(): void {
+    const foundTypes = this.itemDataList
+      .filter((d) => d.isTarget && d.found)
+      .map((d) => d.type);
+
     this.game.events.emit('item-found', {
       foundCount: this.foundCount,
       targetCount: this.stageConfig.targetCount,
       score: this.score,
+      foundTypes,
     });
   }
 
@@ -246,6 +254,7 @@ export class PlayScene extends Phaser.Scene {
   // ─── CLEANUP ──────────────────────────────────────────
 
   shutdown(): void {
+    this.tweens.killAll();
     if (this.timerEvent) {
       this.timerEvent.remove();
       this.timerEvent = undefined;
