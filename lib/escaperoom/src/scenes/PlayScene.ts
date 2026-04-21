@@ -37,6 +37,8 @@ export class PlayScene extends Phaser.Scene {
   private inventoryContainers: Phaser.GameObjects.Container[] = [];
   private codeSlots: Phaser.GameObjects.Container[] = [];
   private puzzleGroup: Phaser.GameObjects.Container | null = null;
+  private puzzleButton: Phaser.GameObjects.Container | null = null;
+  private discoveredObjects: Set<number> = new Set();
 
   constructor() {
     super({ key: 'PlayScene' });
@@ -54,10 +56,13 @@ export class PlayScene extends Phaser.Scene {
     this.phase = 'exploring';
     this.score = 0;
     this.attempts = 0;
+    this.discoveredObjects.clear();
 
     this.drawRoom();
     this.drawInventory();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -97,6 +102,10 @@ export class PlayScene extends Phaser.Scene {
     // Clear previous
     this.objectContainers.forEach((c) => c.destroy());
     this.objectContainers = [];
+    if (this.puzzleButton) {
+      this.puzzleButton.destroy();
+      this.puzzleButton = null;
+    }
 
     const positions = this.getObjectLayout();
     const scale = this.dpr;
@@ -108,6 +117,7 @@ export class PlayScene extends Phaser.Scene {
 
       const isClueObj = isClue(this.stageConfig, idx);
       const collected = isCollected(this.room, idx);
+      const discovered = this.discoveredObjects.has(idx);
 
       // Background card
       const bg = this.add.graphics();
@@ -117,14 +127,14 @@ export class PlayScene extends Phaser.Scene {
         bg.fillRoundedRect(-objW / 2, -objW / 2, objW, objW, 10 * scale);
         bg.lineStyle(2 * scale, 0x22c55e, 0.6);
         bg.strokeRoundedRect(-objW / 2, -objW / 2, objW, objW, 10 * scale);
-      } else if (isClueObj) {
-        // Clue not yet collected — subtle glow
+      } else if (discovered && isClueObj) {
+        // Clue discovered but not collected — subtle glow
         bg.fillStyle(0xfef3c7, 1);
         bg.fillRoundedRect(-objW / 2, -objW / 2, objW, objW, 10 * scale);
         bg.lineStyle(2 * scale, 0xf59e0b, 0.5);
         bg.strokeRoundedRect(-objW / 2, -objW / 2, objW, objW, 10 * scale);
       } else {
-        // Regular object
+        // Regular object or undiscovered clue
         bg.fillStyle(0xf3f4f6, 1);
         bg.fillRoundedRect(-objW / 2, -objW / 2, objW, objW, 10 * scale);
         bg.lineStyle(1.5 * scale, 0xd1d5db, 1);
@@ -167,6 +177,10 @@ export class PlayScene extends Phaser.Scene {
     // Clear previous
     this.inventoryContainers.forEach((c) => c.destroy());
     this.inventoryContainers = [];
+    if (this.puzzleButton) {
+      this.puzzleButton.destroy();
+      this.puzzleButton = null;
+    }
 
     const scale = this.dpr;
     const w = DEFAULT_WIDTH * this.dpr;
@@ -231,12 +245,12 @@ export class PlayScene extends Phaser.Scene {
     const x = w / 2;
     const y = h - 100 * scale;
 
-    const btn = this.add.container(x, y);
+    this.puzzleButton = this.add.container(x, y);
 
     const bg = this.add.graphics();
     bg.fillStyle(0x2563eb, 1);
     bg.fillRoundedRect(-btnW / 2, -btnH / 2, btnW, btnH, 12 * scale);
-    btn.add(bg);
+    this.puzzleButton.add(bg);
 
     const fontSize = Math.round(16 * scale);
     const label = this.add.text(0, 0, '🔓 Solve Puzzle', {
@@ -244,17 +258,14 @@ export class PlayScene extends Phaser.Scene {
       color: '#ffffff',
       fontStyle: 'bold',
     }).setOrigin(0.5, 0.5);
-    btn.add(label);
+    this.puzzleButton.add(label);
 
     const hitArea = this.add
       .rectangle(0, 0, btnW + 8 * scale, btnH + 8 * scale)
       .setInteractive()
       .setAlpha(0.001);
     hitArea.on('pointerdown', () => this.openPuzzle());
-    btn.add(hitArea);
-
-    // Store to clean up
-    this.objectContainers.push(btn);
+    this.puzzleButton.add(hitArea);
   }
 
   // ─── Puzzle Panel ─────────────────────────────────────
@@ -430,6 +441,8 @@ export class PlayScene extends Phaser.Scene {
   private onObjectTap(idx: number) {
     if (this.phase !== 'exploring') return;
     if (this.room.solved) return;
+
+    this.discoveredObjects.add(idx);
 
     if (!isClue(this.stageConfig, idx)) {
       // Not a clue — shake
@@ -618,5 +631,24 @@ export class PlayScene extends Phaser.Scene {
       collected: this.room.collectedClues.length,
       total: this.stageConfig.clueIndices.length,
     });
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
+    this.objectContainers.forEach((c) => c.destroy());
+    this.objectContainers = [];
+    this.inventoryContainers.forEach((c) => c.destroy());
+    this.inventoryContainers = [];
+    this.codeSlots.forEach((c) => c.destroy());
+    this.codeSlots = [];
+    if (this.puzzleGroup) {
+      this.puzzleGroup.destroy();
+      this.puzzleGroup = null;
+    }
+    if (this.puzzleButton) {
+      this.puzzleButton.destroy();
+      this.puzzleButton = null;
+    }
+    this.discoveredObjects.clear();
   }
 }

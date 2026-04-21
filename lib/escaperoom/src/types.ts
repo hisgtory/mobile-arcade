@@ -67,6 +67,7 @@ export function getStageConfig(stage: number): StageConfig {
 
   if (stage <= configs.length) return configs[stage - 1];
   // Beyond stage 5: cycle themes with increasing clues
+  // TODO: Scale difficulty (objectCount, clueCount) for later stages
   const base = configs[(stage - 1) % configs.length];
   return { ...base, stage };
 }
