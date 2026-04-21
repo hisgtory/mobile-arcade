@@ -30,12 +30,13 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
       antialias: false,
       roundPixels: true,
     },
-    scene: [PlayScene],
+    scene: [],
   });
 
-  (game as any).__brainoutConfig = config;
-  (game as any).__dpr = dpr;
+  game.registry.set('brainoutConfig', config);
+  game.registry.set('dpr', dpr);
 
+  game.scene.add('PlayScene', PlayScene);
   game.scene.start('PlayScene', { stage: startStage });
 
   return game;

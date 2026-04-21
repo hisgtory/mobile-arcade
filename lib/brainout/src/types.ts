@@ -47,8 +47,8 @@ export interface StageConfig {
   stage: number;
   /** Puzzle IDs for this stage (5 puzzles per stage) */
   puzzleIds: number[];
-  /** Time limit in seconds (0 = no limit) */
-  timeLimit: number;
+  /** Lives available (errors allowed) */
+  lives: number;
   /** Hints available */
   hints: number;
 }

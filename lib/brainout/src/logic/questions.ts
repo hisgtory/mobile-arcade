@@ -469,8 +469,8 @@ export const PUZZLES: Puzzle[] = [
       { id: 'c', label: '7', x: 0.6, y: 0.5 },
       { id: 'd', label: '9', x: 0.8, y: 0.5 },
     ],
-    correctIds: ['c'],
-    explanation: '3+(3÷3)+(3×3)-3 = 3+1+9-3 = 10... 아니, 정확히 계산하면 7!',
+    correctIds: ['b'],
+    explanation: '3+(3÷3)+(3×3)-3 = 3+1+9-3 = 10!',
     difficulty: 3,
   },
   {
@@ -767,9 +767,4 @@ export function getPuzzlesForStage(stageNum: number): Puzzle[] {
 /** Get a single puzzle by id */
 export function getPuzzleById(id: number): Puzzle | undefined {
   return PUZZLES.find((p) => p.id === id);
-}
-
-/** Total number of stages available */
-export function getTotalStages(): number {
-  return Math.ceil(PUZZLES.length / 5);
 }

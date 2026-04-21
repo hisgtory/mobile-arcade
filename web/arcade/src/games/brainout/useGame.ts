@@ -25,6 +25,11 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const [totalPuzzles, setTotalPuzzles] = useState(5);
   const [currentHint, setCurrentHint] = useState('');
 
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -44,19 +49,19 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
     game.events.on('stage-clear', (data: { score: number; puzzlesSolved: number }) => {
       stageComplete({ stage, score: data.score, cleared: true });
-      onClear?.({ score: data.score, puzzlesSolved: data.puzzlesSolved, cleared: true });
+      onClearRef.current?.({ score: data.score, puzzlesSolved: data.puzzlesSolved, cleared: true });
     });
 
     game.events.on('game-over', (data: { score: number }) => {
       stageComplete({ stage, score: data.score, cleared: false });
-      onGameOver?.({ score: data.score, cleared: false });
+      onGameOverRef.current?.({ score: data.score, cleared: false });
     });
 
     return () => {
       gameRef.current = null;
       destroyGame(game);
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   const doHint = useCallback(() => {
     if (!gameRef.current) return;
