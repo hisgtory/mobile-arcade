@@ -53,13 +53,15 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { stage?: number; gameConfig?: GameConfig }): void {
-    this.stageNum = data?.stage ?? 1;
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__puzzle3goConfig;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    const gameConfig = this.game.registry.get('puzzle3goConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr = this.game.registry.get('dpr') || 1;
     const { width, height } = this.scale;
 
     // Reset state
@@ -112,6 +114,8 @@ export class PlayScene extends Phaser.Scene {
     // Emit initial state
     this.emitMoves();
     this.emitScore();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── COORDINATE HELPERS ──────────────────────────────
@@ -257,15 +261,18 @@ export class PlayScene extends Phaser.Scene {
 
     this.emitScore();
 
+    // Remove from data immediately to stay in sync
+    removeCells(this.board, allCells);
+
     // Animate destroy
     const destroyPromises = allCells.map(
       ({ row, col }) =>
         new Promise<void>((res) => {
           const tile = this.tileGrid[row][col];
           if (tile) {
+            this.tileGrid[row][col] = null;
             tile.animateDestroy(() => {
               tile.destroy();
-              this.tileGrid[row][col] = null;
               res();
             });
           } else {
@@ -275,25 +282,22 @@ export class PlayScene extends Phaser.Scene {
     );
     await Promise.all(destroyPromises);
 
-    // Remove from data
-    removeCells(this.board, allCells);
-
     // Gravity
     const gravityMoves = applyGravity(this.board);
 
-    // Animate gravity
-    const gravityPromises = gravityMoves.map(({ from, to }) => {
-      const tile = this.tileGrid[from.row][from.col];
-      if (tile) {
+    // Animate gravity - process in order to ensure tileGrid consistency
+    const gravityPromises: Promise<void>[] = [];
+    for (const { from, to } of gravityMoves) {
+      const item = this.tileGrid[from.row][from.col];
+      if (item) {
         this.tileGrid[from.row][from.col] = null;
-        this.tileGrid[to.row][to.col] = tile;
-        tile.gridRow = to.row;
-        tile.gridCol = to.col;
+        this.tileGrid[to.row][to.col] = item;
+        item.gridRow = to.row;
+        item.gridCol = to.col;
         const pos = this.gridToPixel(to.row, to.col);
-        return new Promise<void>((res) => tile.animateMoveTo(pos.x, pos.y, () => res()));
+        gravityPromises.push(new Promise<void>((res) => item.animateMoveTo(pos.x, pos.y, () => res())));
       }
-      return Promise.resolve();
-    });
+    }
     await Promise.all(gravityPromises);
 
     // Fill empty
@@ -358,6 +362,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown(): void {
+    this.tweens.killAll();
     this.tileGrid = [];
   }
 }

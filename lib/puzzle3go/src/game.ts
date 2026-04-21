@@ -10,8 +10,8 @@ const DEFAULT_WIDTH = 390;
 const DEFAULT_HEIGHT = 560;
 
 export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Game {
-  const startStage = config?.stage ?? 1;
   const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const startStage = config?.stage ?? 1;
 
   const game = new Phaser.Game({
     type: Phaser.AUTO,
@@ -26,16 +26,17 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
       height: DEFAULT_HEIGHT * dpr,
     },
     render: {
-      pixelArt: false,
-      antialias: true,
+      pixelArt: true,
+      antialias: false,
       roundPixels: true,
     },
-    scene: [PlayScene],
+    scene: [],
   });
 
-  (game as any).__puzzle3goConfig = config;
-  (game as any).__dpr = dpr;
+  game.registry.set('puzzle3goConfig', config);
+  game.registry.set('dpr', dpr);
 
+  game.scene.add('PlayScene', PlayScene);
   game.scene.start('PlayScene', { stage: startStage });
 
   return game;

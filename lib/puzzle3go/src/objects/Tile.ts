@@ -5,21 +5,7 @@
  */
 
 import Phaser from 'phaser';
-import { HWATU_TILES, type TileType } from '../types';
-
-/** Background colors for each 화투 tile type */
-const TILE_COLORS: number[] = [
-  0xfce4ec,  // 1월 핑크
-  0xe8f5e9,  // 2월 연초록
-  0xf3e5f5,  // 3월 연보라
-  0xfff3e0,  // 4월 연주황
-  0xe0f2f1,  // 5월 연청록
-  0xfff9c4,  // 6월 연노랑
-  0xefebe9,  // 7월 연갈색
-  0xe3f2fd,  // 8월 연파랑
-  0xfbe9e7,  // 9월 연살구
-  0xffe0b2,  // 10월 연오렌지
-];
+import { TILE_EMOJIS, TILE_COLORS, type TileType } from '../types';
 
 export class Tile extends Phaser.GameObjects.Container {
   public tileType: TileType;
@@ -52,7 +38,7 @@ export class Tile extends Phaser.GameObjects.Container {
     this.add(this.bg);
 
     // Emoji icon
-    const emoji = HWATU_TILES[type % HWATU_TILES.length];
+    const emoji = TILE_EMOJIS[type % TILE_EMOJIS.length];
     const fontSize = Math.floor(size * 0.5);
     this.icon = scene.add.text(0, 0, emoji, {
       fontSize: `${fontSize}px`,
@@ -66,7 +52,7 @@ export class Tile extends Phaser.GameObjects.Container {
 
   updateType(type: TileType): void {
     this.tileType = type;
-    const emoji = HWATU_TILES[type % HWATU_TILES.length];
+    const emoji = TILE_EMOJIS[type % TILE_EMOJIS.length];
     this.icon.setText(emoji);
     const bgColor = TILE_COLORS[type % TILE_COLORS.length];
     this.bg.setFillStyle(bgColor, 1);
