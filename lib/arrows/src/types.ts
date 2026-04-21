@@ -28,7 +28,6 @@ export const DIR_LABELS: Record<Dir, string> = {
 export interface Cell {
   dir: Dir;
   fixed: boolean;
-  visited: boolean;
 }
 
 // ─── Board State ─────────────────────────────────────────

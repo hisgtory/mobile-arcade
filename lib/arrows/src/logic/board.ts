@@ -41,19 +41,30 @@ function generateHamiltonianPath(
   function getNeighborsSorted(r: number, c: number): [number, number][] {
     const neighbors = getNeighbors(r, c);
     neighbors.sort((a, b) => {
+      // Temporary mark a as visited to get accurate degree for b
+      visited[a[0]][a[1]] = true;
       const countA = getNeighbors(a[0], a[1]).length;
+      visited[a[0]][a[1]] = false;
+
+      visited[b[0]][b[1]] = true;
       const countB = getNeighbors(b[0], b[1]).length;
+      visited[b[0]][b[1]] = false;
+
       return countA - countB;
     });
+
     // Add small randomness: swap equal-degree neighbors
     for (let i = 0; i < neighbors.length - 1; i++) {
       const ni = neighbors[i], nj = neighbors[i + 1];
+      
       visited[ni[0]][ni[1]] = true;
-      visited[nj[0]][nj[1]] = true;
       const ci = getNeighbors(ni[0], ni[1]).length;
-      const cj = getNeighbors(nj[0], nj[1]).length;
       visited[ni[0]][ni[1]] = false;
+
+      visited[nj[0]][nj[1]] = true;
+      const cj = getNeighbors(nj[0], nj[1]).length;
       visited[nj[0]][nj[1]] = false;
+
       if (ci === cj && Math.random() < 0.3) {
         [neighbors[i], neighbors[i + 1]] = [neighbors[i + 1], neighbors[i]];
       }
@@ -93,7 +104,7 @@ function dirFromDelta(dr: number, dc: number): Dir {
 
 // ─── Board Creation ──────────────────────────────────────
 
-const MAX_BOARD_GENERATION_ATTEMPTS = 50;
+const MAX_BOARD_GENERATION_ATTEMPTS = 200;
 
 export function createBoard(config: StageConfig): BoardState {
   const { rows, cols, fixedRatio } = config;
@@ -107,7 +118,6 @@ export function createBoard(config: StageConfig): BoardState {
       Array.from({ length: cols }, () => ({
         dir: Dir.RIGHT,
         fixed: false,
-        visited: false,
       })),
     );
 
@@ -123,11 +133,12 @@ export function createBoard(config: StageConfig): BoardState {
       solutionDirs[r][c] = dir;
       cells[r][c].dir = dir;
     }
-    // Last cell — direction doesn't matter for path, pick random
+    // Last cell — direction doesn't matter, but make it fixed so user doesn't have to guess
     const lastCell = path[path.length - 1];
     const lastDir = Math.floor(Math.random() * 4) as Dir;
     solutionDirs[lastCell[0]][lastCell[1]] = lastDir;
     cells[lastCell[0]][lastCell[1]].dir = lastDir;
+    cells[lastCell[0]][lastCell[1]].fixed = true;
 
     // Determine which cells to fix
     const total = rows * cols;
@@ -138,9 +149,9 @@ export function createBoard(config: StageConfig): BoardState {
     const startCol = path[0][1];
     cells[startRow][startCol].fixed = true;
 
-    // Fix additional cells randomly (excluding start)
+    // Fix additional cells randomly (excluding start and end)
     const indices: number[] = [];
-    for (let i = 1; i < total; i++) {
+    for (let i = 1; i < total - 1; i++) {
       const [r, c] = path[i];
       indices.push(r * cols + c);
     }
@@ -149,8 +160,8 @@ export function createBoard(config: StageConfig): BoardState {
       const j = Math.floor(Math.random() * (i + 1));
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
-    // Fix up to fixedCount - 1 more cells (start already fixed)
-    for (let i = 0; i < Math.min(fixedCount - 1, indices.length); i++) {
+    // Fix up to fixedCount - 2 more cells (start and end already fixed)
+    for (let i = 0; i < Math.min(fixedCount - 2, indices.length); i++) {
       const idx = indices[i];
       const r = Math.floor(idx / cols);
       const c = idx % cols;
@@ -170,7 +181,35 @@ export function createBoard(config: StageConfig): BoardState {
     return { rows, cols, cells, startRow, startCol };
   }
 
-  throw new Error(`Failed to create board after ${MAX_BOARD_GENERATION_ATTEMPTS} attempts`);
+  // Graceful fallback for emergency
+  return createEmergencyBoard();
+}
+
+function createEmergencyBoard(): BoardState {
+  const rows = 3;
+  const cols = 3;
+  const cells: Cell[][] = Array.from({ length: rows }, () =>
+    Array.from({ length: cols }, () => ({
+      dir: Dir.RIGHT,
+      fixed: true,
+    })),
+  );
+  // Simple snake path 3x3
+  cells[0][0].dir = Dir.RIGHT;
+  cells[0][1].dir = Dir.RIGHT;
+  cells[0][2].dir = Dir.DOWN;
+  cells[1][2].dir = Dir.LEFT;
+  cells[1][1].dir = Dir.LEFT;
+  cells[1][0].dir = Dir.DOWN;
+  cells[2][0].dir = Dir.RIGHT;
+  cells[2][1].dir = Dir.RIGHT;
+  cells[2][2].dir = Dir.UP;
+  
+  // Make some unfixed and scramble
+  cells[0][1].fixed = false;
+  cells[0][1].dir = Dir.UP;
+
+  return { rows, cols, cells, startRow: 0, startCol: 0 };
 }
 
 // ─── Path Tracing ────────────────────────────────────────
