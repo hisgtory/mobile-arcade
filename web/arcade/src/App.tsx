@@ -46,6 +46,39 @@ const PlayLayout = styled('div', {
   overflow: 'hidden',
 });
 
+const GameTitle = styled('h1', {
+  fontSize: 48,
+  fontWeight: 800,
+  color: '#111827',
+  letterSpacing: -1,
+  variants: {
+    size: {
+      large: { fontSize: 48 },
+      medium: { fontSize: 36 },
+    },
+  },
+});
+
+const GameDescription = styled('p', {
+  fontSize: 16,
+  color: '#6B7280',
+});
+
+const PrimaryButton = styled('button', {
+  marginTop: 32,
+  backgroundColor: '#2563EB',
+  color: '#fff',
+  border: 'none',
+  padding: '16px 48px',
+  borderRadius: 16,
+  fontSize: 20,
+  fontWeight: 700,
+  cursor: 'pointer',
+  '&:hover': {
+    backgroundColor: '#1D4ED8',
+  },
+});
+
 const isRN = typeof window !== 'undefined' && typeof window.ReactNativeWebView !== 'undefined';
 
 // ─── Found3 Routes ─────────────────────────────────────
@@ -313,14 +346,11 @@ function TidyMasterTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tidy Master</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Sort items into the right shelves!</p>
-      <button
-        onClick={() => navigate('/games/tidymaster/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
+      <GameTitle>Tidy Master</GameTitle>
+      <GameDescription>Sort items into the right shelves!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/tidymaster/v1/stage/1')}>
         Play
-      </button>
+      </PrimaryButton>
     </PlayLayout>
   );
 }
