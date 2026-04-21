@@ -46,17 +46,23 @@ export class PlayScene extends Phaser.Scene {
   private pickableHighlights: Phaser.GameObjects.Graphics[] = [];
   private moveHistory: BoardState[] = [];
 
+  private stageNum: number = 1;
+  private gameConfig?: GameConfig;
+
   constructor() {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    const gameConfig = this.game.registry.get('busjamConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
   }
 
   create() {
-    const stage = this.config.stage ?? 1;
+    this.dpr = this.game.registry.get('dpr') || 1;
+    const stage = this.stageNum;
     const stageConfig = getStageConfig(stage);
     this.board = createBoard(stageConfig);
     this.phase = 'idle';
@@ -66,6 +72,8 @@ export class PlayScene extends Phaser.Scene {
 
     this.drawAll();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Drawing ──────────────────────────────────────────
@@ -80,6 +88,18 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private clearAll() {
+    this.busGraphics.forEach((c) => c.destroy());
+    this.busGraphics = [];
+    this.boardingGraphics.forEach((c) => c.destroy());
+    this.boardingGraphics = [];
+    this.queueGraphics.forEach((c) => c.destroy());
+    this.queueGraphics = [];
+    this.pickableHighlights.forEach((g) => g.destroy());
+    this.pickableHighlights = [];
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
     this.busGraphics.forEach((c) => c.destroy());
     this.busGraphics = [];
     this.boardingGraphics.forEach((c) => c.destroy());
@@ -436,7 +456,9 @@ export class PlayScene extends Phaser.Scene {
         alpha: 0,
         duration: 1000 + Math.random() * 500,
         ease: 'Cubic.easeOut',
-        onComplete: () => p.destroy(),
+        onComplete: () => {
+          if (p && p.active) p.destroy();
+        },
       });
     }
 
@@ -461,7 +483,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   public restart() {
-    this.scene.restart({ config: this.config, dpr: this.dpr });
+    this.scene.restart({ stage: this.stageNum });
   }
 
   // ─── Helpers ──────────────────────────────────────────
