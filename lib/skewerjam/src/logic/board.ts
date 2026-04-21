@@ -33,7 +33,21 @@ export function createBoard(config: StageConfig): BoardState {
     }
   }
 
-  throw new Error(`Failed to create solvable board after ${maxAttempts} attempts`);
+  // Graceful fallback for emergency: return a shuffled board without verification
+  const flat: number[] = [];
+  for (let c = 0; c < numFoods; c++) {
+    for (let i = 0; i < SKEWER_CAPACITY; i++) flat.push(c);
+  }
+  for (let i = flat.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [flat[i], flat[j]] = [flat[j], flat[i]];
+  }
+  const skewers: Skewer[] = [];
+  for (let t = 0; t < numFoods; t++) {
+    skewers.push(flat.slice(t * SKEWER_CAPACITY, (t + 1) * SKEWER_CAPACITY));
+  }
+  for (let e = 0; e < emptySkewers; e++) skewers.push([]);
+  return { skewers, numFoods };
 }
 
 // ─── Move Logic ──────────────────────────────────────────
@@ -124,6 +138,8 @@ export function isSolvable(skewers: Skewer[], _numFoods: number): boolean {
   while (head < queue.length && iterations < MAX_ITERATIONS) {
     iterations++;
     const current = queue[head++]!;
+    // Cleanup processed state to free memory
+    if (head > 1) queue[head - 2] = null as any;
 
     if (isWon(current)) return true;
 

@@ -19,10 +19,14 @@ export function createGame(
       autoCenter: Phaser.Scale.CENTER_BOTH,
     },
     render: { antialias: true, roundPixels: true },
-    scene: [PlayScene],
+    scene: [],
   });
 
-  game.scene.start('PlayScene', { config, dpr });
+  game.registry.set('skewerjamConfig', config);
+  game.registry.set('dpr', dpr);
+
+  game.scene.add('PlayScene', PlayScene);
+  game.scene.start('PlayScene', { stage: config?.stage ?? 1 });
 
   return game;
 }

@@ -8,6 +8,7 @@ import {
   type BoardState,
   type MoveAction,
   type GameConfig,
+  type StageConfig,
 } from '../types';
 import { createBoard, canMove, executeMove, isWon, isSkewerSolved } from '../logic/board';
 
@@ -25,14 +26,16 @@ type GamePhase = 'idle' | 'moving' | 'celebrating';
 
 export class PlayScene extends Phaser.Scene {
   private board!: BoardState;
-  private config!: GameConfig;
+  private gameConfig?: GameConfig;
+  private stageNum: number = 1;
+  private stageConfig!: StageConfig;
   private dpr = 1;
 
   // Visual
   private skewerContainers: Phaser.GameObjects.Container[] = [];
   private selectedSkewer: number | null = null;
   private phase: GamePhase = 'idle';
-  private moveHistory: { skewers: number[][]; from: number; to: number }[] = [];
+  private moveHistory: { skewers: number[][]; from: number; to: number; score: number }[] = [];
   private score = 0;
   private moves = 0;
   private solvedSkewers = new Set<number>();
@@ -42,17 +45,20 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry for better type safety
+    const gameConfig = this.game.registry.get('skewerjamConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
+    this.dpr = this.game.registry.get('dpr') || 1;
   }
 
   preload() {
-    const stage = this.config.stage ?? 1;
-    const stageConfig = getStageConfig(stage);
+    const stage = this.stageNum;
+    this.stageConfig = getStageConfig(stage);
     this.foodTextures = [];
 
-    for (let i = 0; i < stageConfig.numFoods; i++) {
+    for (let i = 0; i < this.stageConfig.numFoods; i++) {
       const food = FOOD_TYPES[i % FOOD_TYPES.length];
       const key = `food_${i}`;
       this.foodTextures.push(key);
@@ -63,9 +69,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create() {
-    const stage = this.config.stage ?? 1;
-    const stageConfig = getStageConfig(stage);
-    this.board = createBoard(stageConfig);
+    this.board = createBoard(this.stageConfig);
     this.selectedSkewer = null;
     this.phase = 'idle';
     this.moveHistory = [];
@@ -75,6 +79,8 @@ export class PlayScene extends Phaser.Scene {
 
     this.drawBoard();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -271,11 +277,13 @@ export class PlayScene extends Phaser.Scene {
       skewers: this.board.skewers.map((s) => [...s]),
       from: move.from,
       to: move.to,
+      score: this.score,
     });
 
     const srcSkewer = this.board.skewers[move.from];
     const scale = this.dpr;
     const itemSz = ITEM_SIZE * scale;
+    const itemGap = ITEM_GAP * scale;
     const skewerH = SKEWER_HEIGHT * scale;
     const srcPos = this.getSkewerLayout()[move.from];
     const dstPos = this.getSkewerLayout()[move.to];
@@ -285,7 +293,10 @@ export class PlayScene extends Phaser.Scene {
     for (let i = 0; i < move.count; i++) {
       const foodIdx = srcSkewer[srcSkewer.length - 1 - i];
       const textureKey = this.foodTextures[foodIdx];
-      const startY = srcPos.y - skewerH / 2 - 10 * scale - i * (itemSz + 4 * scale);
+      
+      // Fixed startY to align with drawBoard items
+      const srcIdx = srcSkewer.length - 1 - i;
+      const startY = srcPos.y + skewerH / 2 - 18 * scale - srcIdx * (itemSz + itemGap) - itemSz / 2;
 
       let item: Phaser.GameObjects.GameObject;
       if (textureKey && this.textures.exists(textureKey)) {
@@ -311,7 +322,6 @@ export class PlayScene extends Phaser.Scene {
     // Animate flying items to destination
     const dstSkewer = this.board.skewers[move.to];
     const dstTopIndex = dstSkewer.length;
-    const itemGap = ITEM_GAP * scale;
 
     flyItems.forEach((item, i) => {
       const targetIdx = dstTopIndex - move.count + i;
@@ -437,7 +447,7 @@ export class PlayScene extends Phaser.Scene {
       this.game.events.emit('stage-clear', {
         score: this.score,
         moves: this.moves,
-        stage: this.config.stage ?? 1,
+        stage: this.stageNum,
       });
     });
   }
@@ -448,6 +458,7 @@ export class PlayScene extends Phaser.Scene {
     if (this.phase !== 'idle' || this.moveHistory.length === 0) return;
     const prev = this.moveHistory.pop()!;
     this.board.skewers = prev.skewers;
+    this.score = prev.score;
     this.moves = Math.max(0, this.moves - 1);
 
     // Recalculate solved skewers
@@ -462,7 +473,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   public restart() {
-    this.scene.restart({ config: this.config, dpr: this.dpr });
+    this.scene.restart({ stage: this.stageNum });
   }
 
   // ─── Events ───────────────────────────────────────────
@@ -470,5 +481,11 @@ export class PlayScene extends Phaser.Scene {
   private emitState() {
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('moves-update', { moves: this.moves });
+  }
+
+  shutdown() {
+    this.tweens.killAll();
+    this.skewerContainers.forEach((c) => c.destroy());
+    this.skewerContainers = [];
   }
 }
