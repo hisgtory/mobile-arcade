@@ -33,7 +33,7 @@ const GRID_BG_COLOR = 0xf3f4f6;
 export class PlayScene extends Phaser.Scene {
   private gameConfig?: GameConfig;
   private stageConfig!: StageConfig;
-  private phase: GamePhase = GamePhase.PLAYING;
+  public phase: GamePhase = GamePhase.PLAYING;
   private board!: Board;
   private score: number = 0;
   private movesLeft: number = 0;
@@ -55,6 +55,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
     this.gameConfig = (this.game as any).__blockyquestConfig;
     const stage = data?.stage ?? this.gameConfig?.stage ?? 1;
     this.stageConfig = getStageConfig(stage);
@@ -109,6 +110,8 @@ export class PlayScene extends Phaser.Scene {
 
     this.emitScore();
     this.emitMoves();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // -- PIECE SLOTS --
@@ -420,9 +423,17 @@ export class PlayScene extends Phaser.Scene {
   }
 
   shutdown(): void {
-    this.pieceSlots = [];
+    this.tweens.killAll();
+    this.gridCells.forEach((row) => row.forEach((cell) => cell.destroy()));
     this.gridCells = [];
+    this.pieceSlots.forEach((slot) => slot.destroy());
+    this.pieceSlots = [];
+    this.highlightRects.forEach((rect) => rect.destroy());
     this.highlightRects = [];
+    if (this.dragPiece) {
+      this.dragPiece.destroy();
+      this.dragPiece = null;
+    }
   }
 }
 
@@ -470,6 +481,7 @@ class PieceSlot {
     this.container.add(hitArea);
 
     hitArea.on('dragstart', () => {
+      if ((this.scene as PlayScene).phase !== GamePhase.PLAYING) return;
       this.onDragStart?.();
     });
 
