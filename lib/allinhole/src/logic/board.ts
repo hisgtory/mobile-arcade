@@ -23,6 +23,7 @@ function seededRandom(seed: number): () => number {
 
 /** Create a new board layout with holes, walls, and balls */
 export function createBoard(config: StageConfig): { grid: Grid; balls: BallData[] } {
+  // TODO: validate solvability after generation (BFS/DFS check)
   const { rows, cols, ballCount, holeCount, wallCount, stage } = config;
   const rng = seededRandom(stage * 1000 + rows * 100 + cols);
 

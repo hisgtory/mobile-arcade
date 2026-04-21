@@ -22,6 +22,11 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const [remaining, setRemaining] = useState(stageConfig.ballCount);
   const [total] = useState(stageConfig.ballCount);
 
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -42,19 +47,19 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
 
     game.events.on('stage-clear', (data: { movesUsed: number }) => {
       stageComplete({ stage, score: data.movesUsed, cleared: true });
-      onClear?.({ movesUsed: data.movesUsed, cleared: true });
+      onClearRef.current?.({ movesUsed: data.movesUsed, cleared: true });
     });
 
     game.events.on('game-over', (data: { movesUsed: number }) => {
       stageComplete({ stage, score: data.movesUsed, cleared: false });
-      onGameOver?.({ movesUsed: data.movesUsed, cleared: false });
+      onGameOverRef.current?.({ movesUsed: data.movesUsed, cleared: false });
     });
 
     return () => {
       destroyGame(game);
       gameRef.current = null;
     };
-  }, [stage, onClear, onGameOver]);
+  }, [stage]);
 
   return {
     containerRef,

@@ -50,9 +50,11 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { stage?: number; gameConfig?: GameConfig }): void {
-    this.stageNum = data?.stage ?? 1;
-    this.gameConfig = data?.gameConfig ?? (this.game as any).__allinHoleConfig;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    const gameConfig = this.game.registry.get('allinHoleConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
   }
 
   preload(): void {
@@ -60,7 +62,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create(): void {
-    const dpr = (this.game as any).__dpr || 1;
+    const dpr = this.game.registry.get('dpr') || 1;
     const { width, height } = this.scale;
 
     // Reset state
@@ -116,6 +118,8 @@ export class PlayScene extends Phaser.Scene {
     // Emit initial state
     this.emitMoves();
     this.emitBalls();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── COORDINATE HELPERS ──────────────────────────────
@@ -292,6 +296,10 @@ export class PlayScene extends Phaser.Scene {
   // ─── UTILS ──────────────────────────────────────────────
 
   shutdown(): void {
+    this.tweens.killAll();
+    this.input.off('pointerdown');
+    this.input.off('pointerup');
+    this.events.off('shutdown', this.shutdown, this);
     this.ballObjects.forEach((b) => b.destroy());
     this.ballObjects.clear();
     this.ballsData = [];

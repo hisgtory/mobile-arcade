@@ -8,8 +8,10 @@ const STAGES: StageConfig[] = [
   { stage: 5, rows: 7, cols: 7, maxMoves: 20, ballCount: 7, holeCount: 7, wallCount: 8 },
 ];
 
+export const TOTAL_STAGES = STAGES.length;
+
 export function getStageConfig(stageNum: number): StageConfig {
   const n = Number.isFinite(stageNum) ? stageNum : 1;
   const idx = Math.max(0, Math.min(n - 1, STAGES.length - 1));
-  return { ...STAGES[idx] };
+  return { ...STAGES[idx], stage: n };
 }
