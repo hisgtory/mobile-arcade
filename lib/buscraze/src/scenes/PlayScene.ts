@@ -16,6 +16,7 @@ import {
   moveVehicle,
   getVehicleCells,
   canTargetExit,
+  isWon,
 } from '../logic/board';
 
 const VEHICLE_RADIUS = 6;
@@ -29,6 +30,8 @@ type GamePhase = 'idle' | 'dragging' | 'animating' | 'celebrating';
 export class PlayScene extends Phaser.Scene {
   private board!: BoardState;
   private config!: GameConfig;
+  private gameConfig?: GameConfig;
+  private stageNum: number = 1;
   private dpr = 1;
 
   // Visual
@@ -50,13 +53,16 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    const gameConfig = this.game.registry.get('buscrazeConfig') as GameConfig;
+    this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
+    this.gameConfig = gameConfig;
   }
 
   create() {
-    const stage = this.config.stage ?? 1;
+    this.dpr = this.game.registry.get('dpr') || 1;
+    const stage = this.stageNum;
     const stageConfig = getStageConfig(stage);
     this.board = createBoard(stageConfig);
     this.phase = 'idle';
@@ -71,6 +77,8 @@ export class PlayScene extends Phaser.Scene {
     this.drawExitArrow();
     this.setupInput();
     this.emitState();
+
+    this.events.on('shutdown', this.shutdown, this);
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -260,10 +268,11 @@ export class PlayScene extends Phaser.Scene {
     const sprite = this.vehicleSprites.get(vehicleId);
     if (!vehicle || !sprite) return;
 
-    const gap = GRID_GAP * this.dpr;
-    const radius = VEHICLE_RADIUS * this.dpr;
     const { x, y } = this.cellToPixel(vehicle.row, vehicle.col);
-
+    sprite.setPosition(x, y);
+    
+    // Position children relative to container (0,0)
+    const gap = GRID_GAP * this.dpr;
     let vw: number;
     let vh: number;
     if (vehicle.direction === 'horizontal') {
@@ -274,24 +283,22 @@ export class PlayScene extends Phaser.Scene {
       vh = vehicle.length * this.cellSize + (vehicle.length - 1) * gap;
     }
 
-    // Recreate the container's children at new position
-    sprite.removeAll(true);
+    // Children are body(0), highlight(1), text(2)
+    const body = sprite.getAt(0) as Phaser.GameObjects.Graphics;
+    const hl = sprite.getAt(1) as Phaser.GameObjects.Graphics;
+    const txt = sprite.getAt(2) as Phaser.GameObjects.Text;
 
-    const body = this.add.graphics();
+    body.clear();
     const hex = parseInt(vehicle.color.replace('#', ''), 16);
+    const radius = VEHICLE_RADIUS * this.dpr;
     body.fillStyle(hex, 1);
-    body.fillRoundedRect(x, y, vw, vh, radius);
+    body.fillRoundedRect(0, 0, vw, vh, radius);
 
-    const highlight = this.add.graphics();
-    highlight.fillStyle(0xffffff, 0.2);
-    highlight.fillRoundedRect(x + 2 * this.dpr, y + 2 * this.dpr, vw - 4 * this.dpr, vh * 0.35, { tl: radius, tr: radius, bl: 0, br: 0 });
+    hl.clear();
+    hl.fillStyle(0xffffff, 0.2);
+    hl.fillRoundedRect(2 * this.dpr, 2 * this.dpr, vw - 4 * this.dpr, vh * 0.35, { tl: radius, tr: radius, bl: 0, br: 0 });
 
-    const text = this.add.text(x + vw / 2, y + vh / 2, getVehicleLabel(vehicle), {
-      fontSize: `${Math.floor(this.cellSize * 0.5)}px`,
-    });
-    text.setOrigin(0.5, 0.5);
-
-    sprite.add([body, highlight, text]);
+    txt.setPosition(vw / 2, vh / 2);
   }
 
   // ─── Input Handling ───────────────────────────────────
@@ -416,7 +423,7 @@ export class PlayScene extends Phaser.Scene {
       this.phase = 'idle';
 
       // Check win
-      if (canTargetExit(this.board)) {
+      if (isWon(this.board)) {
         this.animateTargetExit();
       }
     });
@@ -555,5 +562,11 @@ export class PlayScene extends Phaser.Scene {
   private emitState() {
     this.game.events.emit('score-update', { score: this.score });
     this.game.events.emit('moves-update', { moves: this.moves });
+  }
+
+  shutdown(): void {
+    this.tweens.killAll();
+    this.vehicleSprites.forEach((s) => s.destroy());
+    this.vehicleSprites.clear();
   }
 }
