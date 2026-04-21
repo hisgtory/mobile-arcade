@@ -81,6 +81,6 @@ export function getStageConfig(stage: number): StageConfig {
 
   // Beyond stage 10: scale up, cap at 14×14
   const size = Math.min(9 + Math.floor((stage - 10) / 2), 14);
-  const numFlows = Math.min(Math.floor(size * size * 0.14) + 3, 14);
+  const numFlows = Math.min(Math.floor(size * size * 0.14) + 3, FLOW_COLORS.length);
   return { stage, rows: size, cols: size, numFlows };
 }

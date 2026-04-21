@@ -185,11 +185,13 @@ function createFallbackBoard(
   }
 
   const totalCells = cells.length;
-  const segmentLen = Math.floor(totalCells / numFlows);
+  // Ensure each flow has at least 2 cells (start and end)
+  const safeNumFlows = Math.max(1, Math.min(numFlows, Math.floor(totalCells / 2)));
+  const segmentLen = Math.floor(totalCells / safeNumFlows);
 
-  for (let f = 0; f < numFlows; f++) {
+  for (let f = 0; f < safeNumFlows; f++) {
     const startIdx = f * segmentLen;
-    const endIdx = f === numFlows - 1 ? totalCells - 1 : (f + 1) * segmentLen - 1;
+    const endIdx = f === safeNumFlows - 1 ? totalCells - 1 : (f + 1) * segmentLen - 1;
     const start = cells[startIdx];
     const end = cells[endIdx];
 
@@ -257,7 +259,8 @@ export function isWon(board: BoardState): boolean {
   for (const flow of board.flows) {
     if (!isFlowComplete(board, flow.colorIndex)) return false;
   }
-  return true;
+  // Original Flow Free requirement: all cells must be covered
+  return getCoveredCount(board) === board.rows * board.cols;
 }
 
 /** Get total pipe coverage percentage */

@@ -284,14 +284,11 @@ function PixelFlowTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Pixel Flow</h1>
-      <p style={{ fontSize: 16, color: '#6B7280' }}>Connect the dots, fill the grid!</p>
-      <button
-        onClick={() => navigate('/games/pixelflow/v1/stage/1')}
-        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
-      >
+      <GameTitle>Pixel Flow</GameTitle>
+      <GameDescription>Connect the dots, fill the grid!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/pixelflow/v1/stage/1')}>
         Play
-      </button>
+      </PrimaryButton>
     </PlayLayout>
   );
 }

@@ -43,6 +43,7 @@ export class PlayScene extends Phaser.Scene {
   private score = 0;
   private completedFlows = new Set<number>();
   private moveHistory: { colorIndex: number; path: Coord[] }[] = [];
+  private occupancyMap: Map<string, number> = new Map();
 
   constructor() {
     super({ key: 'PlayScene' });
@@ -63,6 +64,7 @@ export class PlayScene extends Phaser.Scene {
     this.score = 0;
     this.completedFlows = new Set();
     this.moveHistory = [];
+    this.updateOccupancyMap();
 
     this.calculateLayout();
 
@@ -77,13 +79,20 @@ export class PlayScene extends Phaser.Scene {
     this.emitState();
 
     // Input handlers
-    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) =>
-      this.onPointerDown(pointer),
-    );
-    this.input.on('pointermove', (pointer: Phaser.Input.Pointer) =>
-      this.onPointerMove(pointer),
-    );
-    this.input.on('pointerup', () => this.onPointerUp());
+    this.input.on('pointerdown', this.onPointerDown, this);
+    this.input.on('pointermove', this.onPointerMove, this);
+    this.input.on('pointerup', this.onPointerUp, this);
+
+    this.events.on('shutdown', this.shutdown, this);
+  }
+
+  private updateOccupancyMap() {
+    this.occupancyMap.clear();
+    for (const [colorIndex, path] of this.board.paths) {
+      for (const coord of path) {
+        this.occupancyMap.set(`${coord.row},${coord.col}`, colorIndex);
+      }
+    }
   }
 
   // ─── Layout ───────────────────────────────────────────
@@ -265,6 +274,7 @@ export class PlayScene extends Phaser.Scene {
 
       // Clear existing path for this color
       this.board.paths.set(colorIndex, [cell]);
+      this.updateOccupancyMap();
       this.completedFlows.delete(colorIndex);
       this.activeColor = colorIndex;
       this.phase = 'drawing';
@@ -287,6 +297,7 @@ export class PlayScene extends Phaser.Scene {
 
         // Trim path to this point
         this.board.paths.set(colorIndex, path.slice(0, idx + 1));
+        this.updateOccupancyMap();
         this.completedFlows.delete(colorIndex);
         this.activeColor = colorIndex;
         this.phase = 'drawing';
@@ -321,6 +332,7 @@ export class PlayScene extends Phaser.Scene {
       if (prev.row === cell.row && prev.col === cell.col) {
         // Backtrack: remove last cell
         path.pop();
+        this.updateOccupancyMap();
         this.drawPaths();
         this.drawEndpoints();
         return;
@@ -333,9 +345,9 @@ export class PlayScene extends Phaser.Scene {
     );
     if (existsInPath >= 0) return;
 
-    // Check if cell is occupied by another flow's path
-    const occupiedBy = isCellOccupied(this.board, cell, this.activeColor);
-    if (occupiedBy !== null) {
+    // Check if cell is occupied by another flow's path using cache
+    const occupiedBy = this.occupancyMap.get(`${cell.row},${cell.col}`);
+    if (occupiedBy !== undefined && occupiedBy !== this.activeColor) {
       // Clear the conflicting path back to before this cell
       const otherPath = this.board.paths.get(occupiedBy);
       if (otherPath) {
@@ -344,6 +356,7 @@ export class PlayScene extends Phaser.Scene {
         );
         if (conflictIdx >= 0) {
           this.board.paths.set(occupiedBy, otherPath.slice(0, conflictIdx));
+          this.updateOccupancyMap();
           this.completedFlows.delete(occupiedBy);
         }
       }
@@ -357,6 +370,7 @@ export class PlayScene extends Phaser.Scene {
 
     // Add cell to path
     path.push(cell);
+    this.updateOccupancyMap();
 
     // Check if we've reached the other endpoint
     if (
@@ -500,6 +514,7 @@ export class PlayScene extends Phaser.Scene {
     const prev = this.moveHistory.pop()!;
     this.board.paths.set(prev.colorIndex, prev.path);
     this.moves = Math.max(0, this.moves - 1);
+    this.updateOccupancyMap();
 
     // Recalculate completed flows
     this.completedFlows.clear();
@@ -529,5 +544,13 @@ export class PlayScene extends Phaser.Scene {
       total: this.board.flows.length,
       coverage,
     });
+  }
+
+  shutdown() {
+    this.tweens.killAll();
+    this.input.off('pointerdown');
+    this.input.off('pointermove');
+    this.input.off('pointerup');
+    this.occupancyMap.clear();
   }
 }
