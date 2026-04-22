@@ -84,6 +84,10 @@ import { useGame as useCandyFriendsGame, type GameResult as CandyFriendsResult }
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── Anipang3 ───
+import { ClearScreen as Anipang3Clear } from './games/anipang3/ClearScreen';
+import { HUD as Anipang3HUD } from './games/anipang3/HUD';
+import { useGame as useAnipang3Game, type GameResult as Anipang3Result } from './games/anipang3/useGame';
 // ─── SaveDoge ───
 import { ClearScreen as SaveDogeClear } from './games/savedoge/ClearScreen';
 import { HUD as SaveDogeHUD } from './games/savedoge/HUD';
@@ -993,6 +997,65 @@ function TrickyPrankPlaying({ stage, onClear, onGameOver }: { stage: number; onC
 // ─── Root ──────────────────────────────────────────────
 import { getRegisteredRoutes } from './router';
 
+// ─── Anipang3 Routes ──────────────────────────────────
+
+function Anipang3TitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Anipang 3</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Swipe & match cute animals!</p>
+      <button
+        onClick={() => navigate('/games/anipang3/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#F97316', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+    </PlayLayout>
+  );
+}
+
+function Anipang3StageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<Anipang3Result | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: Anipang3Result) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: Anipang3Result) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/anipang3/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/anipang3/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <Anipang3Clear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <Anipang3Playing key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function Anipang3Playing({ stage, onClear, onGameOver }: { stage: number; onClear: (r: Anipang3Result) => void; onGameOver: (r: Anipang3Result) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useAnipang3Game({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <Anipang3HUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
+// ─── Root ──────────────────────────────────────────────
+
 export function App() {
   globalStyles();
   return (
@@ -1036,6 +1099,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* Anipang3 */}
+      <Route path="/games/anipang3/v1" element={<Anipang3TitleRoute />} />
+      <Route path="/games/anipang3/v1/stage/:stageId" element={<Anipang3StageRoute />} />
       {/* DreamStore */}
       <Route path="/games/dreamstore/v1" element={<DreamStoreTitleRoute />} />
       <Route path="/games/dreamstore/v1/stage/:stageId" element={<DreamStoreStageRoute />} />
