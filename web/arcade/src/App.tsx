@@ -60,6 +60,10 @@ import { useGame as useCandyFriendsGame, type GameResult as CandyFriendsResult }
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── MatchFactory ───
+import { ClearScreen as MatchFactoryClear } from './games/matchfactory/ClearScreen';
+import { HUD as MatchFactoryHUD } from './games/matchfactory/HUD';
+import { useGame as useMatchFactoryGame, type GameResult as MatchFactoryResult } from './games/matchfactory/useGame';
 // ─── TrickyPrank ───
 import { ClearScreen as TrickyPrankClear } from './games/trickyprank/ClearScreen';
 import { HUD as TrickyPrankHUD } from './games/trickyprank/HUD';
@@ -560,6 +564,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── MatchFactory Routes ──────────────────────────────
+
+function MatchFactoryTitleRoute() {
 // ─── TrickyPrank Routes ───────────────────────────────
 
 function TrickyPrankTitleRoute() {
@@ -567,6 +574,15 @@ function TrickyPrankTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Match Factory</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Swipe & match to fill orders!</p>
+      <button
+        onClick={() => navigate('/games/matchfactory/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
       <GameTitle>Tricky Prank</GameTitle>
       <GameDescription>Think outside the box! 🧩</GameDescription>
       <PrimaryButton onClick={() => navigate('/games/trickyprank/v1/stage/1')}>
@@ -576,11 +592,40 @@ function TrickyPrankTitleRoute() {
   );
 }
 
+function MatchFactoryStageRoute() {
 function TrickyPrankStageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<MatchFactoryResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: MatchFactoryResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: MatchFactoryResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/matchfactory/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/matchfactory/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <MatchFactoryClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <MatchFactoryPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function MatchFactoryPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: MatchFactoryResult) => void; onGameOver: (r: MatchFactoryResult) => void }) {
+  const { containerRef, score, combo, movesLeft, orders } = useMatchFactoryGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <MatchFactoryHUD stage={stage} score={score} movesLeft={movesLeft} combo={combo} orders={orders} />
   const [gameResult, setGameResult] = useState<TrickyPrankResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -648,6 +693,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* MatchFactory */}
+      <Route path="/games/matchfactory/v1" element={<MatchFactoryTitleRoute />} />
+      <Route path="/games/matchfactory/v1/stage/:stageId" element={<MatchFactoryStageRoute />} />
       {/* Screwdom */}
       <Route path="/games/screwdom/v1" element={<ScrewdomTitleRoute />} />
       <Route path="/games/screwdom/v1/stage/:stageId" element={<ScrewdomStageRoute />} />

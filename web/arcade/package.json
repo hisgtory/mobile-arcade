@@ -18,6 +18,7 @@
     "@arcade/lib-pixelflow": "workspace:*",
     "@arcade/lib-tangledrope": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
+    "@arcade/lib-matchfactory": "workspace:*",
     "@arcade/lib-screwdom": "workspace:*",
     "@arcade/lib-trickyprank": "workspace:*",
     "@arcade/lib-candyfriends": "workspace:*",
