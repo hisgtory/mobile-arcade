@@ -123,6 +123,70 @@
 
 ---
 
+# Requirements — Block Rush (#119)
+
+## Game Concept
+- **Block Rush**: 10x10 블록 퍼즐 (1010!/Woodoku 스타일)
+- 드래그 앤 드롭으로 피스 배치, 가로/세로 라인 클리어
+- Endless 게임 (스테이지 없음)
+
+## Juice Effects
+- Screen shake, particle burst, combo text ("Nice!", "Great!", "Awesome!", "AMAZING!")
+- Placement pop, consecutive clear multiplier
+- Game over: shake + fade → result screen
+
+---
+
+# Requirements — Water Sort (#58)
+
+## Game Concept
+- **Water Sort**: 탭으로 튜브 선택 → 다른 튜브에 부어넣기
+- 같은 색만 부을 수 있음, 빈 튜브에도 가능
+- 모든 튜브를 단색으로 정리하면 클리어
+
+## Stage Progression
+- Stage 1: 3색 + 빈 2개 = 5튜브
+- Stage 5: 7색 + 빈 2개 = 9튜브
+- BFS 솔버로 풀 수 있는 레벨만 생성
+
+## Features
+- Undo/Restart 지원
+- Tube lift 선택 효과, pour arc 애니메이션, 완성 파티클, 클리어 confetti
+
+---
+
+# Requirements — Tic Tac Toe (#118)
+
+## Game Concept
+- **Tic Tac Toe**: 플레이어(X) vs AI(O) 클래식 XO
+- Minimax AI (3단계: easy/medium/hard)
+- Endless 라운드 (Play Again으로 계속)
+
+## Grid Scaling (#136) — 구현 완료 (PR #195)
+- 연승 0~2 → 3x3(3줄), 3~5 → 4x4(4줄), 6+ → 5x5(4줄)
+- 패배/무승부 시 연승 리셋 → 그리드 다운그레이드
+- Depth-limited alpha-beta pruning (4x4 depth 6, 5x5 depth 4)
+- 그리드 업그레이드 시 "4x4!" 애니메이션 + 햅틱
+
+---
+
+# Requirements — Make 10 (#99)
+
+## Game Concept
+- **Make 10 (사과게임)**: 10x17 그리드에 랜덤 숫자 1-9
+- 드래그 사각형 선택 → 합이 10이면 클리어
+- 타이머 없음 — 더 이상 합 10 불가 시 게임 오버
+
+## Design
+- 셀 크기 최대화 (패딩 최소)
+- 선택 피드백: 빨간색(유효) / 회색(무효)
+- 결과 화면: "No More Moves" 또는 "Perfect Clear!" + Play Again
+
+## Planned Variant (#137)
+- **Make 10 Flow**: 중력 + 위에서 리필, endless 모드
+
+---
+
 # Requirements — Issue-Driven Development
 
 ## Workflow
@@ -130,3 +194,13 @@
 - 브랜치: `feat/issue-{N}-description` or `fix/issue-{N}-description`
 - 커밋: `feat: description (#N)` + PR에 `Closes #N`
 - 변경 시 이슈에 댓글 먼저 → 그 다음 코드 수정
+
+---
+
+# Requirements — Phaser→React 비교 실험 (2026-03-30)
+
+## 목적
+기존 9개 게임을 각각 `{game}-react` 버전으로 클론하여 Phaser vs React+Stitches 성능/스타일링 유연성 비교. 디자인 외주 후 반영 용이성 평가.
+
+## 이슈
+- #203~#211 발행 (게임별 React 클론 이슈)

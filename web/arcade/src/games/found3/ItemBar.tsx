@@ -2,7 +2,7 @@ import { styled } from '../../styles/stitches.config';
 import { IconShuffle } from './icons/IconShuffle';
 import { IconUndo } from './icons/IconUndo';
 import { IconHint } from './icons/IconHint';
-import type { ItemType } from '../../hooks/useGame';
+import type { ItemType } from './useGame';
 
 const Root = styled('div', {
   display: 'flex',
