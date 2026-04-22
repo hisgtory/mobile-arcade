@@ -76,6 +76,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── Tangram ───
+import { ClearScreen as TangramClear } from './games/tangram/ClearScreen';
+import { HUD as TangramHUD } from './games/tangram/HUD';
+import { useGame as useTangramGame, type GameResult as TangramResult } from './games/tangram/useGame';
 // ─── PixelArt ───
 import { ClearScreen as PixelArtClear } from './games/pixelart/ClearScreen';
 import { HUD as PixelArtHUD } from './games/pixelart/HUD';
@@ -730,6 +734,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Tangram Routes ───────────────────────────────────
+
+function TangramTitleRoute() {
 // ─── PixelArt Routes ──────────────────────────────────
 
 function PixelArtTitleRoute() {
@@ -765,6 +772,10 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tangram</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Fill the silhouette with triangle pieces!</p>
+      <button
+        onClick={() => navigate('/games/tangram/v1/stage/1')}
       <GameTitle>Pixel Art</GameTitle>
       <GameDescription>Number coloring puzzle! 🎨</GameDescription>
       <PrimaryButton onClick={() => navigate('/games/pixelart/v1/stage/1')}>
@@ -794,6 +805,7 @@ function BrainOutTitleRoute() {
   );
 }
 
+function TangramStageRoute() {
 function PixelArtStageRoute() {
 function BlockyQuestStageRoute() {
 function ToonBlastStageRoute() {
@@ -804,6 +816,31 @@ function BrainOutStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<TangramResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: TangramResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/tangram/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/tangram/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <TangramClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <TangramPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function TangramPlaying({ stage, onClear }: { stage: number; onClear: (r: TangramResult) => void }) {
+  const { containerRef, score, moves, doReset, doRestart } = useTangramGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <TangramHUD stage={stage} score={score} moves={moves} onReset={doReset} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<PixelArtResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -2079,6 +2116,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* Tangram */}
+      <Route path="/games/tangram/v1" element={<TangramTitleRoute />} />
+      <Route path="/games/tangram/v1/stage/:stageId" element={<TangramStageRoute />} />
       {/* PixelArt */}
       <Route path="/games/pixelart/v1" element={<PixelArtTitleRoute />} />
       <Route path="/games/pixelart/v1/stage/:stageId" element={<PixelArtStageRoute />} />

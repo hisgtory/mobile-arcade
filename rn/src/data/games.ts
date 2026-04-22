@@ -78,6 +78,13 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'tangram',
+    name: 'Tangram',
+    description: 'Fill the silhouette with triangle pieces!',
+    icon: '🔺',
+    category: 'puzzle',
+    color: '#8B5CF6',
+    webPath: '/games/tangram/v1',
     id: 'skewerjam',
     name: 'Skewer Jam',
     description: 'Sort food on skewers!',
