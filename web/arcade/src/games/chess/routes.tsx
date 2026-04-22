@@ -14,6 +14,13 @@ const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string }[] =
   { value: 'hard', label: 'Hard', desc: 'Challenging' },
 ];
 
+function parseDifficulty(value: string | null): Difficulty {
+  if (value === 'easy' || value === 'medium' || value === 'hard') {
+    return value;
+  }
+  return 'medium';
+}
+
 function ChessHomeRoute() {
   const navigate = useNavigate();
   const [selected, setSelected] = useState<Difficulty>('medium');
@@ -55,7 +62,7 @@ function ChessHomeRoute() {
 
 function ChessPlayRoute() {
   const [params] = useSearchParams();
-  const difficulty = (params.get('difficulty') as Difficulty | null) ?? 'medium';
+  const difficulty = parseDifficulty(params.get('difficulty'));
   const { containerRef, turn, status, playerWins, aiWins, draws, whiteMaterial, blackMaterial } =
     useChessGame({ difficulty });
   return (
