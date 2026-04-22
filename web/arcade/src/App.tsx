@@ -39,6 +39,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── Anipang4 ───
+import { ClearScreen as Anipang4Clear } from './games/anipang4/ClearScreen';
+import { HUD as Anipang4HUD } from './games/anipang4/HUD';
+import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from './games/anipang4/useGame';
+
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
@@ -288,6 +293,64 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── Anipang4 Routes ──────────────────────────────────
+
+function Anipang4TitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Anipang 4</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Match tiles before time runs out!</p>
+      <button
+        onClick={() => navigate('/games/anipang4/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
+    </PlayLayout>
+  );
+}
+
+function Anipang4StageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<Anipang4Result | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: Anipang4Result) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: Anipang4Result) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/anipang4/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/anipang4/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <Anipang4Clear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <Anipang4Playing key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function Anipang4Playing({ stage, onClear, onGameOver }: { stage: number; onClear: (r: Anipang4Result) => void; onGameOver: (r: Anipang4Result) => void }) {
+  const { containerRef, score, combo, timeLeft, targetScore } = useAnipang4Game({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <Anipang4HUD stage={stage} score={score} targetScore={targetScore} timeLeft={timeLeft} combo={combo} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
 // ─── TicTacToe Routes ─────────────────────────────────
 
 function TicTacToeTitleRoute() {
@@ -317,6 +380,7 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Root ──────────────────────────────────────────────
 // ─── BrainOut Routes ──────────────────────────────────
 
 function BrainOutTitleRoute() {
@@ -1434,6 +1498,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* Anipang4 */}
+      <Route path="/games/anipang4/v1" element={<Anipang4TitleRoute />} />
+      <Route path="/games/anipang4/v1/stage/:stageId" element={<Anipang4StageRoute />} />
       {/* BusCraze */}
       <Route path="/games/buscraze/v1" element={<BusCrazeTitleRoute />} />
       <Route path="/games/buscraze/v1/stage/:stageId" element={<BusCrazeStageRoute />} />
