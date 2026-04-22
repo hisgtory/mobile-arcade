@@ -91,7 +91,7 @@ export class PlayScene extends Phaser.Scene {
     const padding = 20 * dpr;
     const boardW = width - padding * 2;
     const boardH = height - padding * 2;
-    const gap = 2;
+    const _gap = 2;
     this.tileSize = Math.floor(
       Math.min(
         boardW / this.stageConfig.cols,
