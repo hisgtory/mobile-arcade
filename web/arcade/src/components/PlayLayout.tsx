@@ -1,5 +1,6 @@
 import { styled } from '../styles/stitches.config';
 
+export const PlayLayout = styled('div', {
 export const PlayLayout: ReturnType<typeof styled> = styled('div', {
   width: '100%',
   height: '100vh',
