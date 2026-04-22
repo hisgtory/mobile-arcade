@@ -43,10 +43,19 @@ import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from 
 import { ClearScreen as TangledRopeClear } from './games/tangledrope/ClearScreen';
 import { HUD as TangledRopeHUD } from './games/tangledrope/HUD';
 import { useGame as useTangledRopeGame, type GameResult as TangledRopeResult } from './games/tangledrope/useGame';
+// ─── CandyFriends ───
+import { ClearScreen as CandyFriendsClear } from './games/candyfriends/ClearScreen';
+import { HUD as CandyFriendsHUD } from './games/candyfriends/HUD';
+import { useGame as useCandyFriendsGame, type GameResult as CandyFriendsResult } from './games/candyfriends/useGame';
 
 // ─── TicTacToe ───
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
+
+// ─── TrickyPrank ───
+import { ClearScreen as TrickyPrankClear } from './games/trickyprank/ClearScreen';
+import { HUD as TrickyPrankHUD } from './games/trickyprank/HUD';
+import { useGame as useTrickyPrankGame, type GameResult as TrickyPrankResult } from './games/trickyprank/useGame';
 
 const PlayLayout = styled('div', {
   width: '100%',
@@ -55,6 +64,39 @@ const PlayLayout = styled('div', {
   flexDirection: 'column',
   backgroundColor: '$bg',
   overflow: 'hidden',
+});
+
+const GameTitle = styled('h1', {
+  fontSize: 48,
+  fontWeight: 800,
+  color: '#111827',
+  letterSpacing: -1,
+  variants: {
+    size: {
+      large: { fontSize: 48 },
+      medium: { fontSize: 36 },
+    },
+  },
+});
+
+const GameDescription = styled('p', {
+  fontSize: 16,
+  color: '#6B7280',
+});
+
+const PrimaryButton = styled('button', {
+  marginTop: 32,
+  backgroundColor: '#2563EB',
+  color: '#fff',
+  border: 'none',
+  padding: '16px 48px',
+  borderRadius: 16,
+  fontSize: 20,
+  fontWeight: 700,
+  cursor: 'pointer',
+  '&:hover': {
+    backgroundColor: '#1D4ED8',
+  },
 });
 
 const isRN = typeof window !== 'undefined' && typeof window.ReactNativeWebView !== 'undefined';
@@ -119,6 +161,11 @@ function Crunch3TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Crunch 3</GameTitle>
+      <GameDescription>Swipe & match 3 to crush!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/crunch3/v1/stage/1')}>
+        Play
+      </PrimaryButton>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Crunch 3</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Swipe & match 3 to crush!</p>
       <button
@@ -177,6 +224,11 @@ function BlockRushTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Block Rush</GameTitle>
+      <GameDescription>Fill lines to clear the board!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/blockrush/v1/play')}>
+        Play
+      </PrimaryButton>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Block Rush</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Fill lines to clear the board!</p>
       <button
@@ -241,6 +293,11 @@ function WaterSortTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Water Sort</GameTitle>
+      <GameDescription>Sort the colors into tubes!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/watersort/v1/stage/1')}>
+        Play
+      </PrimaryButton>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Water Sort</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Sort the colors into tubes!</p>
       <button
@@ -291,6 +348,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
 // ─── TangledRope Routes ───────────────────────────────
 
 function TangledRopeTitleRoute() {
+// ─── CandyFriends Routes ──────────────────────────────
+
+function CandyFriendsTitleRoute() {
   const navigate = useNavigate();
   globalStyles();
   return (
@@ -303,11 +363,21 @@ function TangledRopeTitleRoute() {
       >
         Play
       </button>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Candy Friends</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Match 3 sweet candies!</p>
+      <button
+        onClick={() => navigate('/games/candyfriends/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#EC4899', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
     </PlayLayout>
   );
 }
 
 function TangledRopeStageRoute() {
+function CandyFriendsStageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
@@ -337,6 +407,34 @@ function TangledRopePlaying({ stage, onClear }: { stage: number; onClear: (r: Ta
   return (
     <PlayLayout>
       <TangledRopeHUD stage={stage} moves={moves} intersections={intersections} onUndo={doUndo} onRestart={doRestart} />
+  const [gameResult, setGameResult] = useState<CandyFriendsResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: CandyFriendsResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: CandyFriendsResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/candyfriends/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/candyfriends/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <CandyFriendsClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <CandyFriendsPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function CandyFriendsPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: CandyFriendsResult) => void; onGameOver: (r: CandyFriendsResult) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useCandyFriendsGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <CandyFriendsHUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>
   );
@@ -349,6 +447,11 @@ function TicTacToeTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Tic Tac Toe</GameTitle>
+      <GameDescription>Beat the AI in classic XO!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/tictactoe/v1/play')}>
+        Play
+      </PrimaryButton>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tic Tac Toe</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Beat the AI in classic XO!</p>
       <button
@@ -366,6 +469,60 @@ function TicTacToePlayRoute() {
   return (
     <PlayLayout>
       <TicTacToeHUD playerScore={playerScore} aiScore={aiScore} />
+      <GameCanvas ref={containerRef} />
+    </PlayLayout>
+  );
+}
+
+// ─── TrickyPrank Routes ───────────────────────────────
+
+function TrickyPrankTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Tricky Prank</GameTitle>
+      <GameDescription>Think outside the box! 🧩</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/trickyprank/v1/stage/1')}>
+        Play
+      </PrimaryButton>
+    </PlayLayout>
+  );
+}
+
+function TrickyPrankStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const stage = parseInt(stageId || '1', 10);
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<TrickyPrankResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: TrickyPrankResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: TrickyPrankResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/trickyprank/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/trickyprank/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <TrickyPrankClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <TrickyPrankPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function TrickyPrankPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: TrickyPrankResult) => void; onGameOver: (r: TrickyPrankResult) => void }) {
+  const { containerRef, attempts, doHint } = useTrickyPrankGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <TrickyPrankHUD stage={stage} attempts={attempts} onHint={doHint} />
       <GameCanvas ref={containerRef} />
     </PlayLayout>
   );
@@ -401,6 +558,13 @@ export function App() {
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
+
+      {/* TrickyPrank */}
+      <Route path="/games/trickyprank/v1" element={<TrickyPrankTitleRoute />} />
+      <Route path="/games/trickyprank/v1/stage/:stageId" element={<TrickyPrankStageRoute />} />
+      {/* CandyFriends */}
+      <Route path="/games/candyfriends/v1" element={<CandyFriendsTitleRoute />} />
+      <Route path="/games/candyfriends/v1/stage/:stageId" element={<CandyFriendsStageRoute />} />
 
       {/* Default */}
       {getRegisteredRoutes().map((route) => (
