@@ -32,17 +32,17 @@
 
 ## Project Overview
 
-모바일 미니게임 모노레포. `lib/{game}` → `web/{game}` → `{game}/rn` 파이프라인 구조.
+모바일 미니게임 모노레포. `lib/{game}` → `web/{game}` → `rn` 파이프라인 구조.
 
 - `lib/{game}`: Phaser.io 기반 게임 코어 로직
 - `web/{game}`: React + TypeScript + Stitches로 웹 게임 빌드 (lib 사용)
-- `{game}/rn`: React Native 앱에서 WebView로 웹 게임 래핑
+- `rn`: React Native 슈퍼앱에서 WebView로 웹 게임 래핑 (단일 앱)
 
 ## Architecture
 
 ```
-lib/{game}  →  web/{game}  →  {game}/rn
-(Phaser.io)   (React+Stitches) (RN WebView)
+lib/{game}  →  web/{game}  →  rn
+(Phaser.io)   (React+Stitches) (RN WebView 슈퍼앱)
 ```
 
 의존성 방향: `lib` ← `web` ← `rn`
@@ -54,7 +54,7 @@ lib/{game}  →  web/{game}  →  {game}/rn
 | PRD | `prd/` | 게임 기획, 요구사항, 게임 디자인 |
 | Game Core | `lib/{game}/` | Phaser.io 씬, 게임 로직, 타입 |
 | Web Frontend | `web/{game}/` | React + Stitches UI, Phaser 통합 |
-| RN App | `{game}/rn/` | React Native, WebView 브릿지 |
+| RN App | `rn/` | React Native, WebView 브릿지 |
 | Knowledge | `knowledge/` | 요구사항, 결정, 유저 bias, 진행 상황 기록 |
 
 각 teammate는 자신의 `CLAUDE.md`와 `TASKS.md`를 따릅니다.
@@ -111,8 +111,45 @@ lib/{game}  →  web/{game}  →  {game}/rn
 1. `prd/{name}.md` 기획서 작성 (PRD 팀)
 2. `lib/{name}/` 게임 코어 구현 (Game Core 팀)
 3. `web/{name}/` 웹 게임 빌드 (Web Frontend 팀)
-4. `{name}/rn/` RN 앱 래핑 (RN App 팀)
+4. `rn/`에 게임 WebView 연동 (RN App 팀 — 단일 슈퍼앱)
 5. 루트 `pnpm-workspace.yaml`에 패키지 등록
+6. **햅틱 이벤트 필수 추가** (아래 Haptic 가이드 참고)
+
+## Haptic Feedback (필수)
+
+**모든 게임에 햅틱 피드백이 반드시 들어가야 한다.** 햅틱 없는 게임은 미완성이다.
+
+### 아키텍처 (ADR-014)
+
+```
+Web (useGame hook)              RN (bridge.ts)
+─────────────────               ──────────────────────
+bridge.haptic('event-name')  →  HAPTIC_PATTERNS 맵에서
+                                 이벤트 → 패턴 결정
+```
+
+- **웹은 이벤트명만 전달** — 스타일/횟수를 웹에서 결정하지 않음
+- **RN이 패턴 소유** — `rn/src/utils/bridge.ts`의 `HAPTIC_PATTERNS` 맵
+
+### 게임별 필수 햅틱 이벤트
+
+| 이벤트 시점 | 패턴 | 예시 |
+|-------------|------|------|
+| 유저 입력 (탭/스와이프) | Heavy × 1 | 타일 탭, 셀 선택, 피스 배치 |
+| 성공 클리어 | Heavy × 6 (60ms 간격) | 매치 클리어, 라인 클리어, 합 10 |
+| 게임 완료 | Heavy × 3 | 스테이지 클리어, 퍼펙트 |
+
+### 구현 방법
+
+1. **lib**: 게임 이벤트를 `this.game.events.emit('event-name')` 로 발행 (탭 시점에 즉시)
+2. **web useGame hook**: `bridge.haptic('event-name')` 호출
+3. **RN HAPTIC_PATTERNS**: 이벤트 → `{ style, count }` 매핑 추가
+
+### 주의사항
+
+- 유저 입력 햅틱은 **애니메이션 전** 즉시 발생해야 함 (딜레이 금지)
+- 웹에서 haptic 스타일/횟수를 직접 지정하지 말 것 (응집도↓ 결합도↑)
+- 새 이벤트 추가 = RN `HAPTIC_PATTERNS` 맵에 한 줄 추가
 
 ## Knowledge Management
 

@@ -1,0 +1,98 @@
+import { useRef, useEffect, useState, useCallback } from 'react';
+import { createGame, destroyGame, getPlayScene } from '@arcade/lib-getcolor';
+import { stageComplete, haptic } from '../../utils/bridge';
+
+export interface GameResult {
+  score: number;
+  moves: number;
+  stage: number;
+  cleared: boolean;
+  timeBonus?: number;
+  secondsLeft?: number;
+}
+
+interface UseGameOptions {
+  stage: number;
+  onClear?: (result: GameResult) => void;
+  onTimeout?: (result: GameResult) => void;
+}
+
+export function useGame({ stage, onClear, onTimeout }: UseGameOptions) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [score, setScore] = useState(0);
+  const [moves, setMoves] = useState(0);
+  const [timerSec, setTimerSec] = useState(0);
+  const [timerTotal, setTimerTotal] = useState(0);
+
+  const gameRef = useRef<ReturnType<typeof createGame> | null>(null);
+
+  // Stable refs for callbacks — avoids game re-creation on parent re-render
+  const onClearRef = useRef(onClear);
+  onClearRef.current = onClear;
+  const onTimeoutRef = useRef(onTimeout);
+  onTimeoutRef.current = onTimeout;
+
+  // Track start time for elapsedMs
+  const startTimeRef = useRef(0);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    startTimeRef.current = Date.now();
+
+    const game = createGame(containerRef.current, {
+      stage,
+    });
+    gameRef.current = game;
+
+    // Haptic events
+    game.events.on('tube-tapped', () => haptic('tube-tapped'));
+    game.events.on('tube-solved', () => haptic('tube-solved'));
+
+    // Unified state update
+    game.events.on('state-update', (data: { score: number; moves: number; phase: string; timeLeft: number }) => {
+      setScore(data.score);
+      setMoves(data.moves);
+    });
+
+    game.events.on('timer-update', (data: { remaining: number; total: number }) => {
+      setTimerSec(data.remaining);
+      setTimerTotal(data.total);
+    });
+
+    game.events.on('stage-clear', (data: { score: number; moves: number; stage: number; timeBonus: number; secondsLeft: number }) => {
+      const elapsedMs = Date.now() - startTimeRef.current;
+      const result: GameResult = {
+        score: data.score, moves: data.moves, stage: data.stage, cleared: true,
+        timeBonus: data.timeBonus, secondsLeft: data.secondsLeft,
+      };
+      stageComplete({ stage: data.stage, score: data.score, moves: data.moves, elapsedMs, cleared: true });
+      onClearRef.current?.(result);
+    });
+
+    game.events.on('stage-timeout', (data: { score: number; moves: number; stage: number }) => {
+      const elapsedMs = Date.now() - startTimeRef.current;
+      const result: GameResult = { score: data.score, moves: data.moves, stage: data.stage, cleared: false };
+      stageComplete({ stage: data.stage, score: data.score, moves: data.moves, elapsedMs, cleared: false });
+      onTimeoutRef.current?.(result);
+    });
+
+    return () => {
+      gameRef.current = null;
+      destroyGame(game);
+    };
+  }, [stage]);
+
+  const doUndo = useCallback(() => {
+    if (!gameRef.current) return;
+    const scene = getPlayScene(gameRef.current);
+    scene?.undo();
+  }, []);
+
+  const doRestart = useCallback(() => {
+    if (!gameRef.current) return;
+    const scene = getPlayScene(gameRef.current);
+    scene?.restart();
+  }, []);
+
+  return { containerRef, score, moves, timerSec, timerTotal, doUndo, doRestart };
+}
