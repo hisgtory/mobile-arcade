@@ -2,9 +2,10 @@
  * Individual tile component — styled with Stitches
  * Visual parity with lib/found3/src/objects/Tile.ts:
  *   - Pastel bg rectangle with 2px #cccccc border (0.6 opacity)
- *   - Pixel-art PNG icon (not emoji)
+ *   - Pixel-art PNG icon (16×16 with pixelated rendering)
  *   - Shadow for upper layers (layer >= 1)
  *   - Blocked tiles stay fully visible (only interaction blocked)
+ *   - Hint state: scale bounce animation (magnet power-up)
  */
 
 import React from 'react';
@@ -15,6 +16,11 @@ const popIn = keyframes({
   '0%': { transform: 'scale(0)', opacity: 0 },
   '70%': { transform: 'scale(1.1)' },
   '100%': { transform: 'scale(1)', opacity: 1 },
+});
+
+const hintBounce = keyframes({
+  '0%, 100%': { transform: 'scale(1)' },
+  '50%': { transform: 'scale(1.2)' },
 });
 
 const StyledTile = styled('button', {
@@ -50,12 +56,27 @@ const StyledTile = styled('button', {
         transform: 'scale(0.9)',
         boxShadow: '0 0 0 3px #3b82f6',
       },
+      hint: {
+        // Magnet highlight: scale bounce (matches Phaser doMagnet tween)
+        animation: `${hintBounce} 0.4s ease-in-out 3`,
+        cursor: 'pointer',
+      },
     },
   },
 
   defaultVariants: {
     state: 'active',
   },
+});
+
+const PixelIcon = styled('img', {
+  imageRendering: 'pixelated',
+  '-webkit-image-rendering': 'pixelated',
+  // Safari fallback: -webkit-optimize-contrast gives nearest-neighbor on WebKit
+  '@supports (-webkit-touch-callout: none)': {
+    imageRendering: '-webkit-optimize-contrast',
+  },
+  pointerEvents: 'none',
 });
 
 const Shadow = styled('div', {
@@ -66,7 +87,7 @@ const Shadow = styled('div', {
 
 interface TileProps {
   tileType: number;
-  state: 'active' | 'blocked' | 'selected';
+  state: 'active' | 'blocked' | 'selected' | 'hint';
   size: number;
   layer?: number;
   onClick?: () => void;
@@ -77,8 +98,9 @@ export const Tile: React.FC<TileProps> = ({ tileType, state, size, layer = 0, on
   const bgColor = TILE_COLORS[tileType % TILE_COLORS.length];
   const isBlocked = state === 'blocked';
 
-  // Match Phaser: icon size = min(40, size * 0.75)
-  const iconSize = Math.min(40, size * 0.75);
+  // Match Phaser: iconSize = min(40*dpr, size*0.75)
+  // In CSS pixels, dpr is handled by the browser. Use size * 0.75 directly.
+  const iconSize = Math.floor(size * 0.75);
 
   // Match Phaser: inner size = size - 4 (due to 2px border on each side)
   const innerSize = size - 4;
@@ -109,16 +131,11 @@ export const Tile: React.FC<TileProps> = ({ tileType, state, size, layer = 0, on
           }}
         />
       )}
-      <img
+      <PixelIcon
         src={`/assets/tiles/${imageKey}.png`}
         alt=""
         draggable={false}
-        style={{
-          width: iconSize,
-          height: iconSize,
-          imageRendering: 'pixelated',
-          pointerEvents: 'none',
-        }}
+        css={{ width: iconSize, height: iconSize }}
       />
     </StyledTile>
   );

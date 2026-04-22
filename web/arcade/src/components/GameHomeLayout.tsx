@@ -1,5 +1,6 @@
-import { type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { styled } from '../styles/stitches.config';
+import { globalStyles } from '../styles/global';
 import { navigateToArcade } from '../utils/bridge';
 
 const Container = styled('div', {
@@ -56,6 +57,7 @@ interface GameHomeLayoutProps {
 }
 
 export function GameHomeLayout({ title, icon, children }: GameHomeLayoutProps) {
+  globalStyles();
   return (
     <Container>
       <Header>
