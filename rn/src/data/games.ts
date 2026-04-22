@@ -78,6 +78,13 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'linedraw',
+    name: 'Line Draw',
+    description: 'Draw a path through every cell!',
+    icon: '✏️',
+    category: 'puzzle',
+    color: '#2563EB',
+    webPath: '/games/linedraw/v1',
     id: 'escaperoom',
     name: 'Escape Room',
     description: 'Find clues & solve puzzles to escape!',

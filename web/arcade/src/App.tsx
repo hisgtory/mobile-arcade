@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── LineDraw ───
+import { ClearScreen as LineDrawClear } from './games/linedraw/ClearScreen';
+import { HUD as LineDrawHUD } from './games/linedraw/HUD';
+import { useGame as useLineDrawGame, type GameResult as LineDrawResult } from './games/linedraw/useGame';
 // ─── EscapeRoom ───
 import { ClearScreen as EscapeRoomClear } from './games/escaperoom/ClearScreen';
 import { HUD as EscapeRoomHUD } from './games/escaperoom/HUD';
@@ -391,6 +395,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── LineDraw Routes ──────────────────────────────────
+
+function LineDrawTitleRoute() {
 // ─── EscapeRoom Routes ────────────────────────────────
 
 function EscapeRoomTitleRoute() {
@@ -437,6 +444,10 @@ function Anipang4TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Line Draw</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Draw a path through every cell!</p>
+      <button
+        onClick={() => navigate('/games/linedraw/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Escape Room</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Find clues & solve puzzles to escape!</p>
       <button
@@ -498,6 +509,7 @@ function Anipang4TitleRoute() {
   );
 }
 
+function LineDrawStageRoute() {
 function EscapeRoomStageRoute() {
 function FishdomStageRoute() {
 function CarJamStageRoute() {
@@ -551,6 +563,31 @@ function Anipang4StageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<LineDrawResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: LineDrawResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/linedraw/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/linedraw/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <LineDrawClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <LineDrawPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function LineDrawPlaying({ stage, onClear }: { stage: number; onClear: (r: LineDrawResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useLineDrawGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <LineDrawHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<EscapeRoomResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -2193,6 +2230,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* LineDraw */}
+      <Route path="/games/linedraw/v1" element={<LineDrawTitleRoute />} />
+      <Route path="/games/linedraw/v1/stage/:stageId" element={<LineDrawStageRoute />} />
       {/* EscapeRoom */}
       <Route path="/games/escaperoom/v1" element={<EscapeRoomTitleRoute />} />
       <Route path="/games/escaperoom/v1/stage/:stageId" element={<EscapeRoomStageRoute />} />
