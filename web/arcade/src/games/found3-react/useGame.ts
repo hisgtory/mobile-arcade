@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
-import type { GameState } from '@arcade/lib-found3-react';
 import { stageComplete, haptic } from '../../utils/bridge';
+
+export { haptic };
 
 export interface GameResult {
   score: number;
@@ -8,18 +9,18 @@ export interface GameResult {
   cleared: boolean;
 }
 
-interface UseGameOptions {
-  stage: number;
-  onClear?: (result: GameResult) => void;
-  onGameOver?: (result: GameResult) => void;
-}
-
 interface HUDGameState {
   score: number;
   elapsedMs: number;
   remainingTiles: number;
   totalTiles: number;
-  slotItems: GameState['slotItems'];
+  slotItems: any[];
+}
+
+interface UseGameOptions {
+  stage: number;
+  onClear?: (result: GameResult) => void;
+  onGameOver?: (result: GameResult) => void;
 }
 
 export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
@@ -36,15 +37,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     slotItems: [],
   });
 
-  const handleTileSelect = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const handleMatch = useCallback(() => {
-    haptic('slot-matched');
-  }, []);
-
-  const handleStateUpdate = useCallback((state: GameState) => {
+  const handleStateUpdate = useCallback((state: any) => {
     setGameState({
       score: state.score ?? 0,
       elapsedMs: state.elapsedMs ?? 0,
@@ -65,18 +58,6 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     onGameOverRef.current?.({ ...result, cleared: false });
   }, [stage]);
 
-  const doShuffle = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const doUndo = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const doHint = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
   const handleHaptic = useCallback((event: string) => {
     haptic(event);
   }, []);
@@ -87,8 +68,5 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     onStateUpdate: handleStateUpdate,
     onClear: handleClear,
     onGameOver: handleGameOver,
-    doShuffle,
-    doUndo,
-    doHint,
   };
 }

@@ -210,6 +210,9 @@ export class PlayScene extends Phaser.Scene {
   private onItemTap(itemId: number) {
     if (this.phase !== 'idle') return;
 
+    // Haptic: Item tapped
+    this.game.events.emit('item-tapped');
+
     const item = this.board.items.find(it => it.id === itemId);
     if (!item || item.shelved) return;
 
@@ -235,6 +238,9 @@ export class PlayScene extends Phaser.Scene {
     this.moves++;
 
     if (correct) {
+      // Haptic: Correct shelf
+      this.game.events.emit('shelf-correct');
+
       this.phase = 'animating';
       this.board = newBoard;
       this.combo++;
@@ -282,6 +288,9 @@ export class PlayScene extends Phaser.Scene {
         }
       }
     } else {
+      // Haptic: Wrong shelf
+      this.game.events.emit('shelf-wrong');
+
       // Wrong shelf — shake it, reset combo
       this.combo = 0;
       this.shakeShelf(shelfIndex);
@@ -317,6 +326,9 @@ export class PlayScene extends Phaser.Scene {
       this.timerEvent.destroy();
       this.timerEvent = null;
     }
+
+    // Haptic: Stage clear
+    this.game.events.emit('stage-clear-tidymaster');
 
     // Stage clear bonus + time bonus
     this.score += 500;

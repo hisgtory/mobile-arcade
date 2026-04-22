@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { createGame, destroyGame, getPlayScene } from '@arcade/lib-tidymaster';
-import { stageComplete } from '../../utils/bridge';
+import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -46,6 +46,13 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     game.events.on('time-update', (data: { time: number }) => {
       setTimeRemaining(data.time);
     });
+
+    // ─── Haptics ───────────────────────────────────────────
+    game.events.on('item-tapped', () => haptic('item-tapped'));
+    game.events.on('shelf-correct', () => haptic('shelf-correct'));
+    game.events.on('shelf-wrong', () => haptic('shelf-wrong'));
+    game.events.on('stage-clear-tidymaster', () => haptic('stage-clear-tidymaster'));
+    // ──────────────────────────────────────────────────────
 
     game.events.on('stage-clear', (data: { score: number; moves: number; stage: number }) => {
       const result = { score: data.score, moves: data.moves, stage: data.stage, cleared: true };

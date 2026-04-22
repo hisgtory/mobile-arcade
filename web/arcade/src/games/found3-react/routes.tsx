@@ -1,13 +1,13 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { GameBoard, TILE_COLORS, type SlotItem } from '@arcade/lib-found3-react';
+import { GameBoard, type GameBoardHandle, TILE_COLORS, type SlotItem } from '@arcade/lib-found3-react';
 import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { StageMap, type StageInfo } from '../../components/StageMap';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { styled } from '../../styles/stitches.config';
 import { registerRoutes } from '../../router';
 import { HUD } from './HUD';
-import { useGame, type GameResult } from './useGame';
+import { useGame, haptic, type GameResult } from './useGame';
 
 const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, cleared: false }));
 
@@ -57,6 +57,10 @@ const ItemBarRoot = styled('div', {
   borderTop: '1px solid $gray200',
 });
 
+const ButtonWrap = styled('div', {
+  position: 'relative',
+});
+
 const ItemButton = styled('button', {
   display: 'flex',
   flexDirection: 'column',
@@ -87,21 +91,58 @@ const ItemLabel = styled('span', {
   lineHeight: 1,
 });
 
-function ItemBar({ onShuffle, onUndo, onHint }: { onShuffle: () => void; onUndo: () => void; onHint: () => void }) {
+const Badge = styled('span', {
+  position: 'absolute',
+  top: -4,
+  right: -4,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minWidth: 18,
+  height: 18,
+  borderRadius: 9,
+  fontFamily: '$body',
+  fontWeight: 700,
+  lineHeight: 1,
+  backgroundColor: '#F43F5E',
+  color: '#FFFFFF',
+  fontSize: 10,
+  padding: '0 4px',
+});
+
+interface ItemBarProps {
+  onShuffle: () => void;
+  onUndo: () => void;
+  onHint: () => void;
+  shuffleCount: number;
+  undoCount: number;
+  hintCount: number;
+}
+
+function ItemBar({ onShuffle, onUndo, onHint, shuffleCount, undoCount, hintCount }: ItemBarProps) {
   return (
     <ItemBarRoot>
-      <ItemButton onClick={onShuffle}>
-        <span style={{ fontSize: 20 }}>🔀</span>
-        <ItemLabel>Shuffle</ItemLabel>
-      </ItemButton>
-      <ItemButton onClick={onUndo}>
-        <span style={{ fontSize: 20 }}>↩️</span>
-        <ItemLabel>Undo</ItemLabel>
-      </ItemButton>
-      <ItemButton onClick={onHint}>
-        <span style={{ fontSize: 20 }}>💡</span>
-        <ItemLabel>Hint</ItemLabel>
-      </ItemButton>
+      <ButtonWrap>
+        <ItemButton onClick={onShuffle}>
+          <span style={{ fontSize: 20 }}>🔀</span>
+          <ItemLabel>Shuffle</ItemLabel>
+        </ItemButton>
+        <Badge>{shuffleCount}</Badge>
+      </ButtonWrap>
+      <ButtonWrap>
+        <ItemButton onClick={onUndo}>
+          <span style={{ fontSize: 20 }}>↩️</span>
+          <ItemLabel>Undo</ItemLabel>
+        </ItemButton>
+        <Badge>{undoCount}</Badge>
+      </ButtonWrap>
+      <ButtonWrap>
+        <ItemButton onClick={onHint}>
+          <span style={{ fontSize: 20 }}>💡</span>
+          <ItemLabel>Hint</ItemLabel>
+        </ItemButton>
+        <Badge>{hintCount}</Badge>
+      </ButtonWrap>
     </ItemBarRoot>
   );
 }
@@ -181,10 +222,10 @@ function Found3ReactStageRoute() {
 }
 
 function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: GameResult) => void; onGameOver: (r: GameResult) => void }) {
+  const boardRef = useRef<GameBoardHandle>(null);
   const {
-    gameState, haptic, onStateUpdate,
+    gameState, onStateUpdate,
     onClear: handleClear, onGameOver: handleGameOver,
-    doShuffle, doUndo, doHint,
   } = useGame({ stage, onClear, onGameOver });
 
   return (
@@ -196,17 +237,23 @@ function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onC
         totalTiles={gameState.totalTiles}
         score={gameState.score}
       />
+      <GameBoard
+        ref={boardRef}
+        stage={stage}
+        haptic={haptic}
+        onStateUpdate={onStateUpdate}
+        onClear={handleClear}
+        onGameOver={handleGameOver}
+      />
+      <ItemBar
+        onShuffle={() => boardRef.current?.doShuffle()}
+        onUndo={() => boardRef.current?.doUndo()}
+        onHint={() => boardRef.current?.doMagnet()}
+        shuffleCount={gameState.itemCounts.shuffle}
+        undoCount={gameState.itemCounts.undo}
+        hintCount={gameState.itemCounts.magnet}
+      />
       <SlotBar items={gameState.slotItems} />
-      <div style={{ flex: 1, overflow: 'hidden' }}>
-        <GameBoard
-          stage={stage}
-          haptic={haptic}
-          onStateUpdate={onStateUpdate}
-          onClear={handleClear}
-          onGameOver={handleGameOver}
-        />
-      </div>
-      <ItemBar onShuffle={doShuffle} onUndo={doUndo} onHint={doHint} />
     </PlayLayout>
   );
 }

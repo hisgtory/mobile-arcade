@@ -114,6 +114,13 @@ stateDiagram-v2
 | Undo | 마지막 배치한 아이템을 바닥으로 복귀 |
 | +Time | 시간 30초 추가 |
 
+## 햅틱 피드백 (Bridge Protocol 필수)
+
+- **아이템 탭 (`item-tapped`)**: Heavy × 1
+- **정답 배치 (`shelf-correct`)**: Heavy × 6
+- **오답 배치 (`shelf-wrong`)**: Heavy × 3
+- **스테이지 클리어 (`stage-clear-tidymaster`)**: Heavy × 3
+
 ## 사운드/이펙트 (TODO)
 
 - 아이템 선택: 톡 효과음
