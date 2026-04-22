@@ -68,6 +68,10 @@ import { useGame as useCandyFriendsGame, type GameResult as CandyFriendsResult }
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── HexaAway (ADR-016: side-effect route registration) ───
+import './games/hexaaway/routes';
+
+import { getRegisteredRoutes } from './router';
 // ─── TrickyTwist ───
 import { ClearScreen as TrickyTwistClear } from './games/trickytwist/ClearScreen';
 import { HUD as TrickyTwistHUD } from './games/trickytwist/HUD';
@@ -854,6 +858,10 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* Registered routes (ADR-016) */}
+      {getRegisteredRoutes().map((r) => (
+        <Route key={r.path} path={r.path} element={r.element} />
+      ))}
       {/* TrickyTwist */}
       <Route path="/games/trickytwist/v1" element={<TrickyTwistTitleRoute />} />
       <Route path="/games/trickytwist/v1/stage/:stageId" element={<TrickyTwistStageRoute />} />

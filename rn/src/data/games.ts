@@ -78,6 +78,13 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'hexaaway',
+    name: 'Hexa Away',
+    description: 'Fill hex lines with block pieces!',
+    icon: '⬡',
+    category: 'puzzle',
+    color: '#10B981',
+    webPath: '/games/hexaaway/v1',
     id: 'wordpuzzle',
     name: 'Word Puzzle',
     description: 'Find hidden Korean words!',
