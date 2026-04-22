@@ -39,6 +39,9 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── StarryNight ───
+import { HUD as StarryNightHUD } from './games/starrynight/HUD';
+import { useGame as useStarryNightGame, type GameResult as StarryNightResult } from './games/starrynight/useGame';
 // ─── BusJam ───
 import { ClearScreen as BusJamClear } from './games/busjam/ClearScreen';
 import { HUD as BusJamHUD } from './games/busjam/HUD';
@@ -309,6 +312,21 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── StarryNight Routes ───────────────────────────────
+
+function StarryNightTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#0f172a' }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#fbbf24', letterSpacing: -1 }}>⭐ Starry Night</h1>
+      <p style={{ fontSize: 16, color: '#94a3b8' }}>Fill lines under the starry sky!</p>
+      <button
+        onClick={() => navigate('/games/starrynight/v1/play')}
+        style={{ marginTop: 32, backgroundColor: '#fbbf24', color: '#0f172a', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
 // ─── BusJam Routes ────────────────────────────────────
 
 function BusJamTitleRoute() {
@@ -358,6 +376,46 @@ function Anipang4TitleRoute() {
   );
 }
 
+function StarryNightPlayRoute() {
+  const navigate = useNavigate();
+  const [gameResult, setGameResult] = useState<StarryNightResult | null>(null);
+
+  const handleGameOver = useCallback((r: StarryNightResult) => {
+    setGameResult(r);
+  }, []);
+
+  if (gameResult) {
+    return (
+      <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 24, padding: 20, backgroundColor: '#0f172a' }}>
+        <h1 style={{ fontSize: 36, fontWeight: 800, color: '#fbbf24' }}>Game Over</h1>
+        <div style={{ backgroundColor: '#1e293b', borderRadius: 16, padding: 20, width: '85%', maxWidth: 320, textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+          <p style={{ fontSize: 14, color: '#94a3b8' }}>Score</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: '#fbbf24' }}>{gameResult.score.toLocaleString()}</p>
+        </div>
+        <button
+          onClick={() => { setGameResult(null); }}
+          style={{ backgroundColor: '#fbbf24', color: '#0f172a', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 18, fontWeight: 700, cursor: 'pointer', width: '85%', maxWidth: 320 }}
+        >
+          Retry
+        </button>
+        <button
+          onClick={() => navigate('/games/starrynight/v1')}
+          style={{ backgroundColor: '#1e293b', color: '#94a3b8', border: '1px solid #334155', padding: '16px 48px', borderRadius: 16, fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '85%', maxWidth: 320 }}
+        >
+          Home
+        </button>
+      </PlayLayout>
+    );
+  }
+
+  return <StarryNightPlaying onGameOver={handleGameOver} />;
+}
+
+function StarryNightPlaying({ onGameOver }: { onGameOver: (r: StarryNightResult) => void }) {
+  const { containerRef, score } = useStarryNightGame({ onGameOver });
+  return (
+    <PlayLayout css={{ backgroundColor: '#0f172a' }}>
+      <StarryNightHUD score={score} />
 function BusJamStageRoute() {
 function CarOutStageRoute() {
 function SkewerJamStageRoute() {
@@ -506,6 +564,7 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Root ──────────────────────────────────────────────
 // ─── Arrows Routes ────────────────────────────────────
 
 function ArrowsTitleRoute() {
@@ -1652,6 +1711,10 @@ export function App() {
       {/* BlockRush */}
       <Route path="/games/blockrush/v1" element={<BlockRushTitleRoute />} />
       <Route path="/games/blockrush/v1/play" element={<BlockRushPlayRoute />} />
+
+      {/* StarryNight */}
+      <Route path="/games/starrynight/v1" element={<StarryNightTitleRoute />} />
+      <Route path="/games/starrynight/v1/play" element={<StarryNightPlayRoute />} />
 
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />

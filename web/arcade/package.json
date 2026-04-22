@@ -13,6 +13,7 @@
     "@arcade/lib-found3": "workspace:*",
     "@arcade/lib-crunch3": "workspace:*",
     "@arcade/lib-blockrush": "workspace:*",
+    "@arcade/lib-starrynight": "workspace:*",
     "@arcade/lib-hexaaway": "workspace:*",
     "@arcade/lib-blockcrush": "workspace:*",
     "@arcade/lib-watersort": "workspace:*",
