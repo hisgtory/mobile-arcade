@@ -100,6 +100,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── DefendKing ───
+import { ClearScreen as DefendKingClear } from './games/defendking/ClearScreen';
+import { HUD as DefendKingHUD } from './games/defendking/HUD';
+import { useGame as useDefendKingGame, type GameResult as DefendKingResult } from './games/defendking/useGame';
 // ─── SpotDiff ───
 import { ClearScreen as SpotDiffClear } from './games/spotdiff/ClearScreen';
 import { HUD as SpotDiffHUD } from './games/spotdiff/HUD';
@@ -1011,6 +1015,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── DefendKing Routes ────────────────────────────────
+
+function DefendKingTitleRoute() {
 // ─── SpotDiff Routes ──────────────────────────────────
 
 function SpotDiffTitleRoute() {
@@ -1067,6 +1074,10 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Defend King</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Destroy all enemies to protect the king!</p>
+      <button
+        onClick={() => navigate('/games/defendking/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Spot Diff</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Find all the differences!</p>
       <button
@@ -1130,6 +1141,7 @@ function BrainOutTitleRoute() {
   );
 }
 
+function DefendKingStageRoute() {
 function SpotDiffStageRoute() {
 function MysteryTownStageRoute() {
 function SpotItStageRoute() {
@@ -1179,6 +1191,34 @@ function BrainOutStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<DefendKingResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: DefendKingResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: DefendKingResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/defendking/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/defendking/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <DefendKingClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <DefendKingPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function DefendKingPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: DefendKingResult) => void; onGameOver: (r: DefendKingResult) => void }) {
+  const { containerRef, score, ammoLeft, enemiesLeft } = useDefendKingGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <DefendKingHUD stage={stage} score={score} ammoLeft={ammoLeft} enemiesLeft={enemiesLeft} />
   const [gameResult, setGameResult] = useState<SpotDiffResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -2619,6 +2659,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* DefendKing */}
+      <Route path="/games/defendking/v1" element={<DefendKingTitleRoute />} />
+      <Route path="/games/defendking/v1/stage/:stageId" element={<DefendKingStageRoute />} />
       {/* SpotDiff */}
       <Route path="/games/spotdiff/v1" element={<SpotDiffTitleRoute />} />
       <Route path="/games/spotdiff/v1/stage/:stageId" element={<SpotDiffStageRoute />} />
