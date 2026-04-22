@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── TangledRope ───
+import { ClearScreen as TangledRopeClear } from './games/tangledrope/ClearScreen';
+import { HUD as TangledRopeHUD } from './games/tangledrope/HUD';
+import { useGame as useTangledRopeGame, type GameResult as TangledRopeResult } from './games/tangledrope/useGame';
 // ─── CandyFriends ───
 import { ClearScreen as CandyFriendsClear } from './games/candyfriends/ClearScreen';
 import { HUD as CandyFriendsHUD } from './games/candyfriends/HUD';
@@ -341,6 +345,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── TangledRope Routes ───────────────────────────────
+
+function TangledRopeTitleRoute() {
 // ─── CandyFriends Routes ──────────────────────────────
 
 function CandyFriendsTitleRoute() {
@@ -348,6 +355,14 @@ function CandyFriendsTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tangled Rope</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Untangle the ropes!</p>
+      <button
+        onClick={() => navigate('/games/tangledrope/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Candy Friends</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Match 3 sweet candies!</p>
       <button
@@ -361,11 +376,37 @@ function CandyFriendsTitleRoute() {
   );
 }
 
+function TangledRopeStageRoute() {
 function CandyFriendsStageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<TangledRopeResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: TangledRopeResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/tangledrope/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/tangledrope/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <TangledRopeClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <TangledRopePlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function TangledRopePlaying({ stage, onClear }: { stage: number; onClear: (r: TangledRopeResult) => void }) {
+  const { containerRef, moves, intersections, doUndo, doRestart } = useTangledRopeGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <TangledRopeHUD stage={stage} moves={moves} intersections={intersections} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<CandyFriendsResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -509,6 +550,10 @@ export function App() {
       {/* WaterSort */}
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
+
+      {/* TangledRope */}
+      <Route path="/games/tangledrope/v1" element={<TangledRopeTitleRoute />} />
+      <Route path="/games/tangledrope/v1/stage/:stageId" element={<TangledRopeStageRoute />} />
 
       {/* TicTacToe */}
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
