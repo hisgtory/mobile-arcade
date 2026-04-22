@@ -161,6 +161,7 @@ export class PlayScene extends Phaser.Scene {
 
     if (gridPos && canPlace(this.board, piece, gridPos.row, gridPos.col)) {
       // Valid placement
+      this.game.events.emit('piece-placed');
       const placed = placePiece(this.board, piece, gridPos.row, gridPos.col);
 
       // Update visual grid
@@ -188,6 +189,7 @@ export class PlayScene extends Phaser.Scene {
       // Check for line clears
       const lines = findFullLines(this.board);
       if (lines.rows.length > 0 || lines.cols.length > 0) {
+        this.game.events.emit('line-cleared');
         this.phase = GamePhase.ANIMATING;
         this.consecutiveClears++;
         const cleared = clearLines(this.board, lines);
