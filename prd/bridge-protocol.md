@@ -187,7 +187,7 @@ const isRN = typeof window.ReactNativeWebView !== 'undefined';
 |-------|--------|------|--------|
 | Phase 1 | Game Core | BridgeClient 구현 | `lib/found3/src/bridge/` |
 | Phase 2 | Web Frontend | BridgeClient 초기화 + Phaser 연동 | `web/found3/src/bridge.ts` |
-| Phase 3 | RN App | BridgeHost 구현 (메시지 수신 + AsyncStorage) | `found3/rn/src/bridge/` |
+| Phase 3 | RN App | BridgeHost 구현 (메시지 수신 + AsyncStorage) | `rn/src/bridge/` |
 | Phase 4 | 전체 | 통합 테스트 (ACK 로그 확인) | 테스트 시나리오 문서 |
 
 ### Phase 1 상세 (Game Core - BridgeClient)
@@ -211,7 +211,7 @@ lib/found3/src/bridge/
 ### Phase 3 상세 (RN App - BridgeHost)
 
 ```
-found3/rn/src/bridge/
+rn/src/bridge/
 ├── BridgeHost.ts     # onMessage 핸들러, AsyncStorage CRUD
 └── types.ts          # (lib에서 공유하거나 복사)
 ```
