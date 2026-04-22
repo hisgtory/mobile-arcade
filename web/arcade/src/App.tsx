@@ -68,6 +68,10 @@ import { useGame as useCandyFriendsGame, type GameResult as CandyFriendsResult }
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── TrickyTwist ───
+import { ClearScreen as TrickyTwistClear } from './games/trickytwist/ClearScreen';
+import { HUD as TrickyTwistHUD } from './games/trickytwist/HUD';
+import { useGame as useTrickyTwistGame, type GameResult as TrickyTwistResult } from './games/trickytwist/useGame';
 // ─── WordPuzzle ───
 import { ClearScreen as WordPuzzleClear } from './games/wordpuzzle/ClearScreen';
 import { HUD as WordPuzzleHUD } from './games/wordpuzzle/HUD';
@@ -646,6 +650,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── TrickyTwist Routes ───────────────────────────────
+
+function TrickyTwistTitleRoute() {
 // ─── WordPuzzle Routes ────────────────────────────────
 
 function WordPuzzleTitleRoute() {
@@ -659,6 +666,10 @@ function TrickyPrankTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🧩 Tricky Twist</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Brain-twisting logic puzzles!</p>
+      <button
+        onClick={() => navigate('/games/trickytwist/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Word Puzzle</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Find hidden Korean words!</p>
       <button
@@ -681,6 +692,7 @@ function TrickyPrankTitleRoute() {
   );
 }
 
+function TrickyTwistStageRoute() {
 function WordPuzzleStageRoute() {
 function MatchFactoryStageRoute() {
 function TrickyPrankStageRoute() {
@@ -688,6 +700,34 @@ function TrickyPrankStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<TrickyTwistResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: TrickyTwistResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: TrickyTwistResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/trickytwist/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/trickytwist/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <TrickyTwistClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <TrickyTwistPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function TrickyTwistPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: TrickyTwistResult) => void; onGameOver: (r: TrickyTwistResult) => void }) {
+  const { containerRef, score, streak, current, total, timeRemaining } = useTrickyTwistGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <TrickyTwistHUD stage={stage} score={score} streak={streak} current={current} total={total} timeRemaining={timeRemaining} />
   const [gameResult, setGameResult] = useState<WordPuzzleResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -814,6 +854,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* TrickyTwist */}
+      <Route path="/games/trickytwist/v1" element={<TrickyTwistTitleRoute />} />
+      <Route path="/games/trickytwist/v1/stage/:stageId" element={<TrickyTwistStageRoute />} />
       {/* WordPuzzle */}
       <Route path="/games/wordpuzzle/v1" element={<WordPuzzleTitleRoute />} />
       <Route path="/games/wordpuzzle/v1/stage/:stageId" element={<WordPuzzleStageRoute />} />
