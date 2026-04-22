@@ -92,6 +92,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── MysteryTown ───
+import { ClearScreen as MysteryTownClear } from './games/mystery-town/ClearScreen';
+import { HUD as MysteryTownHUD } from './games/mystery-town/HUD';
+import { useGame as useMysteryTownGame, type GameResult as MysteryTownResult } from './games/mystery-town/useGame';
 // ─── SpotIt ───
 import { ClearScreen as SpotItClear } from './games/spotit/ClearScreen';
 import { HUD as SpotItHUD } from './games/spotit/HUD';
@@ -913,6 +917,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── MysteryTown Routes ───────────────────────────────
+
+function MysteryTownTitleRoute() {
 // ─── Root ──────────────────────────────────────────────
 // ─── SpotIt Routes ─────────────────────────────────────
 
@@ -962,6 +969,13 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 42, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🔍 Mystery Town</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Merge clues to solve the case!</p>
+      <button
+        onClick={() => navigate('/games/mystery-town/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#8B5CF6', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Investigate
       <h1 style={{ fontSize: 44, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🔍 Spot It!</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Find the hidden objects!</p>
       <button
@@ -1014,6 +1028,7 @@ function BrainOutTitleRoute() {
   );
 }
 
+function MysteryTownStageRoute() {
 function SpotItStageRoute() {
 function ForestPopStageRoute() {
   const { stageId } = useParams();
@@ -1061,6 +1076,34 @@ function BrainOutStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<MysteryTownResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: MysteryTownResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: MysteryTownResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/mystery-town/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/mystery-town/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <MysteryTownClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <MysteryTownPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function MysteryTownPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: MysteryTownResult) => void; onGameOver: (r: MysteryTownResult) => void }) {
+  const { containerRef, score, moves, clues, targetClues, doRestart } = useMysteryTownGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <MysteryTownHUD stage={stage} score={score} moves={moves} clues={clues} targetClues={targetClues} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<SpotItResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -2442,6 +2485,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* MysteryTown */}
+      <Route path="/games/mystery-town/v1" element={<MysteryTownTitleRoute />} />
+      <Route path="/games/mystery-town/v1/stage/:stageId" element={<MysteryTownStageRoute />} />
       {/* AllInHole */}
       <Route path="/games/allinhole/v1" element={<AllInHoleTitleRoute />} />
       <Route path="/games/allinhole/v1/stage/:stageId" element={<AllInHoleStageRoute />} />
