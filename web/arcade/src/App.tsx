@@ -1,5 +1,8 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useCallback, useState } from 'react';
+import { Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { globalStyles } from './styles/global';
+import { styled } from './styles/stitches.config';
+import { GameCanvas } from './components/GameCanvas';
 
 // Game route registrations (side-effect imports)
 import './games/found3/routes';

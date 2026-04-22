@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createGame, destroyGame } from '@arcade/lib-tileconnect';
-import { stageComplete } from '../../utils/bridge';
+import { haptic, stageComplete } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -49,6 +49,18 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     game.events.on('tiles-update', (data: { remaining: number; total: number }) => {
       setRemaining(data.remaining);
       setTotal(data.total);
+    });
+
+    game.events.on('tile-tapped', () => {
+      haptic('tile-tapped');
+    });
+
+    game.events.on('pair-matched', () => {
+      haptic('pair-matched');
+    });
+
+    game.events.on('stage-cleared', () => {
+      haptic('stage-cleared');
     });
 
     game.events.on('stage-clear', (data: { score: number; elapsedMs: number }) => {

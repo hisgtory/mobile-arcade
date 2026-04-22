@@ -43,6 +43,7 @@ const COMBO_WINDOW_MS = 3000; // 3 seconds for combo
 const BASE_PAIR_SCORE = 100;
 const COMBO_BONUS = 50;
 const MAX_TILE_APPEAR_DELAY_MS = 600;
+const HINT_PATH_DURATION_MS = 900;
 
 export class PlayScene extends Phaser.Scene {
   private gameConfig?: GameConfig;
@@ -84,7 +85,6 @@ export class PlayScene extends Phaser.Scene {
   }
 
   init(data: { stage?: number }): void {
-    // TODO: Use Phaser registry or scene data for better type safety
     const gameConfig = this.game.registry.get('tileconnectConfig') as GameConfig;
     this.stageNum = data?.stage ?? gameConfig?.stage ?? 1;
     this.gameConfig = gameConfig;
@@ -157,7 +157,8 @@ export class PlayScene extends Phaser.Scene {
 
     // Input
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-      this.handleTap(pointer.x, pointer.y);
+      const point = this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+      this.handleTap(point.x, point.y);
     });
 
     this.events.on('shutdown', this.shutdown, this);
@@ -247,6 +248,8 @@ export class PlayScene extends Phaser.Scene {
 
     // Must tap a tile that exists
     if (this.board[row][col] === null) return;
+
+    this.game.events.emit('tile-tapped');
 
     if (this.selectedTile === null) {
       // Select first tile
@@ -342,6 +345,7 @@ export class PlayScene extends Phaser.Scene {
   ): void {
     this.phase = GamePhase.ANIMATING;
     this.deselectTile();
+    this.game.events.emit('pair-matched');
 
     // Combo logic
     const now = this.time.now;
@@ -352,14 +356,9 @@ export class PlayScene extends Phaser.Scene {
     }
     this.lastMatchTime = now;
 
-    // Score: BASE + COMBO + LINE BONUS (+50 for 0-bend/direct line)
-    const isDirect = path.length === 2;
-    const pairScore = BASE_PAIR_SCORE + Math.max(0, this.combo - 1) * COMBO_BONUS + (isDirect ? 50 : 0);
+    // Phase 1 scoring: base pair score plus combo bonus only.
+    const pairScore = BASE_PAIR_SCORE + Math.max(0, this.combo - 1) * COMBO_BONUS;
     this.score += pairScore;
-
-    // Survival: Time bonus (+3s on match)
-    const timeBonusMs = 3000;
-    this.startTime += timeBonusMs; // Effectively pushes back start time to increase remaining duration
 
     // Draw path line
     this.drawPath(path);
@@ -554,20 +553,16 @@ export class PlayScene extends Phaser.Scene {
   private stageClear(): void {
     this.phase = GamePhase.CLEAR;
 
-    // Clear bonus (+500) and time bonus (remainingSec * 10)
-    this.score += 500;
-    const remainingSec = Math.max(0, (this.stageConfig.timeLimit * 1000 - this.elapsedMs) / 1000);
-    this.score += Math.round(remainingSec * 10);
-    this.emitScore();
-
     this.cameras.main.flash(400, 255, 255, 200);
+    this.game.events.emit('stage-cleared');
 
     // Emit events
-    this.game.events.emit('stage-clear', {
+    const result = {
       score: this.score,
       elapsedMs: this.elapsedMs,
-    });
-    this.gameConfig?.onClear?.();
+    };
+    this.game.events.emit('stage-clear', result);
+    this.gameConfig?.onClear?.(result);
   }
 
   private gameOver(): void {
@@ -576,11 +571,12 @@ export class PlayScene extends Phaser.Scene {
     this.cameras.main.shake(300, 0.008);
     this.cameras.main.fade(600, 0, 0, 0, false, (_cam: Phaser.Cameras.Scene2D.Camera, progress: number) => {
       if (progress >= 1) {
-        this.game.events.emit('game-over', {
+        const result = {
           score: this.score,
           elapsedMs: this.elapsedMs,
-        });
-        this.gameConfig?.onGameOver?.();
+        };
+        this.game.events.emit('game-over', result);
+        this.gameConfig?.onGameOver?.(result);
       }
     });
   }
@@ -642,6 +638,10 @@ export class PlayScene extends Phaser.Scene {
     if (!result) return;
 
     const { a, b } = result;
+    this.drawPath(result.path);
+    this.time.delayedCall(HINT_PATH_DURATION_MS, () => {
+      this.pathGraphics?.clear();
+    });
 
     // Briefly highlight both tiles
     const highlights: Phaser.GameObjects.Rectangle[] = [];

@@ -28,9 +28,9 @@ export function createGame(parent: HTMLElement, config?: GameConfig): Phaser.Gam
     scene: [PlayScene],
   });
 
-  (game as any).__tileconnectConfig = config;
-  (game as any).__dpr = dpr;
-  game.scene.start('PlayScene', { gameConfig: config });
+  game.registry.set('tileconnectConfig', config);
+  game.registry.set('dpr', dpr);
+  game.scene.start('PlayScene', { stage: config?.stage });
 
   return game;
 }

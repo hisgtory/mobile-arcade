@@ -7,8 +7,8 @@ export enum GamePhase {
 
 export interface GameConfig {
   stage?: number;
-  onClear?: () => void;
-  onGameOver?: () => void;
+  onClear?: (result: { score: number; elapsedMs: number }) => void;
+  onGameOver?: (result: { score: number; elapsedMs: number }) => void;
 }
 
 export type TileType = number; // 0-11, matches TILE_IMAGES index
