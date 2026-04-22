@@ -17,6 +17,7 @@
     "@arcade/lib-watersort": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
     "@arcade/lib-trickyprank": "workspace:*",
+    "@arcade/lib-candyfriends": "workspace:*",
     "@arcade/lib-chess": "workspace:*",
     "@arcade/lib-minesweeper": "workspace:*",
     "@arcade/lib-number10": "workspace:*",

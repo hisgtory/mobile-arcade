@@ -78,6 +78,13 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'candyfriends',
+    name: 'Candy Friends',
+    description: 'Match 3 sweet candies!',
+    icon: '🍬',
+    category: 'puzzle',
+    color: '#EC4899',
+    webPath: '/games/candyfriends/v1',
     id: 'chess',
     name: 'Chess',
     description: 'Classic chess vs AI - full rules.',
