@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── SlidingMatch ───
+import { ClearScreen as SlideMatchClear } from './games/slidematch/ClearScreen';
+import { HUD as SlideMatchHUD } from './games/slidematch/HUD';
+import { useGame as useSlideMatchGame, type GameResult as SlideMatchResult } from './games/slidematch/useGame';
 // ─── CandyPop ───
 import { ClearScreen as CandyPopClear } from './games/candypop/ClearScreen';
 import { HUD as CandyPopHUD } from './games/candypop/HUD';
@@ -415,6 +419,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── SlidingMatch Routes ──────────────────────────────
+
+function SlideMatchTitleRoute() {
 // ─── CandyPop Routes ──────────────────────────────────
 
 function CandyPopTitleRoute() {
@@ -495,6 +502,11 @@ function Anipang4TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Sliding Match</GameTitle>
+      <GameDescription>Slide rows & columns to match 3!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/slidematch/v1/stage/1')}>
+        Play
+      </PrimaryButton>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Line Draw</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Draw a path through every cell!</p>
       <button
@@ -560,6 +572,7 @@ function Anipang4TitleRoute() {
   );
 }
 
+function SlideMatchStageRoute() {
 function CandyPopStageRoute() {
 function AllInHoleStageRoute() {
 function LineDrawStageRoute() {
@@ -616,6 +629,34 @@ function Anipang4StageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<SlideMatchResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'result'>('playing');
+
+  const handleClear = useCallback((r: SlideMatchResult) => {
+    if (!isRN) { setGameResult(r); setScreen('result'); }
+  }, []);
+  const handleGameOver = useCallback((r: SlideMatchResult) => {
+    if (!isRN) { setGameResult(r); setScreen('result'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/slidematch/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/slidematch/v1', { replace: true }), [navigate]);
+
+  if (screen === 'result' && gameResult) {
+    return <SlideMatchClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <SlideMatchPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function SlideMatchPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: SlideMatchResult) => void; onGameOver: (r: SlideMatchResult) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useSlideMatchGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <SlideMatchHUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
   const [gameResult, setGameResult] = useState<CandyPopResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -2538,6 +2579,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* SlidingMatch */}
+      <Route path="/games/slidematch/v1" element={<SlideMatchTitleRoute />} />
+      <Route path="/games/slidematch/v1/stage/:stageId" element={<SlideMatchStageRoute />} />
       {/* MysteryTown */}
       <Route path="/games/mystery-town/v1" element={<MysteryTownTitleRoute />} />
       <Route path="/games/mystery-town/v1/stage/:stageId" element={<MysteryTownStageRoute />} />
