@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { GameBoard } from '@arcade/lib-found3-react';
+import { GameBoard, TILE_COLORS, type SlotItem } from '@arcade/lib-found3-react';
 import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { StageMap, type StageInfo } from '../../components/StageMap';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { styled } from '../../styles/stitches.config';
 import { registerRoutes } from '../../router';
 import { HUD } from './HUD';
-import { useGame, type GameResult, type SlotItem } from './useGame';
+import { useGame, type GameResult } from './useGame';
 
 const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, cleared: false }));
 
@@ -38,7 +38,7 @@ function SlotBar({ items }: { items: SlotItem[] }) {
   return (
     <SlotBarRoot>
       {slots.map((item, i) => (
-        <SlotCell key={i} style={item ? { backgroundColor: item.color } : undefined} />
+        <SlotCell key={i} style={item ? { backgroundColor: TILE_COLORS[item.type] } : undefined} />
       ))}
     </SlotBarRoot>
   );
@@ -182,7 +182,7 @@ function Found3ReactStageRoute() {
 
 function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: GameResult) => void; onGameOver: (r: GameResult) => void }) {
   const {
-    gameState, onTileSelect, onMatch, onStateUpdate,
+    gameState, haptic, onStateUpdate,
     onClear: handleClear, onGameOver: handleGameOver,
     doShuffle, doUndo, doHint,
   } = useGame({ stage, onClear, onGameOver });
@@ -200,8 +200,7 @@ function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onC
       <div style={{ flex: 1, overflow: 'hidden' }}>
         <GameBoard
           stage={stage}
-          onTileSelect={onTileSelect}
-          onMatch={onMatch}
+          haptic={haptic}
           onStateUpdate={onStateUpdate}
           onClear={handleClear}
           onGameOver={handleGameOver}

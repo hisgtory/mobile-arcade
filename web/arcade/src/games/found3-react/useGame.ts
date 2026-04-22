@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import type { GameState } from '@arcade/lib-found3-react';
 import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
@@ -7,23 +8,18 @@ export interface GameResult {
   cleared: boolean;
 }
 
-export interface SlotItem {
-  type: number;
-  color: string;
-}
-
-interface GameState {
-  score: number;
-  elapsedMs: number;
-  remainingTiles: number;
-  totalTiles: number;
-  slotItems: SlotItem[];
-}
-
 interface UseGameOptions {
   stage: number;
   onClear?: (result: GameResult) => void;
   onGameOver?: (result: GameResult) => void;
+}
+
+interface HUDGameState {
+  score: number;
+  elapsedMs: number;
+  remainingTiles: number;
+  totalTiles: number;
+  slotItems: GameState['slotItems'];
 }
 
 export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
@@ -32,7 +28,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const onGameOverRef = useRef(onGameOver);
   onGameOverRef.current = onGameOver;
 
-  const [gameState, setGameState] = useState<GameState>({
+  const [gameState, setGameState] = useState<HUDGameState>({
     score: 0,
     elapsedMs: 0,
     remainingTiles: 0,
@@ -81,10 +77,13 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     haptic('tile-tapped');
   }, []);
 
+  const handleHaptic = useCallback((event: string) => {
+    haptic(event);
+  }, []);
+
   return {
     gameState,
-    onTileSelect: handleTileSelect,
-    onMatch: handleMatch,
+    haptic: handleHaptic,
     onStateUpdate: handleStateUpdate,
     onClear: handleClear,
     onGameOver: handleGameOver,

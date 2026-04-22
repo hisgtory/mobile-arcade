@@ -55,6 +55,24 @@ claude
 /team
 ```
 
+## Development Commands
+
+```bash
+# Build all packages that define a build script
+pnpm build
+
+# Type-check all workspace packages without emitting build artifacts
+pnpm typecheck
+
+# Lint all packages
+# Note: this currently fails until at least one workspace package defines a lint script
+pnpm lint
+
+# Test all packages
+# Note: this currently fails until at least one workspace package defines a test script
+pnpm test
+```
+
 ## Tech Stack
 
 - **Monorepo**: pnpm workspaces
