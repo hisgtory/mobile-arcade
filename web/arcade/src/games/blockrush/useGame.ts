@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createGame, destroyGame } from '@arcade/lib-blockrush';
-import { stageComplete } from '../../utils/bridge';
+import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -21,6 +21,9 @@ export function useGame({ onGameOver }: UseGameOptions) {
     const game = createGame(containerRef.current, {
       onGameOver: () => {},
     });
+
+    game.events.on('piece-placed', () => haptic('piece-placed'));
+    game.events.on('line-cleared', () => haptic('line-cleared'));
 
     game.events.on('score-update', (data: { score: number }) => {
       setScore(data.score);

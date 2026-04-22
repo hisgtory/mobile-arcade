@@ -8,20 +8,20 @@
 mobile-arcade/
 ├── lib/{game}/       # 게임 코어 로직 (Phaser.io scenes, shared types)
 ├── web/{game}/       # 웹 게임 (React + Stitches + lib 사용)
-├── {game}/rn/        # RN 앱 (WebView로 web 게임 래핑)
+├── rn/               # RN 슈퍼앱 (WebView로 web 게임 래핑)
 └── prd/              # 게임 기획서
 ```
 
 ### Data Flow
 
 ```
-lib/{game}  →  web/{game}  →  {game}/rn
-(core)        (web app)      (native shell)
+lib/{game}  →  web/{game}  →  rn
+(core)        (web app)      (native shell, 슈퍼앱)
 ```
 
 1. `lib/{game}`: Phaser.io 기반 게임 로직, 씬, 타입 정의
 2. `web/{game}`: lib를 import해서 React + Stitches로 웹 게임 빌드
-3. `{game}/rn`: 빌드된 웹 게임을 WebView로 표시하는 RN 앱
+3. `rn`: 빌드된 웹 게임을 WebView로 표시하는 RN 슈퍼앱
 
 ## Games
 
@@ -39,7 +39,7 @@ lib/{game}  →  web/{game}  →  {game}/rn
 | PRD | `prd/` | 게임 기획, 요구사항 정의 |
 | Game Core | `lib/found3/` | Phaser.io 게임 로직 개발 |
 | Web Frontend | `web/found3/` | React + Stitches 웹 게임 |
-| RN App | `found3/rn/` | React Native WebView 앱 |
+| RN App | `rn/` | React Native WebView 슈퍼앱 |
 
 ## Getting Started
 
@@ -53,6 +53,24 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 # Start Claude and create team
 claude
 /team
+```
+
+## Development Commands
+
+```bash
+# Build all packages that define a build script
+pnpm build
+
+# Type-check all workspace packages without emitting build artifacts
+pnpm typecheck
+
+# Lint all packages
+# Note: this currently fails until at least one workspace package defines a lint script
+pnpm lint
+
+# Test all packages
+# Note: this currently fails until at least one workspace package defines a test script
+pnpm test
 ```
 
 ## Tech Stack
