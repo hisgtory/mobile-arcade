@@ -1,4 +1,5 @@
 export { GameBoard } from './components/GameBoard';
+export type { GameBoardHandle, GameBoardProps, GameResult } from './components/GameBoard';
 export { TileGrid } from './components/TileGrid';
 export { Tile } from './components/Tile';
 export { SlotBar } from './components/SlotBar';
@@ -14,7 +15,7 @@ export type {
   UndoEntry,
   HapticFn,
 } from './types';
-export { GamePhase, MAX_SLOT, TILE_EMOJIS, TILE_IMAGES, TILE_COLORS } from './types';
+export { GamePhase, MAX_SLOT, TILE_IMAGES, TILE_COLORS } from './types';
 
 export { generateBoard, resetIdCounter, isTileBlocked } from './logic/board';
 export { addToSlotAndMatch, undoLastSlotItem } from './logic/matcher';
