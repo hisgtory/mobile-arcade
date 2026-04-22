@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── CarOut ───
+import { ClearScreen as CarOutClear } from './games/carout/ClearScreen';
+import { HUD as CarOutHUD } from './games/carout/HUD';
+import { useGame as useCarOutGame, type GameResult as CarOutResult } from './games/carout/useGame';
 // ─── SkewerJam ───
 import { ClearScreen as SkewerJamClear } from './games/skewerjam/ClearScreen';
 import { HUD as SkewerJamHUD } from './games/skewerjam/HUD';
@@ -297,6 +301,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── CarOut Routes ─────────────────────────────────────
+
+function CarOutTitleRoute() {
 // ─── SkewerJam Routes ─────────────────────────────────
 
 function SkewerJamTitleRoute() {
@@ -307,6 +314,14 @@ function Anipang4TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Car Out!</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Slide cars to free the exit!</p>
+      <button
+        onClick={() => navigate('/games/carout/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#EF4444', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Skewer Jam</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Sort food on skewers!</p>
       <button
@@ -328,12 +343,38 @@ function Anipang4TitleRoute() {
   );
 }
 
+function CarOutStageRoute() {
 function SkewerJamStageRoute() {
 function Anipang4StageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<CarOutResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: CarOutResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/carout/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/carout/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <CarOutClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <CarOutPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function CarOutPlaying({ stage, onClear }: { stage: number; onClear: (r: CarOutResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useCarOutGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <CarOutHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<SkewerJamResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -1539,6 +1580,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* CarOut */}
+      <Route path="/games/carout/v1" element={<CarOutTitleRoute />} />
+      <Route path="/games/carout/v1/stage/:stageId" element={<CarOutStageRoute />} />
       {/* SkewerJam */}
       <Route path="/games/skewerjam/v1" element={<SkewerJamTitleRoute />} />
       <Route path="/games/skewerjam/v1/stage/:stageId" element={<SkewerJamStageRoute />} />
