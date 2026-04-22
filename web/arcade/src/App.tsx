@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { Suspense } from 'react';
 import { globalStyles } from './styles/global';
 
 // Game route registrations (side-effect imports)
@@ -21,11 +22,13 @@ import { getRegisteredRoutes } from './router';
 export function App() {
   globalStyles();
   return (
-    <Routes>
-      {getRegisteredRoutes().map((route) => (
-        <Route key={route.path} path={route.path} element={route.element} />
-      ))}
-      <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
-    </Routes>
+    <Suspense fallback={<div style={{ width: '100%', height: '100%', background: '#F9FAFB' }} />}>
+      <Routes>
+        {getRegisteredRoutes().map((route) => (
+          <Route key={route.path} path={route.path} element={route.element} />
+        ))}
+        <Route path="/" element={<Navigate to="/games/found3/v1" replace />} />
+      </Routes>
+    </Suspense>
   );
 }
