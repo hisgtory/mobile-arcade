@@ -19,9 +19,9 @@ Create an agent team for mobile-arcade:
    - lib를 사용한 웹 게임 UI, 반응형, Phaser 통합
    - Read: `web/found3/CLAUDE.md`, `web/found3/TASKS.md`
 
-4. **RN App** (`found3/rn/`) — React Native 개발자
+4. **RN App** (`rn/`) — React Native 개발자
    - WebView 래핑, 네이티브 브릿지, 앱 빌드
-   - Read: `found3/rn/CLAUDE.md`, `found3/rn/TASKS.md`
+   - Read: `rn/CLAUDE.md`, `rn/TASKS.md`
 
 **Project Context:**
 - README.md: 전체 프로젝트 개요
