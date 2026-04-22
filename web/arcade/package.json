@@ -27,6 +27,7 @@
     "@arcade/lib-pixelflow": "workspace:*",
     "@arcade/lib-tangledrope": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
+    "@arcade/lib-forestpop": "workspace:*",
     "@arcade/lib-escaperoom": "workspace:*",
     "@arcade/lib-fishdom": "workspace:*",
     "@arcade/lib-hellotown": "workspace:*",

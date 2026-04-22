@@ -88,6 +88,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── ForestPop ───
+import { ClearScreen as ForestPopClear } from './games/forestpop/ClearScreen';
+import { HUD as ForestPopHUD } from './games/forestpop/HUD';
+import { useGame as useForestPopGame, type GameResult as ForestPopResult } from './games/forestpop/useGame';
 // ─── HelloTown ───
 import { ClearScreen as HelloTownClear } from './games/hellotown/ClearScreen';
 import { HUD as HelloTownHUD } from './games/hellotown/HUD';
@@ -857,6 +861,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── ForestPop Routes ──────────────────────────────────
+
+function ForestPopTitleRoute() {
 // ─── Root ──────────────────────────────────────────────
 // ─── HelloTown Routes ─────────────────────────────────
 
@@ -899,6 +906,11 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🌲 Forest Pop</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Tap groups of forest friends to pop!</p>
+      <button
+        onClick={() => navigate('/games/forestpop/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#16A34A', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
       <h1 style={{ fontSize: 40, fontWeight: 800, color: '#8B4513', letterSpacing: -1 }}>Hello Town</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Merge items to build your town!</p>
       <button
@@ -937,6 +949,40 @@ function BrainOutTitleRoute() {
   );
 }
 
+function ForestPopStageRoute() {
+  const { stageId } = useParams();
+  const navigate = useNavigate();
+  const parsed = parseInt(stageId || '1', 10);
+  const stage = Number.isNaN(parsed) ? 1 : parsed;
+  const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<ForestPopResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: ForestPopResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: ForestPopResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/forestpop/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/forestpop/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <ForestPopClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <ForestPopPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function ForestPopPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: ForestPopResult) => void; onGameOver: (r: ForestPopResult) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useForestPopGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <ForestPopHUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
 function HelloTownStageRoute() {
 function TangramStageRoute() {
 function PixelArtStageRoute() {
@@ -2283,6 +2329,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* ForestPop */}
+      <Route path="/games/forestpop/v1" element={<ForestPopTitleRoute />} />
+      <Route path="/games/forestpop/v1/stage/:stageId" element={<ForestPopStageRoute />} />
       {/* Fishdom */}
       <Route path="/games/fishdom/v1" element={<FishdomTitleRoute />} />
       <Route path="/games/fishdom/v1/stage/:stageId" element={<FishdomStageRoute />} />
