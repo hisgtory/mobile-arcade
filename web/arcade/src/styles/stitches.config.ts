@@ -1,6 +1,6 @@
 import { createStitches } from '@stitches/react';
 
-export const { styled, css, globalCss, getCssText, theme } = createStitches({
+const stitches: ReturnType<typeof createStitches> = createStitches({
   theme: {
     colors: {
       gray50: '#F9FAFB',
@@ -25,3 +25,9 @@ export const { styled, css, globalCss, getCssText, theme } = createStitches({
     },
   },
 });
+
+export const styled: typeof stitches.styled = stitches.styled;
+export const css: typeof stitches.css = stitches.css;
+export const globalCss: typeof stitches.globalCss = stitches.globalCss;
+export const getCssText: typeof stitches.getCssText = stitches.getCssText;
+export const theme: typeof stitches.theme = stitches.theme;
