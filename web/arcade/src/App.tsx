@@ -60,6 +60,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── Arrows ───
+import { ClearScreen as ArrowsClear } from './games/arrows/ClearScreen';
+import { HUD as ArrowsHUD } from './games/arrows/HUD';
+import { useGame as useArrowsGame, type GameResult as ArrowsResult } from './games/arrows/useGame';
 // ─── BrainOut ───
 import { ClearScreen as BrainOutClear } from './games/brainout/ClearScreen';
 import { HUD as BrainOutHUD } from './games/brainout/HUD';
@@ -502,6 +506,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Arrows Routes ────────────────────────────────────
+
+function ArrowsTitleRoute() {
 // ─── Root ──────────────────────────────────────────────
 // ─── BrainOut Routes ──────────────────────────────────
 
@@ -510,6 +517,10 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Arrows</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Rotate arrows to find the path!</p>
+      <button
+        onClick={() => navigate('/games/arrows/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🧠 Brain Out</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>넌센스 퀴즈에 도전하세요!</p>
       <button
@@ -522,11 +533,37 @@ function BrainOutTitleRoute() {
   );
 }
 
+function ArrowsStageRoute() {
 function BrainOutStageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<ArrowsResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: ArrowsResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/arrows/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/arrows/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <ArrowsClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <ArrowsPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function ArrowsPlaying({ stage, onClear }: { stage: number; onClear: (r: ArrowsResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useArrowsGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <ArrowsHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<BrainOutResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -1655,6 +1692,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* Arrows */}
+      <Route path="/games/arrows/v1" element={<ArrowsTitleRoute />} />
+      <Route path="/games/arrows/v1/stage/:stageId" element={<ArrowsStageRoute />} />
       {/* BrainOut */}
       <Route path="/games/brainout/v1" element={<BrainOutTitleRoute />} />
       <Route path="/games/brainout/v1/stage/:stageId" element={<BrainOutStageRoute />} />
