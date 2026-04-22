@@ -12,12 +12,14 @@ let msgCounter = 0;
 
 function sendToRN(type: string, payload: Record<string, unknown>): void {
   if (!isRN) return;
+
   const msg = {
     type,
     payload,
     msgId: `ws-${Date.now()}-${++msgCounter}`,
     timestamp: Date.now(),
   };
+
   window.ReactNativeWebView!.postMessage(JSON.stringify(msg));
 }
 
@@ -28,9 +30,10 @@ export function haptic(event: string): void {
 export function navigateToArcade(): void {
   if (isRN) {
     sendToRN('NAVIGATE', { target: 'arcade' });
-  } else {
-    window.location.href = '/';
+    return;
   }
+
+  window.location.href = '/';
 }
 
 export function stageComplete(data: {
@@ -41,8 +44,4 @@ export function stageComplete(data: {
   cleared: boolean;
 }): void {
   sendToRN(data.cleared ? 'STAGE_CLEAR' : 'GAME_OVER', data);
-}
-
-export function haptic(event: string): void {
-  sendToRN('HAPTIC', { style: event });
 }

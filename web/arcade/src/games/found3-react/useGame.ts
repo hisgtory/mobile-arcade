@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { GameState } from '@arcade/lib-found3-react';
-import { stageComplete, haptic } from '../../utils/bridge';
+import { haptic, stageComplete } from '../../utils/bridge';
 
 export { haptic };
 
@@ -8,19 +8,6 @@ export interface GameResult {
   score: number;
   elapsedMs: number;
   cleared: boolean;
-}
-
-interface GameState {
-  score: number;
-  elapsedMs: number;
-  remainingTiles: number;
-  totalTiles: number;
-}
-
-interface UseGameOptions {
-  stage: number;
-  onClear?: (result: GameResult) => void;
-  onGameOver?: (result: GameResult) => void;
 }
 
 interface HUDGameState {
@@ -31,9 +18,16 @@ interface HUDGameState {
   slotItems: GameState['slotItems'];
 }
 
+interface UseGameOptions {
+  stage: number;
+  onClear?: (result: GameResult) => void;
+  onGameOver?: (result: GameResult) => void;
+}
+
 export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const onClearRef = useRef(onClear);
   onClearRef.current = onClear;
+
   const onGameOverRef = useRef(onGameOver);
   onGameOverRef.current = onGameOver;
 
@@ -42,6 +36,7 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     elapsedMs: 0,
     remainingTiles: 0,
     totalTiles: 0,
+    slotItems: [],
   });
 
   const handleStateUpdate = useCallback((state: GameState) => {
@@ -50,33 +45,36 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
       elapsedMs: state.elapsedMs ?? 0,
       remainingTiles: state.remainingTiles ?? 0,
       totalTiles: state.totalTiles ?? 0,
+      slotItems: state.slotItems ?? [],
     });
   }, []);
 
-  const handleClear = useCallback((result: { score: number; elapsedMs: number }) => {
-    haptic('game-clear');
-    stageComplete({ stage, score: result.score, elapsedMs: result.elapsedMs, cleared: true });
-    onClearRef.current?.({ ...result, cleared: true });
-  }, [stage]);
+  const handleClear = useCallback(
+    (result: { score: number; elapsedMs: number }) => {
+      haptic('game-clear');
+      stageComplete({
+        stage,
+        score: result.score,
+        elapsedMs: result.elapsedMs,
+        cleared: true,
+      });
+      onClearRef.current?.({ ...result, cleared: true });
+    },
+    [stage],
+  );
 
-  const handleGameOver = useCallback((result: { score: number; elapsedMs: number }) => {
-    stageComplete({ stage, score: result.score, elapsedMs: result.elapsedMs, cleared: false });
-    onGameOverRef.current?.({ ...result, cleared: false });
-  }, [stage]);
-
-  return {
-    gameState,
-  const doShuffle = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const doUndo = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const doHint = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
+  const handleGameOver = useCallback(
+    (result: { score: number; elapsedMs: number }) => {
+      stageComplete({
+        stage,
+        score: result.score,
+        elapsedMs: result.elapsedMs,
+        cleared: false,
+      });
+      onGameOverRef.current?.({ ...result, cleared: false });
+    },
+    [stage],
+  );
 
   const handleHaptic = useCallback((event: string) => {
     haptic(event);

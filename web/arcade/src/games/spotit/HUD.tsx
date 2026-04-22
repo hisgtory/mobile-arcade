@@ -92,7 +92,15 @@ interface HUDProps {
   targetTypes: ItemType[];
 }
 
-export function HUD({ stage, score, foundCount, targetCount, remainingMs, targetTypes }: HUDProps) {
+export function HUD({
+  stage,
+  score,
+  foundCount,
+  foundTypes,
+  targetCount,
+  remainingMs,
+  targetTypes,
+}: HUDProps) {
   return (
     <>
       <Container>

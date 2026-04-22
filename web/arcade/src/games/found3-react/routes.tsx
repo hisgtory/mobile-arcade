@@ -1,22 +1,23 @@
-import { useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { GameBoard, type GameBoardHandle } from '@arcade/lib-found3-react';
-import { GameBoard, TILE_COLORS, type SlotItem } from '@arcade/lib-found3-react';
+import { useCallback, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import {
+  GameBoard,
+  TILE_COLORS,
+  type GameBoardHandle,
+  type SlotItem,
+} from '@arcade/lib-found3-react';
 import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { StageMap, type StageInfo } from '../../components/StageMap';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { styled } from '../../styles/stitches.config';
 import { registerRoutes } from '../../router';
 import { HUD } from './HUD';
-import { useGame, haptic, type GameResult } from './useGame';
-
-const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, cleared: false }));
-
 import { useGame, type GameResult } from './useGame';
 
-const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({ id: i + 1, cleared: false }));
-
-/* ---------- SlotBar ---------- */
+const STAGES: StageInfo[] = Array.from({ length: 5 }, (_, i) => ({
+  id: i + 1,
+  cleared: false,
+}));
 
 const SlotBarRoot = styled('div', {
   display: 'flex',
@@ -37,19 +38,6 @@ const SlotCell = styled('div', {
   justifyContent: 'center',
   alignItems: 'center',
 });
-
-function SlotBar({ items }: { items: SlotItem[] }) {
-  const slots = Array.from({ length: 7 }, (_, i) => items[i] ?? null);
-  return (
-    <SlotBarRoot>
-      {slots.map((item, i) => (
-        <SlotCell key={i} style={item ? { backgroundColor: TILE_COLORS[item.type] } : undefined} />
-      ))}
-    </SlotBarRoot>
-  );
-}
-
-/* ---------- ItemBar ---------- */
 
 const ItemBarRoot = styled('div', {
   display: 'flex',
@@ -85,7 +73,7 @@ const ItemButton = styled('button', {
   transition: 'transform 0.08s, box-shadow 0.08s',
   '&:active': {
     transform: 'translateY(2px)',
-    boxShadow: '0 0px 0 0 #D1D5DB, 0 1px 2px rgba(0,0,0,0.06)',
+    boxShadow: '0 0 0 0 #D1D5DB, 0 1px 2px rgba(0,0,0,0.06)',
   },
 });
 
@@ -115,16 +103,28 @@ const Badge = styled('span', {
   padding: '0 4px',
 });
 
+function SlotBar({ items }: { items: SlotItem[] }) {
+  const slots = Array.from({ length: 7 }, (_, i) => items[i] ?? null);
+
+  return (
+    <SlotBarRoot>
+      {slots.map((item, i) => (
+        <SlotCell
+          key={i}
+          style={item ? { backgroundColor: TILE_COLORS[item.type] } : undefined}
+        />
+      ))}
+    </SlotBarRoot>
+  );
+}
+
 interface ItemBarProps {
   onShuffle: () => void;
   onUndo: () => void;
   onHint: () => void;
-  shuffleCount: number;
-  undoCount: number;
-  hintCount: number;
 }
 
-function ItemBar({ onShuffle, onUndo, onHint, shuffleCount, undoCount, hintCount }: ItemBarProps) {
+function ItemBar({ onShuffle, onUndo, onHint }: ItemBarProps) {
   return (
     <ItemBarRoot>
       <ButtonWrap>
@@ -132,30 +132,29 @@ function ItemBar({ onShuffle, onUndo, onHint, shuffleCount, undoCount, hintCount
           <span style={{ fontSize: 20 }}>🔀</span>
           <ItemLabel>Shuffle</ItemLabel>
         </ItemButton>
-        <Badge>{shuffleCount}</Badge>
+        <Badge>1</Badge>
       </ButtonWrap>
       <ButtonWrap>
         <ItemButton onClick={onUndo}>
           <span style={{ fontSize: 20 }}>↩️</span>
           <ItemLabel>Undo</ItemLabel>
         </ItemButton>
-        <Badge>{undoCount}</Badge>
+        <Badge>1</Badge>
       </ButtonWrap>
       <ButtonWrap>
         <ItemButton onClick={onHint}>
           <span style={{ fontSize: 20 }}>💡</span>
           <ItemLabel>Hint</ItemLabel>
         </ItemButton>
-        <Badge>{hintCount}</Badge>
+        <Badge>1</Badge>
       </ButtonWrap>
     </ItemBarRoot>
   );
 }
 
-/* ---------- Routes ---------- */
-
 function Found3ReactHomeRoute() {
   const navigate = useNavigate();
+
   return (
     <GameHomeLayout title="Found 3" icon="🔍">
       <StageMap
@@ -176,46 +175,109 @@ function Found3ReactStageRoute() {
   const [gameResult, setGameResult] = useState<GameResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
-  const handleClear = useCallback((r: GameResult) => {
-    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  const handleClear = useCallback((result: GameResult) => {
+    if (!isRN) {
+      setGameResult(result);
+      setScreen('clear');
+    }
   }, []);
-  const handleGameOver = useCallback((r: GameResult) => {
-    if (!isRN) { setGameResult(r); setScreen('clear'); }
+
+  const handleGameOver = useCallback((result: GameResult) => {
+    if (!isRN) {
+      setGameResult(result);
+      setScreen('clear');
+    }
   }, []);
+
   const handleNext = useCallback(() => {
     navigate(`/games/found3-react/v1/stage/${stage + 1}`, { replace: true });
-    setPlayKey((k) => k + 1); setScreen('playing');
+    setPlayKey((k) => k + 1);
+    setScreen('playing');
   }, [navigate, stage]);
-  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
-  const handleHome = useCallback(() => navigate('/games/found3-react/v1', { replace: true }), [navigate]);
+
+  const handleRetry = useCallback(() => {
+    setPlayKey((k) => k + 1);
+    setScreen('playing');
+  }, []);
+
+  const handleHome = useCallback(() => {
+    navigate('/games/found3-react/v1', { replace: true });
+  }, [navigate]);
 
   if (screen === 'clear' && gameResult) {
     return (
       <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 24, padding: 20 }}>
-        <h1 style={{ fontSize: 36, fontWeight: 800, color: gameResult.cleared ? '#059669' : '#DC2626' }}>
+        <h1
+          style={{
+            fontSize: 36,
+            fontWeight: 800,
+            color: gameResult.cleared ? '#059669' : '#DC2626',
+          }}
+        >
           {gameResult.cleared ? 'Stage Clear!' : 'Game Over'}
         </h1>
-        <div style={{ backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '85%', maxWidth: 320, textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+        <div
+          style={{
+            backgroundColor: '#fff',
+            borderRadius: 16,
+            padding: 20,
+            width: '85%',
+            maxWidth: 320,
+            textAlign: 'center',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+          }}
+        >
           <p style={{ fontSize: 14, color: '#6B7280' }}>Score</p>
-          <p style={{ fontSize: 28, fontWeight: 700, color: '#111827' }}>{gameResult.score.toLocaleString()}</p>
+          <p style={{ fontSize: 28, fontWeight: 700, color: '#111827' }}>
+            {gameResult.score.toLocaleString()}
+          </p>
         </div>
         {gameResult.cleared && (
           <button
             onClick={handleNext}
-            style={{ backgroundColor: '#2563EB', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 18, fontWeight: 700, cursor: 'pointer', width: '85%', maxWidth: 320 }}
+            style={{
+              backgroundColor: '#2563EB',
+              color: '#fff',
+              border: 'none',
+              padding: '16px 48px',
+              borderRadius: 16,
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: 'pointer',
+              width: '85%',
+              maxWidth: 320,
+            }}
           >
             Next Stage
           </button>
         )}
         <button
           onClick={handleRetry}
-          style={{ backgroundColor: '#fff', color: '#374151', border: '1px solid #D1D5DB', padding: '16px 48px', borderRadius: 16, fontSize: 16, fontWeight: 600, cursor: 'pointer', width: '85%', maxWidth: 320 }}
+          style={{
+            backgroundColor: '#fff',
+            color: '#374151',
+            border: '1px solid #D1D5DB',
+            padding: '16px 48px',
+            borderRadius: 16,
+            fontSize: 16,
+            fontWeight: 600,
+            cursor: 'pointer',
+            width: '85%',
+            maxWidth: 320,
+          }}
         >
           Retry
         </button>
         <button
           onClick={handleHome}
-          style={{ backgroundColor: 'transparent', color: '#6B7280', border: 'none', padding: '8px', fontSize: 14, cursor: 'pointer' }}
+          style={{
+            backgroundColor: 'transparent',
+            color: '#6B7280',
+            border: 'none',
+            padding: '8px',
+            fontSize: 14,
+            cursor: 'pointer',
+          }}
         >
           Home
         </button>
@@ -223,16 +285,28 @@ function Found3ReactStageRoute() {
     );
   }
 
-  return <Found3ReactPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+  return (
+    <Found3ReactPlaying
+      key={`${stage}-${playKey}`}
+      stage={stage}
+      onClear={handleClear}
+      onGameOver={handleGameOver}
+    />
+  );
 }
 
-function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: GameResult) => void; onGameOver: (r: GameResult) => void }) {
+function Found3ReactPlaying({
+  stage,
+  onClear,
+  onGameOver,
+}: {
+  stage: number;
+  onClear: (result: GameResult) => void;
+  onGameOver: (result: GameResult) => void;
+}) {
   const boardRef = useRef<GameBoardHandle>(null);
-  const {
-    gameState, onStateUpdate,
-    gameState, haptic, onStateUpdate,
-    onClear: handleClear, onGameOver: handleGameOver,
-  } = useGame({ stage, onClear, onGameOver });
+  const { gameState, haptic, onStateUpdate, onClear: handleClear, onGameOver: handleGameOver } =
+    useGame({ stage, onClear, onGameOver });
 
   return (
     <PlayLayout>
@@ -243,30 +317,23 @@ function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onC
         totalTiles={gameState.totalTiles}
         score={gameState.score}
       />
-      <GameBoard
-        ref={boardRef}
-        stage={stage}
-        haptic={haptic}
-        onStateUpdate={onStateUpdate}
-        onClear={handleClear}
-        onGameOver={handleGameOver}
-      />
-      <ItemBar
-        onShuffle={() => boardRef.current?.doShuffle()}
-        onUndo={() => boardRef.current?.doUndo()}
-        onHint={() => boardRef.current?.doMagnet()}
-      />
       <SlotBar items={gameState.slotItems} />
       <div style={{ flex: 1, overflow: 'hidden' }}>
         <GameBoard
+          ref={boardRef}
           stage={stage}
           haptic={haptic}
           onStateUpdate={onStateUpdate}
           onClear={handleClear}
           onGameOver={handleGameOver}
+          hideSlotBar
         />
       </div>
-      <ItemBar onShuffle={doShuffle} onUndo={doUndo} onHint={doHint} />
+      <ItemBar
+        onShuffle={() => boardRef.current?.doShuffle()}
+        onUndo={() => boardRef.current?.doUndo()}
+        onHint={() => boardRef.current?.doMagnet()}
+      />
     </PlayLayout>
   );
 }

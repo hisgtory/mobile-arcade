@@ -77,35 +77,50 @@ interface HUDProps {
   total: number;
   elapsedMs: number;
   combo: number;
+  timeLimit?: number;
+  onShuffle?: () => void;
+  onHint?: () => void;
 }
 
-export function HUD({ stage, score, remaining, total, elapsedMs, combo }: HUDProps) {
+export function HUD({
+  stage,
+  score,
+  remaining,
+  total,
+  elapsedMs,
+  combo,
+  onShuffle,
+  onHint,
+}: HUDProps) {
   const cleared = total > 0 ? total - remaining : 0;
   return (
-    <Container>
-      <StatBlock>
-        <StatLabel>Stage</StatLabel>
-        <StatValue>{stage}</StatValue>
-      </StatBlock>
-      <StatBlock>
-        <StatLabel>Score</StatLabel>
-        <StatValue>{score.toLocaleString()}</StatValue>
-      </StatBlock>
-      <StatBlock>
-        <StatLabel>Tiles</StatLabel>
-        <StatValue>{cleared}/{total}</StatValue>
-      </StatBlock>
-      <StatBlock>
-        <StatLabel>Time</StatLabel>
-        <StatValue>{formatTime(elapsedMs)}</StatValue>
-      </StatBlock>
-      {combo > 1 && (
+    <>
+      <Container>
         <StatBlock>
-          <StatLabel>Combo</StatLabel>
-          <StatValue css={{ color: '$main500' }}>x{combo}</StatValue>
+          <StatLabel>Stage</StatLabel>
+          <StatValue>{stage}</StatValue>
         </StatBlock>
-      )}
-    </Container>
+        <StatBlock>
+          <StatLabel>Score</StatLabel>
+          <StatValue>{score.toLocaleString()}</StatValue>
+        </StatBlock>
+        <StatBlock>
+          <StatLabel>Tiles</StatLabel>
+          <StatValue>{cleared}/{total}</StatValue>
+        </StatBlock>
+        <StatBlock>
+          <StatLabel>Time</StatLabel>
+          <StatValue>{formatTime(elapsedMs)}</StatValue>
+        </StatBlock>
+        {combo > 1 && (
+          <StatBlock>
+            <StatLabel>Combo</StatLabel>
+            <StatValue css={{ color: '$main500' }}>x{combo}</StatValue>
+          </StatBlock>
+        )}
+      </Container>
+      {onShuffle && onHint && <ItemBar onShuffle={onShuffle} onHint={onHint} />}
+    </>
   );
 }
 

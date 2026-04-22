@@ -52,7 +52,9 @@ export function useGame({ stage, onClear }: UseGameOptions) {
 
   const doRestart = useCallback(() => {
     if (!gameRef.current) return;
-    const scene = gameRef.current.scene.getScene('PlayScene') as { restart: () => void } | null;
+    const scene = gameRef.current.scene.getScene('PlayScene') as unknown as
+      | { restart: () => void }
+      | null;
     scene?.restart();
   }, []);
 
