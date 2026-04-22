@@ -78,6 +78,13 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'nonogram',
+    name: 'Nonogram',
+    description: 'Fill the grid to reveal pixel art!',
+    icon: '🖼️',
+    category: 'puzzle',
+    color: '#059669',
+    webPath: '/games/nonogram/v1',
     id: 'hexaaway',
     name: 'Hexa Away',
     description: 'Fill hex lines with block pieces!',

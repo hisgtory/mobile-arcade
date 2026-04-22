@@ -20,6 +20,7 @@
     "@arcade/lib-pixelflow": "workspace:*",
     "@arcade/lib-tangledrope": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
+    "@arcade/lib-nonogram": "workspace:*",
     "@arcade/lib-dop5": "workspace:*",
     "@arcade/lib-savedoge": "workspace:*",
     "@arcade/lib-trickytwist": "workspace:*",

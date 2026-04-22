@@ -17,6 +17,10 @@ import './games/woodoku/routes';
 import './games/getcolor/routes';
 import './games/chess/routes';
 
+// ─── Nonogram (side-effect: registers routes) ───
+import './games/nonogram/routes';
+import { getRegisteredRoutes } from './router';
+
 // ─── Found3 ───
 import { TitleScreen as Found3Title } from './games/found3/TitleScreen';
 import { ClearScreen as Found3Clear } from './games/found3/ClearScreen';
@@ -943,6 +947,10 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* Registered game routes (Nonogram, etc.) */}
+      {getRegisteredRoutes().map((route) => (
+        <Route key={route.path} path={route.path} element={route.element} />
+      ))}
       {/* SaveDoge */}
       <Route path="/games/savedoge/v1" element={<SaveDogeTitleRoute />} />
       <Route path="/games/savedoge/v1/stage/:stageId" element={<SaveDogeStageRoute />} />
