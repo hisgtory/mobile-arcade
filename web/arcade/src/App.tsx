@@ -63,6 +63,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── YarnFever ───
+import { ClearScreen as YarnFeverClear } from './games/yarnfever/ClearScreen';
+import { HUD as YarnFeverHUD } from './games/yarnfever/HUD';
+import { useGame as useYarnFeverGame, type GameResult as YarnFeverResult } from './games/yarnfever/useGame';
 // ─── Arrows ───
 import { ClearScreen as ArrowsClear } from './games/arrows/ClearScreen';
 import { HUD as ArrowsHUD } from './games/arrows/HUD';
@@ -564,6 +568,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── YarnFever Routes ─────────────────────────────────
+
+function YarnFeverTitleRoute() {
 // ─── Root ──────────────────────────────────────────────
 // ─── Arrows Routes ────────────────────────────────────
 
@@ -576,6 +583,10 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Yarn Fever</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Untangle the yarn!</p>
+      <button
+        onClick={() => navigate('/games/yarnfever/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Arrows</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Rotate arrows to find the path!</p>
       <button
@@ -592,12 +603,38 @@ function BrainOutTitleRoute() {
   );
 }
 
+function YarnFeverStageRoute() {
 function ArrowsStageRoute() {
 function BrainOutStageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<YarnFeverResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: YarnFeverResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/yarnfever/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/yarnfever/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <YarnFeverClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <YarnFeverPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function YarnFeverPlaying({ stage, onClear }: { stage: number; onClear: (r: YarnFeverResult) => void }) {
+  const { containerRef, score, crossings, moves, doRestart } = useYarnFeverGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <YarnFeverHUD stage={stage} crossings={crossings} moves={moves} score={score} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<ArrowsResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -1755,6 +1792,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* YarnFever */}
+      <Route path="/games/yarnfever/v1" element={<YarnFeverTitleRoute />} />
+      <Route path="/games/yarnfever/v1/stage/:stageId" element={<YarnFeverStageRoute />} />
       {/* Arrows */}
       <Route path="/games/arrows/v1" element={<ArrowsTitleRoute />} />
       <Route path="/games/arrows/v1/stage/:stageId" element={<ArrowsStageRoute />} />
