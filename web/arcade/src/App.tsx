@@ -43,6 +43,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── BusCraze ───
+import { ClearScreen as BusCrazeClear } from './games/buscraze/ClearScreen';
+import { HUD as BusCrazeHUD } from './games/buscraze/HUD';
+import { useGame as useBusCrazeGame, type GameResult as BusCrazeResult } from './games/buscraze/useGame';
 // ─── DreamStore ───
 import { ClearScreen as DreamStoreClear } from './games/dreamstore/ClearScreen';
 import { HUD as DreamStoreHUD } from './games/dreamstore/HUD';
@@ -393,6 +397,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── BusCraze Routes ──────────────────────────────────
+
+function BusCrazeTitleRoute() {
 // ─── DOP5 Routes ──────────────────────────────────────
 
 function DOP5TitleRoute() {
@@ -430,6 +437,10 @@ function CandyFriendsTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Bus Craze</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Slide the bus out of traffic!</p>
+      <button
+        onClick={() => navigate('/games/buscraze/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>DOP 5</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Erase to find the answer!</p>
       <button
@@ -469,6 +480,7 @@ function CandyFriendsTitleRoute() {
   );
 }
 
+function BusCrazeStageRoute() {
 function DOP5StageRoute() {
 function MahjongMatchStageRoute() {
 function Puzzle3GoStageRoute() {
@@ -480,6 +492,31 @@ function CandyFriendsStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<BusCrazeResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: BusCrazeResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/buscraze/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/buscraze/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <BusCrazeClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <BusCrazePlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function BusCrazePlaying({ stage, onClear }: { stage: number; onClear: (r: BusCrazeResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useBusCrazeGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <BusCrazeHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<DOP5Result | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -976,6 +1013,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* BusCraze */}
+      <Route path="/games/buscraze/v1" element={<BusCrazeTitleRoute />} />
+      <Route path="/games/buscraze/v1/stage/:stageId" element={<BusCrazeStageRoute />} />
       {/* DOP5 */}
       <Route path="/games/dop5/v1" element={<DOP5TitleRoute />} />
       <Route path="/games/dop5/v1/stage/:stageId" element={<DOP5StageRoute />} />
