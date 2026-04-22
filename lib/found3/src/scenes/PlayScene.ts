@@ -232,6 +232,9 @@ export class PlayScene extends Phaser.Scene {
 
     this.inputLocked = true;
 
+    // Emit immediate tap event (for instant haptic feedback)
+    this.game.events.emit('tile-tapped');
+
     const slotItem: SlotItem = {
       id: tile.tileData.id,
       type: tile.tileData.type,
