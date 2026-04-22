@@ -88,6 +88,7 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
     id: 'allinhole',
     name: 'All in Hole',
     description: 'Swipe to slide all balls into holes!',
@@ -98,6 +99,7 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
     id: 'spotit',
     name: 'Spot It!',
     description: 'Find the hidden objects!',
@@ -108,6 +110,7 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
     id: 'forestpop',
     name: 'Forest Pop',
     description: 'Tap groups of forest friends to pop!',
@@ -118,6 +121,7 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
     id: 'linedraw',
     name: 'Line Draw',
     description: 'Draw a path through every cell!',
@@ -125,6 +129,9 @@ export const GAMES: GameInfo[] = [
     category: 'puzzle',
     color: '#2563EB',
     webPath: '/games/linedraw/v1',
+    isNew: true,
+  },
+  {
     id: 'escaperoom',
     name: 'Escape Room',
     description: 'Find clues & solve puzzles to escape!',
@@ -135,6 +142,7 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
     id: 'fishdom',
     name: 'Fishdom',
     description: 'Match 3 to build your aquarium!',
@@ -145,6 +153,7 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
     id: 'tangram',
     name: 'Tangram',
     description: 'Fill the silhouette with triangle pieces!',
@@ -152,6 +161,9 @@ export const GAMES: GameInfo[] = [
     category: 'puzzle',
     color: '#8B5CF6',
     webPath: '/games/tangram/v1',
+    isNew: true,
+  },
+  {
     id: 'skewerjam',
     name: 'Skewer Jam',
     description: 'Sort food on skewers!',
@@ -162,6 +174,7 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
     id: 'anipang4',
     name: 'Anipang 4',
     description: 'Match tiles before time runs out!',
@@ -172,6 +185,7 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
     id: 'brainout',
     name: 'Brain Out',
     description: '넌센스 퀴즈에 도전하세요!',
@@ -179,6 +193,9 @@ export const GAMES: GameInfo[] = [
     category: 'puzzle',
     color: '#F59E0B',
     webPath: '/games/brainout/v1',
+    isNew: true,
+  },
+  {
     id: 'nonogram',
     name: 'Nonogram',
     description: 'Fill the grid to reveal pixel art!',
@@ -186,6 +203,9 @@ export const GAMES: GameInfo[] = [
     category: 'puzzle',
     color: '#059669',
     webPath: '/games/nonogram/v1',
+    isNew: true,
+  },
+  {
     id: 'hexaaway',
     name: 'Hexa Away',
     description: 'Fill hex lines with block pieces!',
@@ -193,6 +213,9 @@ export const GAMES: GameInfo[] = [
     category: 'puzzle',
     color: '#10B981',
     webPath: '/games/hexaaway/v1',
+    isNew: true,
+  },
+  {
     id: 'wordpuzzle',
     name: 'Word Puzzle',
     description: 'Find hidden Korean words!',
@@ -200,6 +223,9 @@ export const GAMES: GameInfo[] = [
     category: 'puzzle',
     color: '#8B5CF6',
     webPath: '/games/wordpuzzle/v1',
+    isNew: true,
+  },
+  {
     id: 'candyfriends',
     name: 'Candy Friends',
     description: 'Match 3 sweet candies!',

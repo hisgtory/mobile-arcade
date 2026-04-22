@@ -215,6 +215,12 @@ stateDiagram-v2
 - 게임 오버 조건: 보드 가득 참 or 매칭 가능 쌍 없음
 - 하이스코어 기록
 
+## 햅틱 피드백 (Bridge Protocol 필수)
+
+- **타일 탭 (`tile-tapped`)**: Heavy × 1
+- **쌍 매칭 (`pair-matched`)**: Heavy × 6
+- **스테이지 클리어 (`stage-cleared`)**: Heavy × 3
+
 ## MVP 범위
 
 ### Phase 1 (MVP) — 1주
