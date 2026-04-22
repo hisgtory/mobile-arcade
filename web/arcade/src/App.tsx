@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── DOP5 ───
+import { ClearScreen as DOP5Clear } from './games/dop5/ClearScreen';
+import { HUD as DOP5HUD } from './games/dop5/HUD';
+import { useGame as useDOP5Game, type GameResult as DOP5Result } from './games/dop5/useGame';
 // ─── MahjongMatch ───
 import { ClearScreen as MahjongMatchClear } from './games/mahjong-match/ClearScreen';
 import { HUD as MahjongMatchHUD } from './games/mahjong-match/HUD';
@@ -381,6 +385,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── DOP5 Routes ──────────────────────────────────────
+
+function DOP5TitleRoute() {
 // ─── MahjongMatch Routes ──────────────────────────────
 
 function MahjongMatchTitleRoute() {
@@ -415,6 +422,10 @@ function CandyFriendsTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>DOP 5</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Erase to find the answer!</p>
+      <button
+        onClick={() => navigate('/games/dop5/v1/stage/1')}
       <GameTitle>Mahjong Match</GameTitle>
       <GameDescription>Match free tiles to clear the board!</GameDescription>
       <PrimaryButton onClick={() => navigate('/games/mahjong-match/v1/stage/1')}>
@@ -450,6 +461,7 @@ function CandyFriendsTitleRoute() {
   );
 }
 
+function DOP5StageRoute() {
 function MahjongMatchStageRoute() {
 function Puzzle3GoStageRoute() {
 function ScrewdomStageRoute() {
@@ -460,6 +472,31 @@ function CandyFriendsStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<DOP5Result | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: DOP5Result) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/dop5/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/dop5/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <DOP5Clear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <DOP5Playing key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function DOP5Playing({ stage, onClear }: { stage: number; onClear: (r: DOP5Result) => void }) {
+  const { containerRef, score, erasePercent, doRestart } = useDOP5Game({ stage, onClear });
+  return (
+    <PlayLayout>
+      <DOP5HUD stage={stage} score={score} erasePercent={erasePercent} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<MahjongMatchResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -886,6 +923,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* DOP5 */}
+      <Route path="/games/dop5/v1" element={<DOP5TitleRoute />} />
+      <Route path="/games/dop5/v1/stage/:stageId" element={<DOP5StageRoute />} />
       {/* MahjongMatch */}
       <Route path="/games/mahjong-match/v1" element={<MahjongMatchTitleRoute />} />
       <Route path="/games/mahjong-match/v1/stage/:stageId" element={<MahjongMatchStageRoute />} />
