@@ -78,6 +78,25 @@ rn/
 <GameWebView gameId="found3" webPath="/games/found3/v1" stageId={1} />
 ```
 
+### Dev URL 해상도 (ADR-011)
+
+| 환경 | 사용되는 호스트 | 설정 방법 |
+|------|----------------|-----------|
+| Android emulator | `10.0.2.2` (자동) | 설정 불필요 |
+| iOS simulator | `localhost` (자동) | 설정 불필요 |
+| 실기기 (WiFi) | **없음 — 반드시 설정** | `rn/.env` 파일 생성 |
+
+**실기기 연결 시 `rn/.env` 파일 생성:**
+
+```bash
+# 머신의 로컬 IP 주소 또는 Bonjour hostname
+EXPO_PUBLIC_DEV_HOST=192.168.1.100
+# 또는
+EXPO_PUBLIC_DEV_HOST=your-mac.local
+```
+
+`rn/.env.example`을 참고하세요.
+
 ## Message Bridge (BridgeHost)
 
 게임-agnostic 양방향 메시지 프로토콜. 스토리지 키는 `@arcade/{gameId}/` 프리픽스.

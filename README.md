@@ -55,6 +55,31 @@ claude
 /team
 ```
 
+## RN WebView 개발 설정
+
+RN 앱은 WebView로 Vite dev server에 접속합니다. 환경별 설정:
+
+| 환경 | 호스트 | 추가 설정 |
+|------|--------|-----------|
+| Android emulator | `10.0.2.2` (자동) | 없음 |
+| iOS simulator | `localhost` (자동) | 없음 |
+| 실기기 (WiFi) | 직접 지정 필요 | `rn/.env` 생성 필요 |
+
+**실기기 연결 시:**
+
+```bash
+# rn/.env 파일 생성 (rn/.env.example 참고)
+echo "EXPO_PUBLIC_DEV_HOST=192.168.1.100" > rn/.env
+
+# Vite dev server 시작 (web/arcade 기준)
+cd web/arcade && pnpm dev
+
+# Expo 시작
+cd rn && npx expo start
+```
+
+> **Note**: `EXPO_PUBLIC_DEV_HOST` 미설정 시 dev 콘솔에 경고 메시지가 출력됩니다. 에뮬레이터/시뮬레이터에서는 자동 기본값이 적용되므로 정상 동작합니다.
+
 ## Tech Stack
 
 - **Monorepo**: pnpm workspaces

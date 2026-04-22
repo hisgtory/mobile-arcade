@@ -182,15 +182,42 @@ web/arcade/
 
 ---
 
-## ADR-011: Bonjour mDNS for Dev Connectivity
+## ADR-011: WebView Dev URL 해상도 정책
+
+> **이전 결정(Bonjour mDNS 하드코딩)은 폐기됨.** `SG-MacBook-Pro.local` 같은 장비명 하드코딩은 제거.
 
 ### Decision
-개발 환경에서 IP 하드코딩 대신 Bonjour hostname(`SG-MacBook-Pro.local`) 사용.
+`EXPO_PUBLIC_DEV_HOST` 환경변수로 개발 호스트를 주입. 환경변수가 없을 때는 플랫폼별 안전한 기본값을 사용.
+
+### URL 해상도 규칙
+
+| 환경 | 기본값 | 비고 |
+|------|--------|------|
+| Android emulator | `10.0.2.2` | AVD 루프백 앨리어스 → 호스트 머신 localhost |
+| iOS simulator | `localhost` | 시뮬레이터가 호스트 머신 네트워크 공유 |
+| 실기기 (WiFi) | **없음 — 반드시 설정** | `EXPO_PUBLIC_DEV_HOST=<IP>` 필수 |
+| Production | N/A | `https://arcade.hisgtory.com` |
+
+### 환경변수 설정 방법
+
+`rn/.env` 파일 생성 (`.env.example` 참고):
+
+```bash
+# 실기기 연결 시
+EXPO_PUBLIC_DEV_HOST=192.168.1.100
+
+# macOS Bonjour (mDNS 지원 환경)
+EXPO_PUBLIC_DEV_HOST=your-mac.local
+```
+
+### 오류 처리
+- `EXPO_PUBLIC_DEV_HOST` 미설정 시 `console.warn` 출력 (dev 모드만)
+- 연결 실패 시 `GameWebView`의 `onError`에서 `console.error` 출력
 
 ### Rationale
-- WiFi/장소 변경 시 IP 수동 변경 불필요
-- Apple 기기 간 자동 해석 (mDNS)
-- `vite.config.ts`에 `allowedHosts: true` 필요
+- 장비명 하드코딩 제거 → 팀 개발, 장비 교체, CI 안정성
+- 새 팀원이 `.env.example` 한 줄만 보고 환경 재현 가능
+- `vite.config.ts`에 `allowedHosts: true` 설정 유지 필요
 
 ---
 
