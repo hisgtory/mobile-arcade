@@ -68,6 +68,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── ColorSlide ───
+import { ClearScreen as ColorSlideClear } from './games/colorslide/ClearScreen';
+import { HUD as ColorSlideHUD } from './games/colorslide/HUD';
+import { useGame as useColorSlideGame, type GameResult as ColorSlideResult } from './games/colorslide/useGame';
 // ─── YarnFever ───
 import { ClearScreen as YarnFeverClear } from './games/yarnfever/ClearScreen';
 import { HUD as YarnFeverHUD } from './games/yarnfever/HUD';
@@ -321,6 +325,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── ColorSlide Routes ────────────────────────────────
+
+function ColorSlideTitleRoute() {
 // ─── TrafficJam Routes ─────────────────────────────────
 
 function TrafficJamTitleRoute() {
@@ -355,6 +362,14 @@ function Anipang4TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Color Slide</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Slide tiles to group colors!</p>
+      <button
+        onClick={() => navigate('/games/colorslide/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#A855F7', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Traffic Frenzy</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Tap cars to clear the road!</p>
       <button
@@ -392,6 +407,7 @@ function Anipang4TitleRoute() {
   );
 }
 
+function ColorSlideStageRoute() {
 function TrafficJamStageRoute() {
 function StarryNightPlayRoute() {
   const navigate = useNavigate();
@@ -441,6 +457,31 @@ function Anipang4StageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<ColorSlideResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: ColorSlideResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/colorslide/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/colorslide/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <ColorSlideClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <ColorSlidePlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function ColorSlidePlaying({ stage, onClear }: { stage: number; onClear: (r: ColorSlideResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useColorSlideGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <ColorSlideHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<TrafficJamResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -1797,6 +1838,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* ColorSlide */}
+      <Route path="/games/colorslide/v1" element={<ColorSlideTitleRoute />} />
+      <Route path="/games/colorslide/v1/stage/:stageId" element={<ColorSlideStageRoute />} />
       {/* TrafficJam */}
       <Route path="/games/trafficjam/v1" element={<TrafficJamTitleRoute />} />
       <Route path="/games/trafficjam/v1/stage/:stageId" element={<TrafficJamStageRoute />} />
