@@ -3,7 +3,7 @@
 ## Role: React + Stitches Web Game Developer
 
 `@arcade/lib-found3`를 사용하여 웹 게임을 빌드합니다.
-이 웹 빌드는 `found3/rn`에서 WebView로 로드됩니다.
+이 웹 빌드는 `rn` 슈퍼앱에서 WebView로 로드됩니다.
 
 ## Tech Stack
 

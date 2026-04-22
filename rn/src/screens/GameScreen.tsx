@@ -26,6 +26,11 @@ export function GameScreen({ route, navigation }: Props) {
   const [currentStage, setCurrentStage] = useState(0);
   const [gameResult, setGameResult] = useState<StageCompleteData | null>(null);
 
+  // Save last played game for quick resume on next app launch
+  useEffect(() => {
+    void AsyncStorage.setItem('@arcade/lastPlayedGame', gameId).catch(() => {});
+  }, [gameId]);
+
   // Load saved stage from AsyncStorage on mount (skip for endless games)
   useEffect(() => {
     if (!hasStages) {
@@ -73,6 +78,10 @@ export function GameScreen({ route, navigation }: Props) {
     navigation.goBack();
   }, [navigation]);
 
+  const handleNavigateArcade = useCallback(() => {
+    navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
+  }, [navigation]);
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* ─── Header (kocket style) ─── */}
@@ -106,6 +115,7 @@ export function GameScreen({ route, navigation }: Props) {
             webPath={webPath}
             stageId={hasStages ? currentStage : undefined}
             onStageComplete={handleStageComplete}
+            onNavigateArcade={handleNavigateArcade}
           />
         </View>
       )}
