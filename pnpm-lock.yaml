@@ -134,7 +134,7 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
-  lib/trickytwist:
+  lib/trickyprank:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -248,9 +248,9 @@ importers:
       '@arcade/lib-tictactoe':
         specifier: workspace:*
         version: link:../../lib/tictactoe
-      '@arcade/lib-trickytwist':
+      '@arcade/lib-trickyprank':
         specifier: workspace:*
-        version: link:../../lib/trickytwist
+        version: link:../../lib/trickyprank
       '@arcade/lib-watersort':
         specifier: workspace:*
         version: link:../../lib/watersort
