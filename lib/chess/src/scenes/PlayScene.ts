@@ -48,6 +48,8 @@ export class PlayScene extends Phaser.Scene {
   private playerWins = 0;
   private aiWins = 0;
   private draws = 0;
+  private aiMoveTimer: Phaser.Time.TimerEvent | null = null;
+  private roundEndTimer: Phaser.Time.TimerEvent | null = null;
 
   constructor() {
     super({ key: 'PlayScene' });
@@ -61,10 +63,14 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create() {
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.clearTimers();
+    });
     this.startNewGame();
   }
 
   private startNewGame() {
+    this.clearTimers();
     this.state = createInitialBoard();
     this.selected = null;
     this.legalForSelected = [];
@@ -289,10 +295,15 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private scheduleAI() {
-    this.time.delayedCall(400 + Math.random() * 250, () => this.doAIMove());
+    this.aiMoveTimer?.remove(false);
+    this.aiMoveTimer = this.time.delayedCall(400 + Math.random() * 250, () => {
+      this.aiMoveTimer = null;
+      this.doAIMove();
+    });
   }
 
   private doAIMove() {
+    if (this.phase !== 'ai_turn') return;
     const move = this.ai.selectMove(this.state);
     if (!move) {
       // No legal moves — game should already be over; recompute status.
@@ -335,19 +346,33 @@ export class PlayScene extends Phaser.Scene {
     this.draw();
     this.emitState();
 
-    this.time.delayedCall(600, () => {
+    const winner =
+      this.state.winner === this.playerColor
+        ? 'player'
+        : this.state.winner === 'draw'
+          ? 'draw'
+          : 'ai';
+    const playerWins = this.playerWins;
+    const aiWins = this.aiWins;
+    const draws = this.draws;
+
+    this.roundEndTimer?.remove(false);
+    this.roundEndTimer = this.time.delayedCall(600, () => {
+      this.roundEndTimer = null;
       this.game.events.emit('round-end', {
-        winner:
-          this.state.winner === this.playerColor
-            ? 'player'
-            : this.state.winner === 'draw'
-              ? 'draw'
-              : 'ai',
-        playerWins: this.playerWins,
-        aiWins: this.aiWins,
-        draws: this.draws,
+        winner,
+        playerWins,
+        aiWins,
+        draws,
       });
     });
+  }
+
+  private clearTimers() {
+    this.aiMoveTimer?.remove(false);
+    this.aiMoveTimer = null;
+    this.roundEndTimer?.remove(false);
+    this.roundEndTimer = null;
   }
 
   // ─── Events ───────────────────────────────────────────

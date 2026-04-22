@@ -316,7 +316,7 @@ export function isInCheck(state: BoardState, color: Color): boolean {
 export function applyMove(state: BoardState, move: Move): BoardState {
   const board = state.board.slice();
   const piece = board[move.from];
-  if (!piece) return state;
+  if (!piece) return { ...state, board };
 
   let captured = move.captured ?? board[move.to] ?? null;
 

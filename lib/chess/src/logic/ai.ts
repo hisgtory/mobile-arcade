@@ -55,5 +55,7 @@ export function createAI(difficulty: Difficulty): ChessAI {
       return new GreedyAI();
     case 'hard':
       return new GreedyAI();
+    default:
+      return new GreedyAI();
   }
 }
