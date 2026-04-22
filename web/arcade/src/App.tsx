@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── CarJam ───
+import { ClearScreen as CarJamClear } from './games/carjam/ClearScreen';
+import { HUD as CarJamHUD } from './games/carjam/HUD';
+import { useGame as useCarJamGame, type GameResult as CarJamResult } from './games/carjam/useGame';
 // ─── BlockyQuest ───
 import { ClearScreen as BlockyQuestClear } from './games/blockyquest/ClearScreen';
 import { HUD as BlockyQuestHUD } from './games/blockyquest/HUD';
@@ -333,6 +337,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── CarJam Routes ─────────────────────────────────────
+
+function CarJamTitleRoute() {
 // ─── ColorSlide Routes ────────────────────────────────
 
 function ColorSlideTitleRoute() {
@@ -370,6 +377,10 @@ function Anipang4TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Car Jam</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Tap cars to clear the traffic!</p>
+      <button
+        onClick={() => navigate('/games/carjam/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Color Slide</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Slide tiles to group colors!</p>
       <button
@@ -415,6 +426,7 @@ function Anipang4TitleRoute() {
   );
 }
 
+function CarJamStageRoute() {
 function ColorSlideStageRoute() {
 function TrafficJamStageRoute() {
 function StarryNightPlayRoute() {
@@ -465,6 +477,31 @@ function Anipang4StageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<CarJamResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: CarJamResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/carjam/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/carjam/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <CarJamClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <CarJamPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function CarJamPlaying({ stage, onClear }: { stage: number; onClear: (r: CarJamResult) => void }) {
+  const { containerRef, score, moves, carsRemaining, carsTotal, doUndo, doRestart } = useCarJamGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <CarJamHUD stage={stage} score={score} moves={moves} carsRemaining={carsRemaining} carsTotal={carsTotal} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<ColorSlideResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -656,6 +693,7 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Root ──────────────────────────────────────────────
 // ─── BlockyQuest Routes ────────────────────────────────
 
 function BlockyQuestTitleRoute() {
@@ -1923,6 +1961,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* CarJam */}
+      <Route path="/games/carjam/v1" element={<CarJamTitleRoute />} />
+      <Route path="/games/carjam/v1/stage/:stageId" element={<CarJamStageRoute />} />
       {/* BlockyQuest */}
       <Route path="/games/blockyquest/v1" element={<BlockyQuestTitleRoute />} />
       <Route path="/games/blockyquest/v1/stage/:stageId" element={<BlockyQuestStageRoute />} />
