@@ -8,6 +8,16 @@ importers:
 
   .: {}
 
+  lib/blockcrush:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/blockpuzzle:
     dependencies:
       phaser:
@@ -28,6 +38,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/chess:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/crunch3:
     dependencies:
       phaser:
@@ -39,6 +59,32 @@ importers:
         version: 5.9.3
 
   lib/found3:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/found3-react:
+    dependencies:
+      '@stitches/react':
+        specifier: ^1.2.8
+        version: 1.2.8(react@18.3.1)
+      react:
+        specifier: ^18.3.0
+        version: 18.3.1
+    devDependencies:
+      '@types/react':
+        specifier: 18.2.79
+        version: 18.2.79
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/getcolor:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -98,6 +144,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/woodoku:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   rn:
     dependencies:
       '@react-native-async-storage/async-storage':
@@ -146,18 +202,30 @@ importers:
 
   web/arcade:
     dependencies:
+      '@arcade/lib-blockcrush':
+        specifier: workspace:*
+        version: link:../../lib/blockcrush
       '@arcade/lib-blockpuzzle':
         specifier: workspace:*
         version: link:../../lib/blockpuzzle
       '@arcade/lib-blockrush':
         specifier: workspace:*
         version: link:../../lib/blockrush
+      '@arcade/lib-chess':
+        specifier: workspace:*
+        version: link:../../lib/chess
       '@arcade/lib-crunch3':
         specifier: workspace:*
         version: link:../../lib/crunch3
       '@arcade/lib-found3':
         specifier: workspace:*
         version: link:../../lib/found3
+      '@arcade/lib-found3-react':
+        specifier: workspace:*
+        version: link:../../lib/found3-react
+      '@arcade/lib-getcolor':
+        specifier: workspace:*
+        version: link:../../lib/getcolor
       '@arcade/lib-minesweeper':
         specifier: workspace:*
         version: link:../../lib/minesweeper
@@ -173,6 +241,9 @@ importers:
       '@arcade/lib-watersort':
         specifier: workspace:*
         version: link:../../lib/watersort
+      '@arcade/lib-woodoku':
+        specifier: workspace:*
+        version: link:../../lib/woodoku
       '@stitches/react':
         specifier: ^1.2.8
         version: 1.2.8(react@18.3.1)
@@ -1364,6 +1435,9 @@ packages:
     resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
     peerDependencies:
       '@types/react': ^18.0.0
+
+  '@types/react@18.2.79':
+    resolution: {integrity: sha512-RwGAGXPl9kSXwdNTafkOEuFrTBD5SA2B3iEB96xi8+xu5ddUa/cpvyVCSNn+asgLCTHkb5ZxN8gbuibYJi4s1w==}
 
   '@types/react@18.3.28':
     resolution: {integrity: sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw==}
@@ -4581,6 +4655,11 @@ snapshots:
   '@types/react-dom@18.3.7(@types/react@18.3.28)':
     dependencies:
       '@types/react': 18.3.28
+
+  '@types/react@18.2.79':
+    dependencies:
+      '@types/prop-types': 15.7.15
+      csstype: 3.2.3
 
   '@types/react@18.3.28':
     dependencies:
