@@ -100,6 +100,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── SpotDiff ───
+import { ClearScreen as SpotDiffClear } from './games/spotdiff/ClearScreen';
+import { HUD as SpotDiffHUD } from './games/spotdiff/HUD';
+import { useGame as useSpotDiffGame, type GameResult as SpotDiffResult } from './games/spotdiff/useGame';
 // ─── MysteryTown ───
 import { ClearScreen as MysteryTownClear } from './games/mystery-town/ClearScreen';
 import { HUD as MysteryTownHUD } from './games/mystery-town/HUD';
@@ -1007,6 +1011,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── SpotDiff Routes ──────────────────────────────────
+
+function SpotDiffTitleRoute() {
 // ─── Root ──────────────────────────────────────────────
 // ─── MysteryTown Routes ───────────────────────────────
 
@@ -1060,6 +1067,10 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Spot Diff</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Find all the differences!</p>
+      <button
+        onClick={() => navigate('/games/spotdiff/v1/stage/1')}
       <h1 style={{ fontSize: 42, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🔍 Mystery Town</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Merge clues to solve the case!</p>
       <button
@@ -1119,6 +1130,7 @@ function BrainOutTitleRoute() {
   );
 }
 
+function SpotDiffStageRoute() {
 function MysteryTownStageRoute() {
 function SpotItStageRoute() {
 function ForestPopStageRoute() {
@@ -1167,6 +1179,34 @@ function BrainOutStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<SpotDiffResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: SpotDiffResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: SpotDiffResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/spotdiff/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/spotdiff/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <SpotDiffClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <SpotDiffPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function SpotDiffPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: SpotDiffResult) => void; onGameOver: (r: SpotDiffResult) => void }) {
+  const { containerRef, score, lives, maxLives, foundCount, totalDiffs, elapsedMs, timeLimitMs } = useSpotDiffGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <SpotDiffHUD stage={stage} score={score} foundCount={foundCount} totalDiffs={totalDiffs} lives={lives} maxLives={maxLives} elapsedMs={elapsedMs} timeLimitMs={timeLimitMs} />
   const [gameResult, setGameResult] = useState<MysteryTownResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -2579,6 +2619,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* SpotDiff */}
+      <Route path="/games/spotdiff/v1" element={<SpotDiffTitleRoute />} />
+      <Route path="/games/spotdiff/v1/stage/:stageId" element={<SpotDiffStageRoute />} />
       {/* SlidingMatch */}
       <Route path="/games/slidematch/v1" element={<SlideMatchTitleRoute />} />
       <Route path="/games/slidematch/v1/stage/:stageId" element={<SlideMatchStageRoute />} />
