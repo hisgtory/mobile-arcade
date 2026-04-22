@@ -69,6 +69,7 @@
     "@arcade/lib-found3-react": "workspace:*",
     "@arcade/lib-woodoku": "workspace:*",
     "@arcade/lib-getcolor": "workspace:*",
+    "@arcade/lib-tileconnect": "workspace:*",
     "@stitches/react": "^1.2.8",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",

@@ -313,6 +313,9 @@ export class BridgeHost {
     // ─── Block Crush ───
     'block-tapped':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
     'blocks-crushed': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── TileConnect ───
+    'pair-matched': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    'stage-cleared': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
     // ─── Chess ───
     'chess-piece-tapped': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
     'chess-piece-moved': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
