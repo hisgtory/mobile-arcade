@@ -58,6 +58,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/dop5:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/found3:
     dependencies:
       phaser:
@@ -134,7 +144,7 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
-  lib/tidymaster:
+  lib/trickyprank:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -227,6 +237,9 @@ importers:
       '@arcade/lib-crunch3':
         specifier: workspace:*
         version: link:../../lib/crunch3
+      '@arcade/lib-dop5':
+        specifier: workspace:*
+        version: link:../../lib/dop5
       '@arcade/lib-found3':
         specifier: workspace:*
         version: link:../../lib/found3
@@ -248,9 +261,9 @@ importers:
       '@arcade/lib-tictactoe':
         specifier: workspace:*
         version: link:../../lib/tictactoe
-      '@arcade/lib-tidymaster':
+      '@arcade/lib-trickyprank':
         specifier: workspace:*
-        version: link:../../lib/tidymaster
+        version: link:../../lib/trickyprank
       '@arcade/lib-watersort':
         specifier: workspace:*
         version: link:../../lib/watersort
