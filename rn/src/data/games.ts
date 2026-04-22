@@ -78,6 +78,13 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'brainout',
+    name: 'Brain Out',
+    description: '넌센스 퀴즈에 도전하세요!',
+    icon: '🧠',
+    category: 'puzzle',
+    color: '#F59E0B',
+    webPath: '/games/brainout/v1',
     id: 'nonogram',
     name: 'Nonogram',
     description: 'Fill the grid to reveal pixel art!',
