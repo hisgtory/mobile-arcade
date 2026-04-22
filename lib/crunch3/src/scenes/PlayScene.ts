@@ -191,6 +191,7 @@ export class PlayScene extends Phaser.Scene {
       const toPos: CellPos = { row: targetRow, col: targetCol };
 
       this.selectedTile = null;
+      this.game.events.emit('tile-swapped');
       this.trySwap(fromPos, toPos);
     });
   }
@@ -278,6 +279,7 @@ export class PlayScene extends Phaser.Scene {
     }
 
     this.emitScore();
+    this.game.events.emit('match-cleared');
 
     // Animate destroy
     const destroyPromises = allCells.map(
