@@ -32,6 +32,12 @@
 
 ## Project Overview
 
+모바일 미니게임 모노레포. 현재 기준 실행 구조는 `lib/{game}` → `web/arcade` → `rn` 이다.
+
+- `lib/{game}`: Phaser.io 기반 게임 코어 로직
+- `web/arcade`: 통합 웹 앱. React Router로 여러 게임을 서빙
+- `rn`: 단일 React Native Arcade 앱. WebView로 웹 게임을 래핑
+- `web/found3`, `web/crunch3`, `found3/rn`: 레거시 또는 개별 개발용 패키지
 모바일 미니게임 모노레포. `lib/{game}` → `web/{game}` → `rn` 파이프라인 구조.
 
 - `lib/{game}`: Phaser.io 기반 게임 코어 로직
@@ -41,6 +47,8 @@
 ## Architecture
 
 ```
+lib/{game}  →  web/arcade  →  rn
+(Phaser.io)   (Unified Web)   (RN WebView)
 lib/{game}  →  web/{game}  →  rn
 (Phaser.io)   (React+Stitches) (RN WebView 슈퍼앱)
 ```
@@ -53,6 +61,7 @@ lib/{game}  →  web/{game}  →  rn
 |----------|--------|-----------|
 | PRD | `prd/` | 게임 기획, 요구사항, 게임 디자인 |
 | Game Core | `lib/{game}/` | Phaser.io 씬, 게임 로직, 타입 |
+| Web Frontend | `web/arcade/` | 통합 웹 앱, React Router, Phaser 통합 |
 | Web Frontend | `web/{game}/` | React + Stitches UI, Phaser 통합 |
 | RN App | `rn/` | React Native, WebView 브릿지 |
 | Knowledge | `knowledge/` | 요구사항, 결정, 유저 bias, 진행 상황 기록 |
@@ -110,6 +119,10 @@ lib/{game}  →  web/{game}  →  rn
 새 게임 `{name}` 추가 시:
 1. `prd/{name}.md` 기획서 작성 (PRD 팀)
 2. `lib/{name}/` 게임 코어 구현 (Game Core 팀)
+3. `web/arcade/`에 라우트/훅/컴포넌트 연결 (Web Frontend 팀)
+4. `rn/src/data/games.ts`에 카탈로그 등록 (RN App 팀)
+5. 필요 시 전용 웹 패키지 또는 기타 워크스페이스를 추가
+6. 필요 시 루트 `pnpm-workspace.yaml`에 패키지 등록
 3. `web/{name}/` 웹 게임 빌드 (Web Frontend 팀)
 4. `rn/`에 게임 WebView 연동 (RN App 팀 — 단일 슈퍼앱)
 5. 루트 `pnpm-workspace.yaml`에 패키지 등록
