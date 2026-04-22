@@ -28,12 +28,13 @@ logs/
 .env.*.local
 
 # React Native
-found3/rn/ios/Pods/
-found3/rn/android/.gradle/
-found3/rn/android/app/build/
+rn/ios/Pods/
+rn/android/.gradle/
+rn/android/app/build/
 *.jks
 *.keystore
 
 # Metro
 .metro-health-check*
 rn/.expo/
+package-lock.json
