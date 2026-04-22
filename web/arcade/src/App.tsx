@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── SkewerJam ───
+import { ClearScreen as SkewerJamClear } from './games/skewerjam/ClearScreen';
+import { HUD as SkewerJamHUD } from './games/skewerjam/HUD';
+import { useGame as useSkewerJamGame, type GameResult as SkewerJamResult } from './games/skewerjam/useGame';
 // ─── Anipang4 ───
 import { ClearScreen as Anipang4Clear } from './games/anipang4/ClearScreen';
 import { HUD as Anipang4HUD } from './games/anipang4/HUD';
@@ -293,6 +297,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── SkewerJam Routes ─────────────────────────────────
+
+function SkewerJamTitleRoute() {
 // ─── Anipang4 Routes ──────────────────────────────────
 
 function Anipang4TitleRoute() {
@@ -300,6 +307,14 @@ function Anipang4TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Skewer Jam</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Sort food on skewers!</p>
+      <button
+        onClick={() => navigate('/games/skewerjam/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#EA580C', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Anipang 4</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Match tiles before time runs out!</p>
       <button
@@ -313,11 +328,37 @@ function Anipang4TitleRoute() {
   );
 }
 
+function SkewerJamStageRoute() {
 function Anipang4StageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<SkewerJamResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: SkewerJamResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/skewerjam/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/skewerjam/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <SkewerJamClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <SkewerJamPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function SkewerJamPlaying({ stage, onClear }: { stage: number; onClear: (r: SkewerJamResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useSkewerJamGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <SkewerJamHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<Anipang4Result | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -1498,6 +1539,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* SkewerJam */}
+      <Route path="/games/skewerjam/v1" element={<SkewerJamTitleRoute />} />
+      <Route path="/games/skewerjam/v1/stage/:stageId" element={<SkewerJamStageRoute />} />
       {/* Anipang4 */}
       <Route path="/games/anipang4/v1" element={<Anipang4TitleRoute />} />
       <Route path="/games/anipang4/v1/stage/:stageId" element={<Anipang4StageRoute />} />
