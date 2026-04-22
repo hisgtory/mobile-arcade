@@ -39,6 +39,7 @@ export function useGame({ difficulty = 'medium' }: UseGameOptions) {
     const game = createGame(containerRef.current, { difficulty });
 
     game.events.on('piece-tapped', () => haptic('chess-piece-tapped'));
+    game.events.on('piece-moved', () => haptic('chess-piece-moved'));
     game.events.on('piece-captured', () => haptic('chess-capture'));
     game.events.on('check', () => haptic('chess-check'));
     game.events.on('checkmate', () => haptic('chess-checkmate'));

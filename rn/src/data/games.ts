@@ -80,7 +80,7 @@ export const GAMES: GameInfo[] = [
   {
     id: 'chess',
     name: 'Chess',
-    description: 'Classic chess vs AI — full rules.',
+    description: 'Classic chess vs AI - full rules.',
     icon: '♛',
     category: 'strategy',
     color: '#374151',

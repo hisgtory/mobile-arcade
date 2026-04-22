@@ -7,6 +7,7 @@ import {
   type GameConfig,
   type Move,
   type Piece,
+  type PieceType,
   type Square,
 } from '../types';
 import {
@@ -30,21 +31,23 @@ const PIECE_GLYPH: Record<string, string> = {
 
 type Phase = 'player_turn' | 'ai_turn' | 'game_over';
 
+type PromotionPrompt = {
+  moves: Move[];
+};
+
 export class PlayScene extends Phaser.Scene {
   private state!: BoardState;
-  private config!: GameConfig;
+  private gameConfig?: GameConfig;
   private dpr = 1;
   private phase: Phase = 'player_turn';
   private playerColor: Color = 'w';
   private ai!: ChessAI;
-
   private boardOriginX = 0;
   private boardOriginY = 0;
   private cellSize = 0;
-
   private selected: Square | null = null;
   private legalForSelected: Move[] = [];
-
+  private promotionPrompt: PromotionPrompt | null = null;
   private playerWins = 0;
   private aiWins = 0;
   private draws = 0;
@@ -55,25 +58,25 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
-    this.playerColor = this.config.playerColor ?? 'w';
-    this.ai = createAI(this.config.difficulty ?? 'medium');
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    this.gameConfig = this.game.registry.get('chessConfig') as GameConfig;
+    this.dpr = this.game.registry.get('dpr') || 1;
+    this.playerColor = this.gameConfig?.playerColor ?? 'w';
+    this.ai = createAI(this.gameConfig?.difficulty ?? 'medium');
   }
 
   create() {
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.clearTimers();
-    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clearScheduledCallbacks());
     this.startNewGame();
   }
 
   private startNewGame() {
-    this.clearTimers();
+    this.clearScheduledCallbacks();
     this.state = createInitialBoard();
     this.selected = null;
     this.legalForSelected = [];
+    this.promotionPrompt = null;
     this.phase = this.state.turn === this.playerColor ? 'player_turn' : 'ai_turn';
     this.draw();
     this.emitState();
@@ -82,29 +85,36 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  private clearScheduledCallbacks() {
+    this.aiMoveTimer?.remove(false);
+    this.roundEndTimer?.remove(false);
+    this.aiMoveTimer = null;
+    this.roundEndTimer = null;
+  }
+
   // ─── Drawing ──────────────────────────────────────────
 
   private draw() {
     this.children.removeAll(true);
 
     const scale = this.dpr;
-    const w = DEFAULT_WIDTH * scale;
-    const h = DEFAULT_HEIGHT * scale;
+    const width = DEFAULT_WIDTH * scale;
+    const height = DEFAULT_HEIGHT * scale;
 
-    this.add.rectangle(w / 2, h / 2, w, h, BG_COLOR);
+    this.add.rectangle(width / 2, height / 2, width, height, BG_COLOR);
 
-    const boardSize = Math.min(w - 16 * scale, h - 140 * scale);
+    const boardSize = Math.min(width - 16 * scale, height - 140 * scale);
     this.cellSize = boardSize / 8;
-    this.boardOriginX = (w - boardSize) / 2;
-    this.boardOriginY = (h - boardSize) / 2 + 10 * scale;
+    this.boardOriginX = (width - boardSize) / 2;
+    this.boardOriginY = (height - boardSize) / 2 + 10 * scale;
 
     // Squares
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        const isLight = (r + c) % 2 === 0;
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const isLight = (row + col) % 2 === 0;
         const baseColor = isLight ? LIGHT_SQUARE : DARK_SQUARE;
-        const x = this.boardOriginX + c * this.cellSize + this.cellSize / 2;
-        const y = this.boardOriginY + r * this.cellSize + this.cellSize / 2;
+        const x = this.boardOriginX + col * this.cellSize + this.cellSize / 2;
+        const y = this.boardOriginY + row * this.cellSize + this.cellSize / 2;
         this.add.rectangle(x, y, this.cellSize, this.cellSize, baseColor);
       }
     }
@@ -121,84 +131,88 @@ export class PlayScene extends Phaser.Scene {
     }
 
     // Pieces
-    for (let i = 0; i < 64; i++) {
-      const p = this.state.board[i];
-      if (p) this.drawPiece(i, p);
+    for (let index = 0; index < 64; index++) {
+      const piece = this.state.board[index];
+      if (piece) this.drawPiece(index, piece);
     }
 
     // Legal-move dots
-    for (const m of this.legalForSelected) {
-      const { cx, cy } = this.squareCenter(m.to);
-      const isCapture = !!m.captured || !!m.isEnPassant;
-      const dot = this.add.graphics();
+    const markerKeys = new Set<string>();
+    for (const move of this.legalForSelected) {
+      const markerKey = `${move.to}:${move.captured ? 'capture' : move.isEnPassant ? 'capture' : 'quiet'}`;
+      if (markerKeys.has(markerKey)) continue;
+      markerKeys.add(markerKey);
+      
+      const { cx, cy } = this.squareCenter(move.to);
+      const isCapture = !!move.captured || !!move.isEnPassant;
+      const marker = this.add.graphics();
       if (isCapture) {
-        dot.lineStyle(3 * scale, LEGAL_DOT_COLOR, 0.85);
-        dot.strokeCircle(cx, cy, this.cellSize * 0.45);
+        marker.lineStyle(3 * scale, LEGAL_DOT_COLOR, 0.85);
+        marker.strokeCircle(cx, cy, this.cellSize * 0.45);
       } else {
-        dot.fillStyle(LEGAL_DOT_COLOR, 0.55);
-        dot.fillCircle(cx, cy, this.cellSize * 0.14);
+        marker.fillStyle(LEGAL_DOT_COLOR, 0.55);
+        marker.fillCircle(cx, cy, this.cellSize * 0.14);
       }
     }
 
-    // Hit areas (entire board, both for piece selection and target moves)
-    if (this.phase === 'player_turn') {
-      for (let i = 0; i < 64; i++) {
-        const { cx, cy } = this.squareCenter(i);
-        const hit = this.add
+    if (this.phase === 'player_turn' && !this.promotionPrompt) {
+      for (let index = 0; index < 64; index++) {
+        const { cx, cy } = this.squareCenter(index);
+        const hitArea = this.add
           .rectangle(cx, cy, this.cellSize, this.cellSize)
           .setInteractive()
           .setAlpha(0.001);
-        const sqIndex = i;
-        hit.on('pointerdown', () => this.onSquareTap(sqIndex));
+        hitArea.on('pointerdown', () => this.onSquareTap(index));
       }
     }
 
     this.drawStatus();
+    this.drawPromotionPrompt();
   }
 
-  private tintSquare(s: Square, color: number, alpha: number) {
-    const { cx, cy } = this.squareCenter(s);
+  private tintSquare(square: Square, color: number, alpha: number) {
+    const { cx, cy } = this.squareCenter(square);
     this.add.rectangle(cx, cy, this.cellSize, this.cellSize, color, alpha);
   }
 
-  private squareCenter(s: Square): { cx: number; cy: number } {
-    const r = s >> 3;
-    const c = s & 7;
+  private squareCenter(square: Square): { cx: number; cy: number } {
+    const row = square >> 3;
+    const col = square & 7;
     return {
-      cx: this.boardOriginX + c * this.cellSize + this.cellSize / 2,
-      cy: this.boardOriginY + r * this.cellSize + this.cellSize / 2,
+      cx: this.boardOriginX + col * this.cellSize + this.cellSize / 2,
+      cy: this.boardOriginY + row * this.cellSize + this.cellSize / 2,
     };
   }
 
-  private drawPiece(s: Square, piece: Piece) {
-    const { cx, cy } = this.squareCenter(s);
+  private drawPiece(square: Square, piece: Piece) {
+    const { cx, cy } = this.squareCenter(square);
     const glyph = PIECE_GLYPH[`${piece.color}${piece.type}`];
     const fontSize = Math.floor(this.cellSize * 0.82);
     const isWhite = piece.color === 'w';
 
-    const t = this.add.text(cx, cy, glyph, {
+    const text = this.add.text(cx, cy, glyph, {
       fontSize: `${fontSize}px`,
       fontFamily: '"Segoe UI Symbol", "Apple Color Emoji", "Noto Sans Symbols2", system-ui, sans-serif',
       color: isWhite ? '#FFFFFF' : '#1A1A1A',
       stroke: isWhite ? '#1A1A1A' : '#FFFFFF',
       strokeThickness: Math.max(1, Math.floor(this.cellSize * 0.025)),
     });
-    t.setOrigin(0.5, 0.55);
+    text.setOrigin(0.5, 0.55);
   }
 
   private drawStatus() {
     const scale = this.dpr;
-    const w = DEFAULT_WIDTH * scale;
+    const width = DEFAULT_WIDTH * scale;
 
     let text = '';
     let color = '#E5E7EB';
 
     if (this.state.status === 'checkmate') {
       const youWon = this.state.winner === this.playerColor;
-      text = youWon ? 'Checkmate — You Win!' : 'Checkmate — AI Wins';
+      text = youWon ? 'Checkmate - You Win!' : 'Checkmate - AI Wins';
       color = youWon ? '#22C55E' : '#EF4444';
     } else if (this.state.status === 'stalemate') {
-      text = 'Stalemate — Draw';
+      text = 'Stalemate - Draw';
       color = '#EAB308';
     } else if (this.state.status === 'check') {
       text = this.state.turn === this.playerColor ? 'Check!' : 'AI in Check';
@@ -210,7 +224,7 @@ export class PlayScene extends Phaser.Scene {
     }
 
     const topY = this.boardOriginY - 28 * scale;
-    const status = this.add.text(w / 2, topY, text, {
+    const status = this.add.text(width / 2, topY, text, {
       fontSize: `${18 * scale}px`,
       fontFamily: 'system-ui, -apple-system, sans-serif',
       color,
@@ -219,52 +233,120 @@ export class PlayScene extends Phaser.Scene {
     status.setOrigin(0.5);
 
     if (this.phase === 'game_over') {
-      const btnY = this.boardOriginY + 8 * this.cellSize + 36 * scale;
-      const btn = this.add.graphics();
-      btn.fillStyle(0x2563eb, 1);
-      btn.fillRoundedRect(w / 2 - 80 * scale, btnY - 22 * scale, 160 * scale, 44 * scale, 12 * scale);
+      const buttonY = this.boardOriginY + 8 * this.cellSize + 36 * scale;
+      const button = this.add.graphics();
+      button.fillStyle(0x2563eb, 1);
+      button.fillRoundedRect(width / 2 - 80 * scale, buttonY - 22 * scale, 160 * scale, 44 * scale, 12 * scale);
 
-      const btnText = this.add.text(w / 2, btnY, 'Play Again', {
+      const buttonText = this.add.text(width / 2, buttonY, 'Play Again', {
         fontSize: `${16 * scale}px`,
         fontFamily: 'system-ui, -apple-system, sans-serif',
         color: '#ffffff',
         fontStyle: 'bold',
       });
-      btnText.setOrigin(0.5);
+      buttonText.setOrigin(0.5);
 
-      const hit = this.add
-        .rectangle(w / 2, btnY, 160 * scale, 44 * scale)
+      const hitArea = this.add
+        .rectangle(width / 2, buttonY, 160 * scale, 44 * scale)
         .setInteractive()
         .setAlpha(0.001);
-      hit.on('pointerdown', () => this.startNewGame());
+      hitArea.on('pointerdown', () => this.startNewGame());
+    }
+  }
+
+  private drawPromotionPrompt() {
+    if (!this.promotionPrompt) return;
+
+    const scale = this.dpr;
+    const width = DEFAULT_WIDTH * scale;
+    const height = DEFAULT_HEIGHT * scale;
+    const options: PieceType[] = ['q', 'r', 'b', 'n'];
+    const panelWidth = Math.min(this.cellSize * 6.2, width - 32 * scale);
+    const panelHeight = this.cellSize * 1.85;
+    const panelX = width / 2 - panelWidth / 2;
+    const panelY = height / 2 - panelHeight / 2;
+    const optionWidth = panelWidth / options.length;
+    const optionHeight = panelHeight - 56 * scale;
+
+    const backdrop = this.add.rectangle(width / 2, height / 2, width, height, 0x030712, 0.5);
+    backdrop.setInteractive();
+    backdrop.on('pointerdown', () => {
+      this.promotionPrompt = null;
+      this.draw();
+    });
+
+    const panel = this.add.graphics();
+    panel.fillStyle(0x111827, 0.98);
+    panel.fillRoundedRect(panelX, panelY, panelWidth, panelHeight, 16 * scale);
+    panel.lineStyle(2 * scale, 0xf9fafb, 0.12);
+    panel.strokeRoundedRect(panelX, panelY, panelWidth, panelHeight, 16 * scale);
+
+    const title = this.add.text(width / 2, panelY + 22 * scale, 'Choose Promotion', {
+      fontSize: `${16 * scale}px`,
+      fontFamily: 'system-ui, -apple-system, sans-serif',
+      color: '#F9FAFB',
+      fontStyle: 'bold',
+    });
+    title.setOrigin(0.5);
+
+    for (let index = 0; index < options.length; index++) {
+      const pieceType = options[index];
+      const optionX = panelX + index * optionWidth;
+      const buttonX = optionX + 8 * scale;
+      const buttonY = panelY + 40 * scale;
+      const centerX = optionX + optionWidth / 2;
+      const centerY = buttonY + optionHeight / 2;
+
+      const button = this.add.graphics();
+      button.fillStyle(0xf9fafb, 1);
+      button.fillRoundedRect(buttonX, buttonY, optionWidth - 16 * scale, optionHeight, 12 * scale);
+
+      const glyph = PIECE_GLYPH[`${this.playerColor}${pieceType}`];
+      const pieceText = this.add.text(centerX, centerY, glyph, {
+        fontSize: `${Math.floor(this.cellSize * 0.62)}px`,
+        fontFamily: '"Segoe UI Symbol", "Apple Color Emoji", "Noto Sans Symbols2", system-ui, sans-serif',
+        color: '#111827',
+        stroke: '#ffffff',
+        strokeThickness: Math.max(1, Math.floor(this.cellSize * 0.02)),
+      });
+      pieceText.setOrigin(0.5, 0.55);
+
+      const hitArea = this.add
+        .rectangle(centerX, centerY, optionWidth - 16 * scale, optionHeight)
+        .setInteractive()
+        .setAlpha(0.001);
+      hitArea.on('pointerdown', () => this.confirmPromotion(pieceType));
     }
   }
 
   // ─── Interaction ──────────────────────────────────────
 
-  private onSquareTap(s: Square) {
-    if (this.phase !== 'player_turn') return;
+  private onSquareTap(square: Square) {
+    if (this.phase !== 'player_turn' || this.promotionPrompt) return;
 
-    // If a piece is selected and the tap matches a legal move, execute it.
     if (this.selected !== null) {
-      const move = this.legalForSelected.find((m) => m.to === s);
-      if (move) {
-        this.executeMove(move);
+      const candidates = this.legalForSelected.filter((candidate) => candidate.to === square);
+      if (candidates.length > 0) {
+        const promotionMoves = candidates.filter((candidate) => candidate.promotion);
+        if (promotionMoves.length > 0) {
+          this.promotionPrompt = { moves: promotionMoves };
+          this.draw();
+          return;
+        }
+        this.executeMove(candidates[0]);
         return;
       }
     }
 
-    // Otherwise, attempt to (re)select.
-    const piece = this.state.board[s];
+    const piece = this.state.board[square];
     if (piece && piece.color === this.playerColor) {
-      this.selected = s;
-      this.legalForSelected = getLegalMoves(this.state, s);
+      this.selected = square;
+      this.legalForSelected = getLegalMoves(this.state, square);
       this.game.events.emit('piece-tapped');
       this.draw();
       return;
     }
 
-    // Tap on empty/enemy with nothing selected: clear selection.
     if (this.selected !== null) {
       this.selected = null;
       this.legalForSelected = [];
@@ -272,25 +354,37 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  private confirmPromotion(pieceType: PieceType) {
+    if (!this.promotionPrompt) return;
+
+    const move = this.promotionPrompt.moves.find((candidate) => candidate.promotion === pieceType);
+    this.promotionPrompt = null;
+    if (!move) {
+      this.draw();
+      return;
+    }
+    this.executeMove(move);
+  }
+
   private executeMove(move: Move) {
     const isCapture = !!move.captured || !!move.isEnPassant;
-    const next = applyMove(this.state, move);
-    this.state = next;
+    this.state = applyMove(this.state, move);
     this.selected = null;
     this.legalForSelected = [];
+    this.promotionPrompt = null;
 
     this.game.events.emit('piece-moved');
     if (isCapture) this.game.events.emit('piece-captured');
+    if (this.state.status === 'check') this.game.events.emit('check');
 
-    if (next.status === 'check') this.game.events.emit('check');
-
-    if (this.isTerminal(next)) {
+    if (this.isTerminal(this.state)) {
       this.handleGameEnd();
       return;
     }
 
     this.phase = 'ai_turn';
     this.draw();
+    this.emitState();
     this.scheduleAI();
   }
 
@@ -306,20 +400,19 @@ export class PlayScene extends Phaser.Scene {
     if (this.phase !== 'ai_turn') return;
     const move = this.ai.selectMove(this.state);
     if (!move) {
-      // No legal moves — game should already be over; recompute status.
       this.phase = 'game_over';
       this.draw();
       return;
     }
+
     const isCapture = !!move.captured || !!move.isEnPassant;
-    const next = applyMove(this.state, move);
-    this.state = next;
+    this.state = applyMove(this.state, move);
 
     this.game.events.emit('piece-moved');
     if (isCapture) this.game.events.emit('piece-captured');
-    if (next.status === 'check') this.game.events.emit('check');
+    if (this.state.status === 'check') this.game.events.emit('check');
 
-    if (this.isTerminal(next)) {
+    if (this.isTerminal(this.state)) {
       this.handleGameEnd();
       return;
     }
@@ -329,8 +422,8 @@ export class PlayScene extends Phaser.Scene {
     this.emitState();
   }
 
-  private isTerminal(s: BoardState): boolean {
-    return s.status === 'checkmate' || s.status === 'stalemate';
+  private isTerminal(state: BoardState): boolean {
+    return state.status === 'checkmate' || state.status === 'stalemate';
   }
 
   private handleGameEnd() {
@@ -368,13 +461,6 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  private clearTimers() {
-    this.aiMoveTimer?.remove(false);
-    this.aiMoveTimer = null;
-    this.roundEndTimer?.remove(false);
-    this.roundEndTimer = null;
-  }
-
   // ─── Events ───────────────────────────────────────────
 
   private emitState() {
@@ -392,12 +478,20 @@ export class PlayScene extends Phaser.Scene {
 
   private computeMaterial(): { whiteMaterial: number; blackMaterial: number } {
     const value: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
-    let w = 0, b = 0;
-    for (const p of this.state.board) {
-      if (!p) continue;
-      if (p.color === 'w') w += value[p.type];
-      else b += value[p.type];
+    let whiteMaterial = 0;
+    let blackMaterial = 0;
+
+    for (const piece of this.state.board) {
+      if (!piece) continue;
+      if (piece.color === 'w') whiteMaterial += value[piece.type];
+      else blackMaterial += value[piece.type];
     }
-    return { whiteMaterial: w, blackMaterial: b };
+
+    return { whiteMaterial, blackMaterial };
+  }
+
+  shutdown(): void {
+    this.clearScheduledCallbacks();
+    this.tweens.killAll();
   }
 }
