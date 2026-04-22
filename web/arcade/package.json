@@ -26,6 +26,7 @@
     "@arcade/lib-pixelflow": "workspace:*",
     "@arcade/lib-tangledrope": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
+    "@arcade/lib-hellotown": "workspace:*",
     "@arcade/lib-tangram": "workspace:*",
     "@arcade/lib-pixelart": "workspace:*",
     "@arcade/lib-carjam": "workspace:*",
