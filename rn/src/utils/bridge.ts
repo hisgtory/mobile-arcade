@@ -73,13 +73,6 @@ const RESPONSE_TYPE_MAP: Record<BridgeRequestType, BridgeResponseType> = {
   NAVIGATE: 'ACK',
 };
 
-const HAPTIC_PATTERNS: Record<string, { style: Haptics.ImpactFeedbackStyle; count: number }> = {
-  'chess-piece-tapped': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
-  'chess-capture': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
-  'chess-check': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
-  'chess-checkmate': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
-};
-
 // ─── BridgeHost ─────────────────────────────────────────────
 
 export class BridgeHost {
@@ -266,6 +259,12 @@ export class BridgeHost {
     // ─── Block Crush ───
     'block-tapped':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
     'blocks-crushed': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Chess ───
+    'chess-piece-tapped': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'chess-piece-moved':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'chess-capture':      { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
+    'chess-check':        { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
+    'chess-checkmate':    { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
     // ─── Fallback (direct style names) ───
     light:  { style: Haptics.ImpactFeedbackStyle.Light, count: 1 },
     medium: { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 },
@@ -277,11 +276,16 @@ export class BridgeHost {
     const pattern = BridgeHost.HAPTIC_PATTERNS[event]
       ?? { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 };
 
-    for (let i = 0; i < pattern.count; i++) {
-      await Haptics.impactAsync(pattern.style);
-      if (i < pattern.count - 1) await new Promise((r) => setTimeout(r, 60));
-    }
+    // Send ACK immediately to avoid blocking the bridge
     this.sendResponse(msg.msgId, 'ACK', 'ack');
+
+    // Run haptic pattern in background
+    (async () => {
+      for (let i = 0; i < pattern.count; i++) {
+        await Haptics.impactAsync(pattern.style);
+        if (i < pattern.count - 1) await new Promise((r) => setTimeout(r, 60));
+      }
+    })().catch((err) => console.error('[BridgeHost] Haptic error:', err));
   }
 
   // ─── Safe Storage Read ─────────────────────────────────

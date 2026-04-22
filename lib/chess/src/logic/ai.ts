@@ -19,49 +19,34 @@ function pickRandom<T>(items: T[]): T | null {
   return items[Math.floor(Math.random() * items.length)];
 }
 
-function preferQueenPromotions(moves: Move[]): Move[] {
-  const queenPromotionKeys = new Set(
-    moves
-      .filter((move) => move.promotion === 'q')
-      .map((move) => `${move.from}:${move.to}:${move.captured?.type ?? '-'}`),
-  );
-
-  return moves.filter((move) => {
-    if (!move.promotion || move.promotion === 'q') return true;
-    const key = `${move.from}:${move.to}:${move.captured?.type ?? '-'}`;
-    return !queenPromotionKeys.has(key);
-  });
-}
-
 class RandomAI implements ChessAI {
   selectMove(state: BoardState): Move | null {
-    const moves = preferQueenPromotions(getAllLegalMoves(state, state.turn));
+    const moves = getAllLegalMoves(state, state.turn);
     return pickRandom(moves);
   }
 }
 
 class GreedyAI implements ChessAI {
   selectMove(state: BoardState): Move | null {
-    const moves = preferQueenPromotions(getAllLegalMoves(state, state.turn));
+    const moves = getAllLegalMoves(state, state.turn);
     if (moves.length === 0) return null;
 
     let bestScore = -Infinity;
     let bestMoves: Move[] = [];
-    for (const move of moves) {
-      const captureScore = move.captured ? PIECE_VALUE[move.captured.type] : 0;
-      const promotionScore = move.promotion ? PIECE_VALUE[move.promotion] - PIECE_VALUE.p : 0;
-      const score = captureScore + promotionScore;
+    for (const m of moves) {
+      const score = m.captured ? PIECE_VALUE[m.captured.type] : 0;
       if (score > bestScore) {
         bestScore = score;
-        bestMoves = [move];
+        bestMoves = [m];
       } else if (score === bestScore) {
-        bestMoves.push(move);
+        bestMoves.push(m);
       }
     }
     return pickRandom(bestMoves);
   }
 }
 
+// TODO: implement MinimaxAI (alpha-beta) for hard difficulty.
 export function createAI(difficulty: Difficulty): ChessAI {
   switch (difficulty) {
     case 'easy':
@@ -69,8 +54,6 @@ export function createAI(difficulty: Difficulty): ChessAI {
     case 'medium':
       return new GreedyAI();
     case 'hard':
-      return new GreedyAI();
-    default:
       return new GreedyAI();
   }
 }

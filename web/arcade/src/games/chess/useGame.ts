@@ -1,11 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
-import {
-  createGame,
-  destroyGame,
-  type Color,
-  type Difficulty,
-  type GameStatus,
-} from '@arcade/lib-chess';
+import { createGame, destroyGame, type Color, type Difficulty, type GameStatus } from '@arcade/lib-chess';
 import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface RoundResult {
@@ -45,6 +39,7 @@ export function useGame({ difficulty = 'medium' }: UseGameOptions) {
     const game = createGame(containerRef.current, { difficulty });
 
     game.events.on('piece-tapped', () => haptic('chess-piece-tapped'));
+    game.events.on('piece-moved', () => haptic('chess-piece-moved'));
     game.events.on('piece-captured', () => haptic('chess-capture'));
     game.events.on('check', () => haptic('chess-check'));
     game.events.on('checkmate', () => haptic('chess-checkmate'));

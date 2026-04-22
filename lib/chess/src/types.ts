@@ -9,20 +9,23 @@ export interface Piece {
   color: Color;
 }
 
+// Square index: 0-63. 0 = a8, 7 = h8, 56 = a1, 63 = h1.
+// Row 0 is rank 8 (black back rank), row 7 is rank 1 (white back rank).
+// Column 0 is a-file, column 7 is h-file.
 export type Square = number;
 
 export interface Move {
   from: Square;
   to: Square;
-  promotion?: PieceType;
-  isCastle?: 'k' | 'q';
+  promotion?: PieceType; // queen for MVP auto-promotion
+  isCastle?: 'k' | 'q'; // king-side / queen-side
   isEnPassant?: boolean;
   captured?: Piece | null;
 }
 
 export interface CastlingRights {
-  wk: boolean;
-  wq: boolean;
+  wk: boolean; // white king-side
+  wq: boolean; // white queen-side
   bk: boolean;
   bq: boolean;
 }
@@ -30,11 +33,11 @@ export interface CastlingRights {
 export type GameStatus = 'playing' | 'check' | 'checkmate' | 'stalemate' | 'draw';
 
 export interface BoardState {
-  board: (Piece | null)[];
+  board: (Piece | null)[]; // length 64
   turn: Color;
   castling: CastlingRights;
-  enPassantTarget: Square | null;
-  halfmoveClock: number;
+  enPassantTarget: Square | null; // square that may be captured en-passant by next player
+  halfmoveClock: number; // for 50-move rule (tracked but not yet enforced)
   fullmoveNumber: number;
   status: GameStatus;
   winner: Color | 'draw' | null;
@@ -45,5 +48,5 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export interface GameConfig {
   difficulty?: Difficulty;
-  playerColor?: Color;
+  playerColor?: Color; // MVP: always 'w'
 }

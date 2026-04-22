@@ -30,13 +30,14 @@ const PIECE_GLYPH: Record<string, string> = {
 };
 
 type Phase = 'player_turn' | 'ai_turn' | 'game_over';
+
 type PromotionPrompt = {
   moves: Move[];
 };
 
 export class PlayScene extends Phaser.Scene {
   private state!: BoardState;
-  private config!: GameConfig;
+  private gameConfig?: GameConfig;
   private dpr = 1;
   private phase: Phase = 'player_turn';
   private playerColor: Color = 'w';
@@ -57,11 +58,12 @@ export class PlayScene extends Phaser.Scene {
     super({ key: 'PlayScene' });
   }
 
-  init(data: { config?: GameConfig; dpr?: number }) {
-    this.config = data.config ?? {};
-    this.dpr = data.dpr ?? 1;
-    this.playerColor = this.config.playerColor ?? 'w';
-    this.ai = createAI(this.config.difficulty ?? 'medium');
+  init(data: { stage?: number }): void {
+    // TODO: Use Phaser registry or scene data for better type safety
+    this.gameConfig = this.game.registry.get('chessConfig') as GameConfig;
+    this.dpr = this.game.registry.get('dpr') || 1;
+    this.playerColor = this.gameConfig?.playerColor ?? 'w';
+    this.ai = createAI(this.gameConfig?.difficulty ?? 'medium');
   }
 
   create() {
@@ -90,6 +92,8 @@ export class PlayScene extends Phaser.Scene {
     this.roundEndTimer = null;
   }
 
+  // ─── Drawing ──────────────────────────────────────────
+
   private draw() {
     this.children.removeAll(true);
 
@@ -104,6 +108,7 @@ export class PlayScene extends Phaser.Scene {
     this.boardOriginX = (width - boardSize) / 2;
     this.boardOriginY = (height - boardSize) / 2 + 10 * scale;
 
+    // Squares
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
         const isLight = (row + col) % 2 === 0;
@@ -114,25 +119,30 @@ export class PlayScene extends Phaser.Scene {
       }
     }
 
+    // Last-move tint
     if (this.state.lastMove) {
       this.tintSquare(this.state.lastMove.from, LAST_MOVE_TINT, 0.35);
       this.tintSquare(this.state.lastMove.to, LAST_MOVE_TINT, 0.35);
     }
 
+    // Selected highlight
     if (this.selected !== null) {
       this.tintSquare(this.selected, SELECTED_SQUARE, 0.55);
     }
 
+    // Pieces
     for (let index = 0; index < 64; index++) {
       const piece = this.state.board[index];
       if (piece) this.drawPiece(index, piece);
     }
 
+    // Legal-move dots
     const markerKeys = new Set<string>();
     for (const move of this.legalForSelected) {
       const markerKey = `${move.to}:${move.captured ? 'capture' : move.isEnPassant ? 'capture' : 'quiet'}`;
       if (markerKeys.has(markerKey)) continue;
       markerKeys.add(markerKey);
+      
       const { cx, cy } = this.squareCenter(move.to);
       const isCapture = !!move.captured || !!move.isEnPassant;
       const marker = this.add.graphics();
@@ -145,7 +155,9 @@ export class PlayScene extends Phaser.Scene {
       }
     }
 
-    if (this.phase === 'player_turn') {
+    // Hit areas (entire board, both for piece selection and target moves)
+    // Fix Issue 3: guard with promotionPrompt check
+    if (this.phase === 'player_turn' && !this.promotionPrompt) {
       for (let index = 0; index < 64; index++) {
         const { cx, cy } = this.squareCenter(index);
         const hitArea = this.add
@@ -309,6 +321,8 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
+  // ─── Interaction ──────────────────────────────────────
+
   private onSquareTap(square: Square) {
     if (this.phase !== 'player_turn' || this.promotionPrompt) return;
 
@@ -372,6 +386,8 @@ export class PlayScene extends Phaser.Scene {
 
     this.phase = 'ai_turn';
     this.draw();
+    // Fix Issue 2: Emit state immediately to update HUD before AI starts thinking
+    this.emitState();
     this.scheduleAI();
   }
 
@@ -448,6 +464,8 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
+  // ─── Events ───────────────────────────────────────────
+
   private emitState() {
     const { whiteMaterial, blackMaterial } = this.computeMaterial();
     this.game.events.emit('score-update', {
@@ -473,5 +491,10 @@ export class PlayScene extends Phaser.Scene {
     }
 
     return { whiteMaterial, blackMaterial };
+  }
+
+  shutdown(): void {
+    this.clearScheduledCallbacks();
+    this.tweens.killAll();
   }
 }

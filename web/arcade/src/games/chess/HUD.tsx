@@ -53,7 +53,7 @@ function statusLabel(status: GameStatus, turn: Color): { text: string; color: st
   if (status === 'checkmate') return { text: 'Checkmate', color: '#EF4444' };
   if (status === 'stalemate') return { text: 'Stalemate', color: '#EAB308' };
   if (status === 'check') return { text: 'Check!', color: '#F97316' };
-  return { text: turn === 'w' ? 'Your turn' : 'AI thinking...', color: '#6B7280' };
+  return { text: turn === 'w' ? 'Your turn' : 'AI thinking…', color: '#6B7280' };
 }
 
 export function HUD({
@@ -68,7 +68,6 @@ export function HUD({
   const { text, color } = statusLabel(status, turn);
   const balance = whiteMaterial - blackMaterial;
   const balanceText = balance === 0 ? 'even' : balance > 0 ? `+${balance}` : `${balance}`;
-
   return (
     <Container>
       <Block>
