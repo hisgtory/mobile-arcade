@@ -78,6 +78,13 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'wordpuzzle',
+    name: 'Word Puzzle',
+    description: 'Find hidden Korean words!',
+    icon: '🔤',
+    category: 'puzzle',
+    color: '#8B5CF6',
+    webPath: '/games/wordpuzzle/v1',
     id: 'candyfriends',
     name: 'Candy Friends',
     description: 'Match 3 sweet candies!',

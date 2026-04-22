@@ -60,6 +60,10 @@ import { useGame as useCandyFriendsGame, type GameResult as CandyFriendsResult }
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── WordPuzzle ───
+import { ClearScreen as WordPuzzleClear } from './games/wordpuzzle/ClearScreen';
+import { HUD as WordPuzzleHUD } from './games/wordpuzzle/HUD';
+import { useGame as useWordPuzzleGame, type GameResult as WordPuzzleResult } from './games/wordpuzzle/useGame';
 // ─── MatchFactory ───
 import { ClearScreen as MatchFactoryClear } from './games/matchfactory/ClearScreen';
 import { HUD as MatchFactoryHUD } from './games/matchfactory/HUD';
@@ -564,6 +568,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── WordPuzzle Routes ────────────────────────────────
+
+function WordPuzzleTitleRoute() {
 // ─── MatchFactory Routes ──────────────────────────────
 
 function MatchFactoryTitleRoute() {
@@ -574,6 +581,10 @@ function TrickyPrankTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Word Puzzle</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Find hidden Korean words!</p>
+      <button
+        onClick={() => navigate('/games/wordpuzzle/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Match Factory</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Swipe & match to fill orders!</p>
       <button
@@ -592,12 +603,38 @@ function TrickyPrankTitleRoute() {
   );
 }
 
+function WordPuzzleStageRoute() {
 function MatchFactoryStageRoute() {
 function TrickyPrankStageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<WordPuzzleResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: WordPuzzleResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/wordpuzzle/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/wordpuzzle/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <WordPuzzleClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <WordPuzzlePlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function WordPuzzlePlaying({ stage, onClear }: { stage: number; onClear: (r: WordPuzzleResult) => void }) {
+  const { containerRef, score, foundWords, totalWords, doHint, doRestart } = useWordPuzzleGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <WordPuzzleHUD stage={stage} foundWords={foundWords} totalWords={totalWords} score={score} onHint={doHint} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<MatchFactoryResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -693,6 +730,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* WordPuzzle */}
+      <Route path="/games/wordpuzzle/v1" element={<WordPuzzleTitleRoute />} />
+      <Route path="/games/wordpuzzle/v1/stage/:stageId" element={<WordPuzzleStageRoute />} />
       {/* MatchFactory */}
       <Route path="/games/matchfactory/v1" element={<MatchFactoryTitleRoute />} />
       <Route path="/games/matchfactory/v1/stage/:stageId" element={<MatchFactoryStageRoute />} />
