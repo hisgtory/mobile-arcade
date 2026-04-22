@@ -155,8 +155,6 @@ export class PlayScene extends Phaser.Scene {
       }
     }
 
-    // Hit areas (entire board, both for piece selection and target moves)
-    // Fix Issue 3: guard with promotionPrompt check
     if (this.phase === 'player_turn' && !this.promotionPrompt) {
       for (let index = 0; index < 64; index++) {
         const { cx, cy } = this.squareCenter(index);
@@ -386,7 +384,6 @@ export class PlayScene extends Phaser.Scene {
 
     this.phase = 'ai_turn';
     this.draw();
-    // Fix Issue 2: Emit state immediately to update HUD before AI starts thinking
     this.emitState();
     this.scheduleAI();
   }
