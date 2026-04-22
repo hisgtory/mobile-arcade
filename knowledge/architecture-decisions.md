@@ -19,6 +19,8 @@ lib/{game}  →  web/arcade  →  rn
 ### Rationale
 코드 재사용 극대화, 게임별 독립 배포. 하나의 게임 로직으로 웹/앱 동시 서빙.
 
+> **Note**: `{game}/rn` 부분은 ADR-015에 의해 superseded — 현재는 단일 `rn/` 슈퍼앱 구조. 파이프라인은 `lib/{game}` → `web/{game}` → `rn` (단일 슈퍼앱)으로 변경됨.
+
 ---
 
 ## ADR-002: Phaser is Board-Only
@@ -192,3 +194,124 @@ web/arcade/
 - WiFi/장소 변경 시 IP 수동 변경 불필요
 - Apple 기기 간 자동 해석 (mDNS)
 - `vite.config.ts`에 `allowedHosts: true` 필요
+
+---
+
+## ADR-012: Shared Bridge Utility
+
+### Decision
+`web/arcade/src/utils/bridge.ts` — 모든 게임이 공유하는 경량 브릿지 유틸.
+
+### Structure
+```typescript
+stageComplete({ stage, score, cleared }) → postMessage('STAGE_CLEAR' | 'GAME_OVER')
+```
+
+### Context
+- Found3는 자체 BridgeClient (lib/found3/src/bridge/) 보유 — 기존 유지
+- Crunch3, BlockRush, WaterSort, TicTacToe, Make10은 공유 브릿지 사용
+- 웹 환경(`isRN=false`)에서는 no-op
+
+### Rationale
+- 새 게임 추가 시 브릿지 연동 누락 방지
+- Found3의 풀 BridgeClient는 과도 — 대부분 게임은 stageComplete만 필요
+- 단순 postMessage 래퍼로 충분
+
+---
+
+## ADR-013: Endless Game Convention (stage: 0)
+
+### Decision
+스테이지 없는 endless 게임은 브릿지 메시지에서 `stage: 0`으로 전송.
+
+### Applies To
+- Block Rush, Tic Tac Toe, Make 10
+
+### Rationale
+- RN GameScreen이 `hasStages` 플래그로 분기
+- `stage: 0`은 "스테이지 없음"을 명시적으로 표현
+- Found3/Crunch3/WaterSort는 실제 stage 번호 전송
+
+---
+
+## ADR-014: Event-Driven Haptic — RN Owns Haptic Patterns
+
+### Decision
+웹은 게임 이벤트명만 브릿지로 전달, RN이 `HAPTIC_PATTERNS` 맵에서 햅틱 패턴(스타일, 횟수)을 결정.
+
+### Structure
+```
+Web: bridge.haptic('tile-tapped')     → HAPTIC { style: 'tile-tapped' }
+Web: bridge.haptic('slot-matched')    → HAPTIC { style: 'slot-matched' }
+
+RN HAPTIC_PATTERNS:
+  'tile-tapped'  → Heavy × 1
+  'slot-matched' → Heavy × 6 (60ms interval)
+  'light'/'medium'/'heavy' → fallback (하위 호환)
+```
+
+### Rationale
+- 네이티브 동작(햅틱)은 네이티브(RN)가 소유해야 응집도↑ 결합도↓
+- 햅틱 튜닝 시 RN 맵만 수정, 웹 코드 변경 불필요
+- 새 게임 이벤트 추가 시 RN 맵에 한 줄 추가로 완료
+- 하위 호환: 직접 스타일명(light/medium/heavy)도 fallback으로 지원
+
+---
+
+## ADR-015: 단일 RN 슈퍼앱 구조 확정
+
+### Context
+초기에는 게임별 독립 RN 앱 (`found3/rn/`)으로 시작했으나, ADR-009에서 슈퍼앱 (`rn/`)으로 전환 결정. 이후 `found3/rn/`과 `rn/`이 공존하는 상태가 지속됨.
+
+### Decision
+모든 게임은 단일 RN 슈퍼앱 (`rn/`, @arcade/app)에서 WebView로 로드. 게임별 독립 RN 프로젝트는 만들지 않음. `found3/rn/`은 레거시로 삭제.
+
+### Consequences
+- `{game}/rn/` 패턴 폐기 — 새 게임 추가 시 `rn/`에서 WebView URL만 추가하면 됨
+- 파이프라인 구조 변경: `lib/{game}` → `web/{game}` → `rn` (단일 슈퍼앱)
+- pnpm-workspace.yaml에서 `found3/rn` 제거
+- 루트 CLAUDE.md 팀 테이블 `found3/rn/` → `rn/` 반영
+
+### Rationale
+ADR-009의 슈퍼앱 결정을 물리적 폴더 구조까지 완전히 반영. 레거시 프로토타입 코드 제거로 혼란 방지.
+
+---
+
+## ADR-016: 게임별 라우트 자체 등록 패턴
+
+### Context
+web/arcade App.tsx가 540줄로 비대해짐. 게임 추가마다 import + Route + 컴포넌트 추가가 필요하여 스케일 불가.
+
+### Decision
+Express 스타일 `registerRoutes(basePath, routes)` 레지스트리. 각 게임이 `games/{game}/routes.tsx`에서 자체 등록. App.tsx는 수집된 라우트만 렌더링 (~25줄).
+
+### Rejected Alternative
+`React.lazy()` + `import.meta.glob` 자동 매핑 — 유저가 명시적으로 거부. "잘못된 매핑이 십상".
+
+### Consequences
+- 새 게임 추가 시 `routes.tsx` 생성 + App.tsx에 side-effect import 한 줄만 추가
+- App.tsx가 게임 수에 관계없이 일정 크기 유지
+- 각 게임이 자기 라우트의 소유권을 가짐 (응집도↑)
+
+---
+
+## ADR-017: Phaser→React 전환 비교 실험
+
+### Context
+Phaser canvas에서 디자인 반영 공수가 CSS 대비 3~5배. 디자인 외주 후 반영 용이성이 핵심 요구사항으로 부상. 폰트, 그라데이션, border-radius, 반응형 등 CSS에서 자연스러운 것들이 Phaser에서는 수작업 필요.
+
+### Decision
+기존 게임의 React+Stitches 클론을 `{game}-react` 패턴으로 만들어 성능/스타일링 비교. 완전 격리 원칙: 별도 패키지, 별도 라우트, 별도 rn 등록. 공유되는 것은 순수 로직의 물리적 복사본뿐 (import가 아닌 복사).
+
+### 비교 포인트
+- FPS, 번들 크기, 애니메이션 부드러움
+- 스타일링 유연성, 코드량, 터치 반응성
+- Figma→코드 반영 용이성
+
+### Rejected
+Phaser + CSS overlay 하이브리드 — 복잡도만 증가, 근본적 해결 아님.
+
+### Consequences
+- 결과에 따라 전체 게임 React 전환 or Phaser 유지 결정
+- 비교 완료 전까지 두 버전 공존 (Arcade Home에서 나란히 표시)
+- 9개 이슈 (#203~#211) 병렬 진행

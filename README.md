@@ -14,6 +14,10 @@ mobile-arcade/
 ├── found3/rn/        # deprecated: 초기 found3 전용 RN 앱
 ├── prd/              # 게임 기획서
 └── knowledge/        # 아키텍처/결정/진행 기록
+├── lib/{game}/       # 게임 코어 로직 (Phaser.io scenes, shared types)
+├── web/{game}/       # 웹 게임 (React + Stitches + lib 사용)
+├── rn/               # RN 슈퍼앱 (WebView로 web 게임 래핑)
+└── prd/              # 게임 기획서
 ```
 
 ### Current Flow
@@ -28,6 +32,13 @@ lib/{game}  →  web/arcade  →  rn
 3. `rn`: `web/arcade`의 게임 경로를 WebView로 로드하는 단일 네이티브 앱
 
 `web/found3`, `web/crunch3`, `found3/rn`은 남아 있지만 현재 기준 구조의 중심은 아닙니다.
+lib/{game}  →  web/{game}  →  rn
+(core)        (web app)      (native shell, 슈퍼앱)
+```
+
+1. `lib/{game}`: Phaser.io 기반 게임 로직, 씬, 타입 정의
+2. `web/{game}`: lib를 import해서 React + Stitches로 웹 게임 빌드
+3. `rn`: 빌드된 웹 게임을 WebView로 표시하는 RN 슈퍼앱
 
 ## Games
 
@@ -47,6 +58,9 @@ lib/{game}  →  web/arcade  →  rn
 | Web Frontend | `web/arcade/` | 통합 웹 앱과 라우팅 |
 | RN App | `rn/` | React Native Arcade 앱 |
 | Knowledge | `knowledge/` | 구조, 결정, 진행 기록 |
+| Game Core | `lib/found3/` | Phaser.io 게임 로직 개발 |
+| Web Frontend | `web/found3/` | React + Stitches 웹 게임 |
+| RN App | `rn/` | React Native WebView 슈퍼앱 |
 
 ## Getting Started
 
@@ -60,6 +74,24 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 # Start Claude and create team
 claude
 /team
+```
+
+## Development Commands
+
+```bash
+# Build all packages that define a build script
+pnpm build
+
+# Type-check all workspace packages without emitting build artifacts
+pnpm typecheck
+
+# Lint all packages
+# Note: this currently fails until at least one workspace package defines a lint script
+pnpm lint
+
+# Test all packages
+# Note: this currently fails until at least one workspace package defines a test script
+pnpm test
 ```
 
 ## Tech Stack
