@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { createGame, destroyGame, getPlayScene } from '@arcade/lib-watersort';
-import { stageComplete } from '../../utils/bridge';
+import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -28,6 +28,9 @@ export function useGame({ stage, onClear }: UseGameOptions) {
       stage,
     });
     gameRef.current = game;
+
+    game.events.on('tube-tapped', () => haptic('tube-tapped'));
+    game.events.on('tube-solved', () => haptic('tube-solved'));
 
     game.events.on('score-update', (data: { score: number }) => {
       setScore(data.score);
