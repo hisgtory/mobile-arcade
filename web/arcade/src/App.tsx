@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── BusJam ───
+import { ClearScreen as BusJamClear } from './games/busjam/ClearScreen';
+import { HUD as BusJamHUD } from './games/busjam/HUD';
+import { useGame as useBusJamGame, type GameResult as BusJamResult } from './games/busjam/useGame';
 // ─── CarOut ───
 import { ClearScreen as CarOutClear } from './games/carout/ClearScreen';
 import { HUD as CarOutHUD } from './games/carout/HUD';
@@ -301,6 +305,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── BusJam Routes ────────────────────────────────────
+
+function BusJamTitleRoute() {
 // ─── CarOut Routes ─────────────────────────────────────
 
 function CarOutTitleRoute() {
@@ -314,6 +321,10 @@ function Anipang4TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Bus Jam</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Match passengers to their buses!</p>
+      <button
+        onClick={() => navigate('/games/busjam/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Car Out!</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Slide cars to free the exit!</p>
       <button
@@ -343,6 +354,7 @@ function Anipang4TitleRoute() {
   );
 }
 
+function BusJamStageRoute() {
 function CarOutStageRoute() {
 function SkewerJamStageRoute() {
 function Anipang4StageRoute() {
@@ -350,6 +362,34 @@ function Anipang4StageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<BusJamResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: BusJamResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: BusJamResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/busjam/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/busjam/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <BusJamClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <BusJamPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function BusJamPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: BusJamResult) => void; onGameOver: (r: BusJamResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useBusJamGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <BusJamHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<CarOutResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -1580,6 +1620,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* BusJam */}
+      <Route path="/games/busjam/v1" element={<BusJamTitleRoute />} />
+      <Route path="/games/busjam/v1/stage/:stageId" element={<BusJamStageRoute />} />
       {/* CarOut */}
       <Route path="/games/carout/v1" element={<CarOutTitleRoute />} />
       <Route path="/games/carout/v1/stage/:stageId" element={<CarOutStageRoute />} />

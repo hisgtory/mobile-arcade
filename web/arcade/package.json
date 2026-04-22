@@ -16,6 +16,7 @@
     "@arcade/lib-hexaaway": "workspace:*",
     "@arcade/lib-blockcrush": "workspace:*",
     "@arcade/lib-watersort": "workspace:*",
+    "@arcade/lib-busjam": "workspace:*",
     "@arcade/lib-skewerjam": "workspace:*",
     "@arcade/lib-mahjong-match": "workspace:*",
     "@arcade/lib-pixelflow": "workspace:*",
