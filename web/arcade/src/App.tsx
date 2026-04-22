@@ -43,6 +43,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── DreamStore ───
+import { ClearScreen as DreamStoreClear } from './games/dreamstore/ClearScreen';
+import { HUD as DreamStoreHUD } from './games/dreamstore/HUD';
+import { useGame as useDreamStoreGame, type GameResult as DreamStoreResult } from './games/dreamstore/useGame';
 // ─── DOP5 ───
 import { ClearScreen as DOP5Clear } from './games/dop5/ClearScreen';
 import { HUD as DOP5HUD } from './games/dop5/HUD';
@@ -699,6 +703,22 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── DreamStore Routes ────────────────────────────────
+
+function DreamStoreTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#fff5f7' }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#be185d', letterSpacing: -1 }}>Dream Store</h1>
+      <p style={{ fontSize: 16, color: '#9d174d' }}>Serve customers & run your dream shop!</p>
+      <button
+        onClick={() => navigate('/games/dreamstore/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#db2777', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#f9a8d4' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
 // ─── SaveDoge Routes ──────────────────────────────────
 
 function SaveDogeTitleRoute() {
@@ -753,6 +773,7 @@ function TrickyPrankTitleRoute() {
   );
 }
 
+function DreamStoreStageRoute() {
 function SaveDogeStageRoute() {
 function TrickyTwistStageRoute() {
 function WordPuzzleStageRoute() {
@@ -762,6 +783,34 @@ function TrickyPrankStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<DreamStoreResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: DreamStoreResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: DreamStoreResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/dreamstore/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/dreamstore/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <DreamStoreClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <DreamStorePlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function DreamStorePlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: DreamStoreResult) => void; onGameOver: (r: DreamStoreResult) => void }) {
+  const { containerRef, score, combo, timeLeft, customersServed, totalCustomers } = useDreamStoreGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <DreamStoreHUD stage={stage} score={score} timeLeft={timeLeft} customersServed={customersServed} totalCustomers={totalCustomers} combo={combo} />
   const [gameResult, setGameResult] = useState<SaveDogeResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -947,6 +996,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* DreamStore */}
+      <Route path="/games/dreamstore/v1" element={<DreamStoreTitleRoute />} />
+      <Route path="/games/dreamstore/v1/stage/:stageId" element={<DreamStoreStageRoute />} />
       {/* Registered game routes (Nonogram, etc.) */}
       {getRegisteredRoutes().map((route) => (
         <Route key={route.path} path={route.path} element={route.element} />
