@@ -169,6 +169,7 @@ export class PlayScene extends Phaser.Scene {
 
   private onTubeTap(idx: number) {
     if (this.phase !== 'idle') return;
+    this.game.events.emit('tube-tapped');
 
     if (this.selectedTube === null) {
       // Select source tube
@@ -305,6 +306,7 @@ export class PlayScene extends Phaser.Scene {
     if (isTubeSolved(dstTube) && !this.solvedTubes.has(move.to)) {
       this.solvedTubes.add(move.to);
       this.score += 100;
+      this.game.events.emit('tube-solved');
       this.celebrateTube(move.to);
     }
 
