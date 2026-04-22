@@ -39,6 +39,11 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── TrafficJam ───
+import { ClearScreen as TrafficJamClear } from './games/trafficjam/ClearScreen';
+import { HUD as TrafficJamHUD } from './games/trafficjam/HUD';
+import { useGame as useTrafficJamGame, type GameResult as TrafficJamResult } from './games/trafficjam/useGame';
+import { TOTAL_STAGES as TRAFFICJAM_TOTAL_STAGES } from '@arcade/lib-trafficjam';
 // ─── StarryNight ───
 import { HUD as StarryNightHUD } from './games/starrynight/HUD';
 import { useGame as useStarryNightGame, type GameResult as StarryNightResult } from './games/starrynight/useGame';
@@ -316,6 +321,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── TrafficJam Routes ─────────────────────────────────
+
+function TrafficJamTitleRoute() {
 // ─── StarryNight Routes ───────────────────────────────
 
 function StarryNightTitleRoute() {
@@ -347,6 +355,10 @@ function Anipang4TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Traffic Frenzy</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Tap cars to clear the road!</p>
+      <button
+        onClick={() => navigate('/games/trafficjam/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Bus Jam</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Match passengers to their buses!</p>
       <button
@@ -380,6 +392,7 @@ function Anipang4TitleRoute() {
   );
 }
 
+function TrafficJamStageRoute() {
 function StarryNightPlayRoute() {
   const navigate = useNavigate();
   const [gameResult, setGameResult] = useState<StarryNightResult | null>(null);
@@ -428,6 +441,32 @@ function Anipang4StageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<TrafficJamResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: TrafficJamResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/trafficjam/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/trafficjam/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    const isLastStage = stage >= TRAFFICJAM_TOTAL_STAGES;
+    return <TrafficJamClear result={gameResult} stage={stage} onNext={isLastStage ? null : handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <TrafficJamPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function TrafficJamPlaying({ stage, onClear }: { stage: number; onClear: (r: TrafficJamResult) => void }) {
+  const { containerRef, score, moves, doUndo, doRestart } = useTrafficJamGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <TrafficJamHUD stage={stage} score={score} moves={moves} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<BusJamResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -568,6 +607,7 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Root ──────────────────────────────────────────────
 // ─── YarnFever Routes ─────────────────────────────────
 
 function YarnFeverTitleRoute() {
@@ -1757,6 +1797,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* TrafficJam */}
+      <Route path="/games/trafficjam/v1" element={<TrafficJamTitleRoute />} />
+      <Route path="/games/trafficjam/v1/stage/:stageId" element={<TrafficJamStageRoute />} />
       {/* BusJam */}
       <Route path="/games/busjam/v1" element={<BusJamTitleRoute />} />
       <Route path="/games/busjam/v1/stage/:stageId" element={<BusJamStageRoute />} />
