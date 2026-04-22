@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── PixelFlow ───
+import { ClearScreen as PixelFlowClear } from './games/pixelflow/ClearScreen';
+import { HUD as PixelFlowHUD } from './games/pixelflow/HUD';
+import { useGame as usePixelFlowGame, type GameResult as PixelFlowResult } from './games/pixelflow/useGame';
 // ─── TangledRope ───
 import { ClearScreen as TangledRopeClear } from './games/tangledrope/ClearScreen';
 import { HUD as TangledRopeHUD } from './games/tangledrope/HUD';
@@ -345,6 +349,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── PixelFlow Routes ─────────────────────────────────
+
+function PixelFlowTitleRoute() {
 // ─── TangledRope Routes ───────────────────────────────
 
 function TangledRopeTitleRoute() {
@@ -355,6 +362,11 @@ function CandyFriendsTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Pixel Flow</GameTitle>
+      <GameDescription>Connect the dots, fill the grid!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/pixelflow/v1/stage/1')}>
+        Play
+      </PrimaryButton>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Tangled Rope</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Untangle the ropes!</p>
       <button
@@ -376,12 +388,38 @@ function CandyFriendsTitleRoute() {
   );
 }
 
+function PixelFlowStageRoute() {
 function TangledRopeStageRoute() {
 function CandyFriendsStageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<PixelFlowResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: PixelFlowResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/pixelflow/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/pixelflow/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <PixelFlowClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <PixelFlowPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function PixelFlowPlaying({ stage, onClear }: { stage: number; onClear: (r: PixelFlowResult) => void }) {
+  const { containerRef, score, moves, flowsCompleted, flowsTotal, coverage, doUndo, doRestart } = usePixelFlowGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <PixelFlowHUD stage={stage} score={score} moves={moves} flowsCompleted={flowsCompleted} flowsTotal={flowsTotal} coverage={coverage} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<TangledRopeResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -551,6 +589,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* PixelFlow */}
+      <Route path="/games/pixelflow/v1" element={<PixelFlowTitleRoute />} />
+      <Route path="/games/pixelflow/v1/stage/:stageId" element={<PixelFlowStageRoute />} />
       {/* TangledRope */}
       <Route path="/games/tangledrope/v1" element={<TangledRopeTitleRoute />} />
       <Route path="/games/tangledrope/v1/stage/:stageId" element={<TangledRopeStageRoute />} />
