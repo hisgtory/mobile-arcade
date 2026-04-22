@@ -88,6 +88,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── SpotIt ───
+import { ClearScreen as SpotItClear } from './games/spotit/ClearScreen';
+import { HUD as SpotItHUD } from './games/spotit/HUD';
+import { useGame as useSpotItGame, type GameResult as SpotItResult } from './games/spotit/useGame';
 // ─── ForestPop ───
 import { ClearScreen as ForestPopClear } from './games/forestpop/ClearScreen';
 import { HUD as ForestPopHUD } from './games/forestpop/HUD';
@@ -861,6 +865,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── SpotIt Routes ─────────────────────────────────────
+
+function SpotItTitleRoute() {
 // ─── ForestPop Routes ──────────────────────────────────
 
 function ForestPopTitleRoute() {
@@ -906,6 +913,15 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 44, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🔍 Spot It!</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Find the hidden objects!</p>
+      <button
+        onClick={() => navigate('/games/spotit/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#F59E0B', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#9CA3AF' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>🌲 Forest Pop</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Tap groups of forest friends to pop!</p>
       <button
@@ -949,6 +965,7 @@ function BrainOutTitleRoute() {
   );
 }
 
+function SpotItStageRoute() {
 function ForestPopStageRoute() {
   const { stageId } = useParams();
   const navigate = useNavigate();
@@ -995,6 +1012,53 @@ function BrainOutStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<SpotItResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: SpotItResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: SpotItResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/spotit/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/spotit/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <SpotItClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <SpotItPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function SpotItPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: SpotItResult) => void; onGameOver: (r: SpotItResult) => void }) {
+  const { containerRef, score, foundCount, targetCount, targetTypes, remainingMs, hintCount, doHint } = useSpotItGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <SpotItHUD stage={stage} score={score} foundCount={foundCount} targetCount={targetCount} remainingMs={remainingMs} targetTypes={targetTypes} />
+      <GameCanvas ref={containerRef} />
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 16px', backgroundColor: '#fff', borderTop: '1px solid #F3F4F6' }}>
+        <button
+          onClick={doHint}
+          disabled={hintCount <= 0}
+          style={{
+            backgroundColor: hintCount > 0 ? '#FBBF24' : '#E5E7EB',
+            color: hintCount > 0 ? '#fff' : '#9CA3AF',
+            border: 'none',
+            padding: '12px 32px',
+            borderRadius: 12,
+            fontSize: 16,
+            fontWeight: 700,
+            cursor: hintCount > 0 ? 'pointer' : 'default',
+          }}
+        >
+          💡 Hint ({hintCount})
+        </button>
+      </div>
   const [gameResult, setGameResult] = useState<HelloTownResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -2329,6 +2393,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* SpotIt */}
+      <Route path="/games/spotit/v1" element={<SpotItTitleRoute />} />
+      <Route path="/games/spotit/v1/stage/:stageId" element={<SpotItStageRoute />} />
       {/* ForestPop */}
       <Route path="/games/forestpop/v1" element={<ForestPopTitleRoute />} />
       <Route path="/games/forestpop/v1/stage/:stageId" element={<ForestPopStageRoute />} />
