@@ -26,5 +26,5 @@
 
 ## Next Steps
 
-- found3/rn 팀과 WebView 통합 테스트
+- rn 팀과 WebView 통합 테스트
 - 게임↔React 이벤트 브릿지 구현
