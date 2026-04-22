@@ -20,6 +20,7 @@
     "@arcade/lib-pixelflow": "workspace:*",
     "@arcade/lib-tangledrope": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
+    "@arcade/lib-savedoge": "workspace:*",
     "@arcade/lib-trickytwist": "workspace:*",
     "@arcade/lib-puzzle3go": "workspace:*",
     "@arcade/lib-wordpuzzle": "workspace:*",
