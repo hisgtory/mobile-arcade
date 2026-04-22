@@ -15,6 +15,7 @@
     "@arcade/lib-blockrush": "workspace:*",
     "@arcade/lib-blockcrush": "workspace:*",
     "@arcade/lib-watersort": "workspace:*",
+    "@arcade/lib-mahjong-match": "workspace:*",
     "@arcade/lib-pixelflow": "workspace:*",
     "@arcade/lib-tangledrope": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",

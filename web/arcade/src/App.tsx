@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── MahjongMatch ───
+import { ClearScreen as MahjongMatchClear } from './games/mahjong-match/ClearScreen';
+import { HUD as MahjongMatchHUD } from './games/mahjong-match/HUD';
+import { useGame as useMahjongMatchGame, type GameResult as MahjongMatchResult } from './games/mahjong-match/useGame';
 // ─── Puzzle3Go ───
 import { ClearScreen as Puzzle3GoClear } from './games/puzzle3go/ClearScreen';
 import { HUD as Puzzle3GoHUD } from './games/puzzle3go/HUD';
@@ -365,6 +369,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── MahjongMatch Routes ──────────────────────────────
+
+function MahjongMatchTitleRoute() {
 // ─── Puzzle3Go Routes ─────────────────────────────────
 
 function Puzzle3GoTitleRoute() {
@@ -396,6 +403,11 @@ function CandyFriendsTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Mahjong Match</GameTitle>
+      <GameDescription>Match free tiles to clear the board!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/mahjong-match/v1/stage/1')}>
+        Play
+      </PrimaryButton>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>퍼즐쓰리고</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>화투 패 매치-3 퍼즐!</p>
       <button
@@ -426,6 +438,7 @@ function CandyFriendsTitleRoute() {
   );
 }
 
+function MahjongMatchStageRoute() {
 function Puzzle3GoStageRoute() {
 function ScrewdomStageRoute() {
 function PixelFlowStageRoute() {
@@ -435,6 +448,31 @@ function CandyFriendsStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<MahjongMatchResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: MahjongMatchResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/mahjong-match/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing'); setGameResult(null);
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); setGameResult(null); }, []);
+  const handleHome = useCallback(() => navigate('/games/mahjong-match/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <MahjongMatchClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <MahjongMatchPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function MahjongMatchPlaying({ stage, onClear }: { stage: number; onClear: (r: MahjongMatchResult) => void }) {
+  const { containerRef, score, matchesLeft, shuffleNotice, doShuffle, doHint, doRestart } = useMahjongMatchGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <MahjongMatchHUD stage={stage} score={score} matchesLeft={matchesLeft} shuffleNotice={shuffleNotice} onShuffle={doShuffle} onHint={doHint} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<Puzzle3GoResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -759,6 +797,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* MahjongMatch */}
+      <Route path="/games/mahjong-match/v1" element={<MahjongMatchTitleRoute />} />
+      <Route path="/games/mahjong-match/v1/stage/:stageId" element={<MahjongMatchStageRoute />} />
       {/* Puzzle3Go */}
       <Route path="/games/puzzle3go/v1" element={<Puzzle3GoTitleRoute />} />
       <Route path="/games/puzzle3go/v1/stage/:stageId" element={<Puzzle3GoStageRoute />} />
