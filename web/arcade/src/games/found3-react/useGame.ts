@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { type GameState as LibGameState, TILE_COLORS } from '@arcade/lib-found3-react';
 import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
@@ -48,13 +49,16 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     haptic('slot-matched');
   }, []);
 
-  const handleStateUpdate = useCallback((state: GameState) => {
+  const handleStateUpdate = useCallback((state: LibGameState) => {
     setGameState({
       score: state.score ?? 0,
       elapsedMs: state.elapsedMs ?? 0,
       remainingTiles: state.remainingTiles ?? 0,
       totalTiles: state.totalTiles ?? 0,
-      slotItems: state.slotItems ?? [],
+      slotItems: state.slotItems.map(item => ({
+        type: item.type,
+        color: TILE_COLORS[item.type] ?? '#ffffff',
+      })),
     });
   }, []);
 

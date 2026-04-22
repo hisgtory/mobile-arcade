@@ -6,6 +6,7 @@ import { StageMap, type StageInfo } from '../../components/StageMap';
 import { PlayLayout, isRN } from '../../components/PlayLayout';
 import { styled } from '../../styles/stitches.config';
 import { registerRoutes } from '../../router';
+import { haptic } from '../../utils/bridge';
 import { HUD } from './HUD';
 import { useGame, type GameResult, type SlotItem } from './useGame';
 
@@ -182,7 +183,7 @@ function Found3ReactStageRoute() {
 
 function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: GameResult) => void; onGameOver: (r: GameResult) => void }) {
   const {
-    gameState, onTileSelect, onMatch, onStateUpdate,
+    gameState, onStateUpdate,
     onClear: handleClear, onGameOver: handleGameOver,
     doShuffle, doUndo, doHint,
   } = useGame({ stage, onClear, onGameOver });
@@ -200,11 +201,10 @@ function Found3ReactPlaying({ stage, onClear, onGameOver }: { stage: number; onC
       <div style={{ flex: 1, overflow: 'hidden' }}>
         <GameBoard
           stage={stage}
-          onTileSelect={onTileSelect}
-          onMatch={onMatch}
           onStateUpdate={onStateUpdate}
           onClear={handleClear}
           onGameOver={handleGameOver}
+          haptic={haptic}
         />
       </div>
       <ItemBar onShuffle={doShuffle} onUndo={doUndo} onHint={doHint} />

@@ -14,7 +14,8 @@
   "scripts": {
     "dev": "tsc --watch",
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "typecheck": "tsc"
   },
   "dependencies": {
     "phaser": "^3.80.0"
