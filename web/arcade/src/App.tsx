@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── Fishdom ───
+import { ClearScreen as FishdomClear } from './games/fishdom/ClearScreen';
+import { HUD as FishdomHUD } from './games/fishdom/HUD';
+import { useGame as useFishdomGame, type GameResult as FishdomResult } from './games/fishdom/useGame';
 // ─── CarJam ───
 import { ClearScreen as CarJamClear } from './games/carjam/ClearScreen';
 import { HUD as CarJamHUD } from './games/carjam/HUD';
@@ -383,6 +387,9 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── Fishdom Routes ────────────────────────────────────
+
+function FishdomTitleRoute() {
 // ─── CarJam Routes ─────────────────────────────────────
 
 function CarJamTitleRoute() {
@@ -423,6 +430,14 @@ function Anipang4TitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#0C4A6E', letterSpacing: -1 }}>🐠 Fishdom</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Match 3 to build your aquarium!</p>
+      <button
+        onClick={() => navigate('/games/fishdom/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#0EA5E9', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Car Jam</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Tap cars to clear the traffic!</p>
       <button
@@ -472,6 +487,7 @@ function Anipang4TitleRoute() {
   );
 }
 
+function FishdomStageRoute() {
 function CarJamStageRoute() {
 function ColorSlideStageRoute() {
 function TrafficJamStageRoute() {
@@ -523,6 +539,34 @@ function Anipang4StageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<FishdomResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: FishdomResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: FishdomResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/fishdom/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/fishdom/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <FishdomClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <FishdomPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function FishdomPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: FishdomResult) => void; onGameOver: (r: FishdomResult) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useFishdomGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <FishdomHUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
   const [gameResult, setGameResult] = useState<CarJamResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -739,6 +783,7 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Root ──────────────────────────────────────────────
 // ─── HelloTown Routes ─────────────────────────────────
 
 function HelloTownTitleRoute() {
@@ -2158,6 +2203,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* Fishdom */}
+      <Route path="/games/fishdom/v1" element={<FishdomTitleRoute />} />
+      <Route path="/games/fishdom/v1/stage/:stageId" element={<FishdomStageRoute />} />
       {/* HelloTown */}
       <Route path="/games/hellotown/v1" element={<HelloTownTitleRoute />} />
       <Route path="/games/hellotown/v1/stage/:stageId" element={<HelloTownStageRoute />} />
