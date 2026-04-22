@@ -100,6 +100,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── TidyMaster ───
+import { ClearScreen as TidyMasterClear } from './games/tidymaster/ClearScreen';
+import { HUD as TidyMasterHUD } from './games/tidymaster/HUD';
+import { useGame as useTidyMasterGame, type GameResult as TidyMasterResult } from './games/tidymaster/useGame';
 // ─── DefendKing ───
 import { ClearScreen as DefendKingClear } from './games/defendking/ClearScreen';
 import { HUD as DefendKingHUD } from './games/defendking/HUD';
@@ -1015,6 +1019,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── TidyMaster Routes ────────────────────────────────
+
+function TidyMasterTitleRoute() {
 // ─── DefendKing Routes ────────────────────────────────
 
 function DefendKingTitleRoute() {
@@ -1074,6 +1081,11 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Tidy Master</GameTitle>
+      <GameDescription>Sort items into the right shelves!</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/tidymaster/v1/stage/1')}>
+        Play
+      </PrimaryButton>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Defend King</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Destroy all enemies to protect the king!</p>
       <button
@@ -1141,6 +1153,7 @@ function BrainOutTitleRoute() {
   );
 }
 
+function TidyMasterStageRoute() {
 function DefendKingStageRoute() {
 function SpotDiffStageRoute() {
 function MysteryTownStageRoute() {
@@ -1191,6 +1204,34 @@ function BrainOutStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<TidyMasterResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: TidyMasterResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: TidyMasterResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/tidymaster/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/tidymaster/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <TidyMasterClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <TidyMasterPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function TidyMasterPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: TidyMasterResult) => void; onGameOver: (r: TidyMasterResult) => void }) {
+  const { containerRef, score, moves, timeRemaining, doUndo, doRestart } = useTidyMasterGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <TidyMasterHUD stage={stage} score={score} moves={moves} timeRemaining={timeRemaining} onUndo={doUndo} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<DefendKingResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -2659,6 +2700,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* TidyMaster */}
+      <Route path="/games/tidymaster/v1" element={<TidyMasterTitleRoute />} />
+      <Route path="/games/tidymaster/v1/stage/:stageId" element={<TidyMasterStageRoute />} />
       {/* DefendKing */}
       <Route path="/games/defendking/v1" element={<DefendKingTitleRoute />} />
       <Route path="/games/defendking/v1/stage/:stageId" element={<DefendKingStageRoute />} />

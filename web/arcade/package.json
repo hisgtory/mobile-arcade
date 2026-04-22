@@ -28,6 +28,7 @@
     "@arcade/lib-pixelflow": "workspace:*",
     "@arcade/lib-tangledrope": "workspace:*",
     "@arcade/lib-tictactoe": "workspace:*",
+    "@arcade/lib-tidymaster": "workspace:*",
     "@arcade/lib-defendking": "workspace:*",
     "@arcade/lib-slidematch": "workspace:*",
     "@arcade/lib-candypop": "workspace:*",
