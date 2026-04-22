@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── CandyPop ───
+import { ClearScreen as CandyPopClear } from './games/candypop/ClearScreen';
+import { HUD as CandyPopHUD } from './games/candypop/HUD';
+import { useGame as useCandyPopGame, type GameResult as CandyPopResult } from './games/candypop/useGame';
 // ─── AllInHole ───
 import { ClearScreen as AllInHoleClear } from './games/allinhole/ClearScreen';
 import { HUD as AllInHoleHUD } from './games/allinhole/HUD';
@@ -411,6 +415,22 @@ function WaterSortPlaying({ stage, onClear }: { stage: number; onClear: (r: Wate
   );
 }
 
+// ─── CandyPop Routes ──────────────────────────────────
+
+function CandyPopTitleRoute() {
+  const navigate = useNavigate();
+  globalStyles();
+  return (
+    <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12, backgroundColor: '#e8f5e9' }}>
+      <h1 style={{ fontSize: 44, fontWeight: 800, color: '#2e7d32', letterSpacing: -1 }}>🌳 Candy Pop</h1>
+      <p style={{ fontSize: 16, color: '#558b2f' }}>Forest Match-3 Puzzle</p>
+      <button
+        onClick={() => navigate('/games/candypop/v1/stage/1')}
+        style={{ marginTop: 32, backgroundColor: '#2e7d32', color: '#fff', border: 'none', padding: '16px 48px', borderRadius: 16, fontSize: 20, fontWeight: 700, cursor: 'pointer' }}
+      >
+        Play
+      </button>
+      <p style={{ position: 'absolute', bottom: 24, fontSize: 12, color: '#81c784' }}>Pixel food icons by Alex Kovacsart (CC BY 4.0)</p>
 // ─── AllInHole Routes ─────────────────────────────────
 
 function AllInHoleTitleRoute() {
@@ -540,6 +560,7 @@ function Anipang4TitleRoute() {
   );
 }
 
+function CandyPopStageRoute() {
 function AllInHoleStageRoute() {
 function LineDrawStageRoute() {
 function EscapeRoomStageRoute() {
@@ -595,6 +616,34 @@ function Anipang4StageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<CandyPopResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: CandyPopResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: CandyPopResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/candypop/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/candypop/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <CandyPopClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <CandyPopPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function CandyPopPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: CandyPopResult) => void; onGameOver: (r: CandyPopResult) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useCandyPopGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout css={{ backgroundColor: '#e8f5e9' }}>
+      <CandyPopHUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
   const [gameResult, setGameResult] = useState<AllInHoleResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -917,6 +966,7 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── Root ──────────────────────────────────────────────
 // ─── MysteryTown Routes ───────────────────────────────
 
 function MysteryTownTitleRoute() {
@@ -2432,6 +2482,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* CandyPop */}
+      <Route path="/games/candypop/v1" element={<CandyPopTitleRoute />} />
+      <Route path="/games/candypop/v1/stage/:stageId" element={<CandyPopStageRoute />} />
       {/* LineDraw */}
       <Route path="/games/linedraw/v1" element={<LineDrawTitleRoute />} />
       <Route path="/games/linedraw/v1/stage/:stageId" element={<LineDrawStageRoute />} />
