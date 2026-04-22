@@ -1,5 +1,5 @@
 import { styled } from '../../styles/stitches.config';
-import type { GameResult } from '../../hooks/useGame';
+import type { GameResult } from './useGame';
 
 const Container = styled('div', {
   width: '100%',

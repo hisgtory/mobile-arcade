@@ -92,7 +92,7 @@ export const DEFAULT_BRIDGE_GAME_STATE: BridgeGameState = {
 
 // ─── Haptic Styles ──────────────────────────────────────────
 
-export type HapticStyle = 'light' | 'medium' | 'heavy';
+export type HapticStyle = 'light' | 'medium' | 'heavy' | (string & {});
 
 // ─── BridgeClient Config ────────────────────────────────────
 
