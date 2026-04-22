@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { createGame, destroyGame, getStageConfig } from '@arcade/lib-crunch3';
-import { stageComplete } from '../../utils/bridge';
+import { stageComplete, haptic } from '../../utils/bridge';
 
 export interface GameResult {
   score: number;
@@ -33,6 +33,9 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
       onGameOver: () => {},
     });
     gameRef.current = game;
+
+    game.events.on('tile-swapped', () => haptic('tile-swapped'));
+    game.events.on('match-cleared', () => haptic('match-cleared'));
 
     game.events.on('score-update', (data: { score: number; combo: number }) => {
       setScore(data.score);

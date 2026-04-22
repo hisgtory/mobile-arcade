@@ -134,3 +134,89 @@
 - **Before**: `/games/{game}/v1/assets/tiles/...` (게임별 경로)
 - **After**: `/assets/tiles/...` (공유 경로)
 - **Reason**: 통합 웹 서버에서 에셋 중복 제거
+
+## Game Design (2026-03-29)
+
+### Make 10: 타이머 제거
+- **Before**: 2분 타임 리밋 → 자동 게임 오버
+- **After**: 타이머 없음, "더 이상 합 10 불가" 시에만 게임 오버
+- **Reason**: "이거 타이머 없애줘. 왜 자동 게임 오버 돼?"
+
+### Make 10: 그리드 세로 전환 + 셀 확대
+- **Before**: 17열×10행 (가로), 셀 ~22px (작음)
+- **After**: 10열×17행 (세로), 셀 ~32px (45% 증가), 패딩 최소화
+- **Reason**: "타일 사이즈가 너무 작아. 더 많은 영역을 사용해도 돼. 위 아래로 공간이 많이 남아"
+
+### Water Sort: RN 브릿지 누락 수정
+- **Before**: stage-clear 시 RN에 메시지 안 보냄 → 결과 화면 없음
+- **After**: 공유 브릿지로 STAGE_CLEAR 전송 → RN 결과 화면 정상 작동
+- **Reason**: "이거 다 해도 다음 스테이지로 넘어간다거나 그런 result가 없는데?"
+
+### 게임별 브릿지 → 공유 브릿지
+- **Before**: Found3만 자체 BridgeClient, 나머지 게임은 브릿지 없음
+- **After**: `web/arcade/src/utils/bridge.ts` 공유 유틸로 모든 게임 지원
+- **Reason**: 새 게임 추가 시마다 브릿지 누락 방지
+
+### 게임 변형은 별도 이슈로 분리
+- **Decision**: 현재 PR에 넣지 않고 별도 이슈 등록 후 처리
+- **Examples**: TicTacToe 5x5 (#136), Make 10 Flow (#137)
+- **Reason**: 스코프 크리프 방지, 빠른 머지 우선
+
+## Haptic Architecture (2026-03-29)
+
+### 웹이 햅틱 결정 → RN이 햅틱 결정
+- **Before**: 웹 useGame 훅이 `bridge.haptic('heavy', 6)` 처럼 스타일+횟수를 직접 지정
+- **After**: 웹은 게임 이벤트명만 전달 (`bridge.haptic('tile-tapped')`), RN `HAPTIC_PATTERNS` 맵이 이벤트 → 패턴 결정
+- **Reason**: "웹뷰가 결정하면 응집도가 내려가고 결합도가 높아진다" — 네이티브 동작은 네이티브가 소유해야
+
+### 햅틱 강도 조정
+- **Before**: `light` (타일 탭), `heavy` × 1 (3매치 클리어)
+- **After**: `heavy` (타일 탭), `heavy` × 6 (3매치 클리어)
+- **Reason**: "햅틱이 약해. 6번으로 늘려줘. tap도 heavy로"
+
+### 햅틱 즉시 반응
+- **Before**: `tile-selected` 이벤트 (애니메이션 200ms 후) 에서 햅틱 발생 → 체감 0.5~1초 딜레이
+- **After**: `tile-tapped` 이벤트 (탭 즉시) 에서 햅틱 발생 → 즉시 피드백
+- **Reason**: "아이템 선택하면 약간 딜레이 후에 진동이 와. 이 딜레이가 해소돼야"
+
+## RN App Structure (2026-03-29)
+
+### found3/rn/ 레거시 삭제 → rn/ 슈퍼앱으로 통합
+- **Before**: `found3/rn/` (싱글 게임 전용 RN 앱) + `rn/` (슈퍼앱) 공존
+- **After**: `found3/rn/` 삭제, `rn/` 단일 슈퍼앱으로 통합
+- **Reason**: `rn/`이 실제 프로덕션 앱 (com.hisgtory.arcade)이며 모든 게임을 포함하는 슈퍼앱 구조. `found3/rn/`은 초기 프로토타입으로 역할 종료
+
+## Web Architecture (2026-03-29)
+
+### App.tsx 직접 라우트 → 게임별 자체 등록 패턴
+- **Before**: App.tsx에 모든 게임 라우트를 직접 작성 (540줄, 게임 추가마다 수정 필요)
+- **After**: 각 게임이 `games/{game}/routes.tsx`에서 `registerRoutes()`로 자체 등록. App.tsx는 수집된 라우트만 렌더링 (~25줄)
+- **Reason**: "스케일 안 됨, 잘못된 매핑 위험"
+
+### React.lazy() 자동 매핑 거부
+- **Proposed**: `import.meta.glob`이나 `React.lazy(() => import(...))` 자동 매핑
+- **Rejected**: 유저가 명시적으로 거부 — "잘못된 매핑이 십상"
+- **Reason**: 라우트는 각 게임이 직접 명시적으로 등록해야 함
+
+### web/found3, web/crunch3 레거시 확인
+- **Status**: web/arcade가 통합 웹서버 (ADR-010) 역할. web/found3과 web/crunch3는 초기 프로토타입으로 역할 종료
+- **Decision**: 삭제 후보
+
+## Development Process (2026-03-29)
+
+### 빈 Copilot PR → 팀 직접 구현 전환
+- **Before**: Copilot이 plan만 작성하고 구현하지 않은 WIP PR 존재 (PR #172 Block Puzzle)
+- **After**: 코드 없는 PR 닫고, 팀이 직접 구현 (PR #200)
+- **Reason**: 코드 없는 PR을 takeover할 수 없음. plan만 있는 PR은 닫고 새로 시작하는 것이 효율적
+
+## Rendering Strategy (2026-03-30)
+
+### Phaser 스타일링 한계 인식 → React 전환 검토 시작
+- **Issue**: Phaser canvas에서 디자인 반영이 어려움 (폰트, 그라데이션, border-radius, 반응형 등 CSS 대비 3~5배 공수)
+- **Decision**: 비교 실험으로 시작, 결과에 따라 전체 전환 여부 결정
+- **Reason**: 디자인 외주를 받아 반영하려면 React+CSS가 유리. Figma→CSS 반영이 직관적인 구조 필요
+
+### {game}-react 100% 격리 원칙
+- **Rule**: React 클론은 기존 Phaser 버전과 완전 격리 — 별도 패키지, 별도 라우트, 별도 rn 등록
+- **Shared**: 순수 로직 파일의 물리적 복사본뿐 (import가 아닌 복사)
+- **Reason**: 두 버전이 Arcade Home에서 나란히 표시되어 비교 가능해야 함. 상호 의존 시 비교 무의미

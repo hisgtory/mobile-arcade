@@ -11,6 +11,7 @@ interface GameWebViewProps {
   stageId?: number;
   onReady?: () => void;
   onStageComplete?: (data: StageCompleteData) => void;
+  onNavigateArcade?: () => void;
 }
 
 export function GameWebView({
@@ -19,18 +20,20 @@ export function GameWebView({
   stageId,
   onReady,
   onStageComplete,
+  onNavigateArcade,
 }: GameWebViewProps) {
   const webViewRef = useRef<WebView>(null);
   const bridge = useMemo(
-    () => new BridgeHost(webViewRef, gameId, { onStageComplete }),
+    () => new BridgeHost(webViewRef, gameId, { onStageComplete, onNavigateArcade }),
     [gameId],
   );
 
   useEffect(() => {
-    bridge.updateCallbacks({ onStageComplete });
-  }, [onStageComplete]);
+    bridge.updateCallbacks({ onStageComplete, onNavigateArcade });
+  }, [onStageComplete, onNavigateArcade]);
 
   const uri = getGameUrl(webPath, stageId);
+  if (__DEV__) console.log(`[GameWebView] Loading: ${uri}`);
 
   return (
     <WebView
@@ -40,6 +43,8 @@ export function GameWebView({
       style={styles.webview}
       onMessage={bridge.handleMessage}
       onLoadEnd={onReady}
+      onError={(e) => console.error('[WebView] Error:', e.nativeEvent.description)}
+      onHttpError={(e) => console.error('[WebView] HTTP Error:', e.nativeEvent.statusCode, e.nativeEvent.url)}
       javaScriptEnabled
       domStorageEnabled
       allowsInlineMediaPlayback
