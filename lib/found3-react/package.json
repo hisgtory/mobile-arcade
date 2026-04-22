@@ -16,16 +16,11 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^18.3.0",
+    "react": "^19.1.0",
     "@stitches/react": "^1.2.8"
   },
   "devDependencies": {
-    "@types/react": "18.2.79",
+    "@types/react": "^19.1.0",
     "typescript": "^5.5.0"
-  },
-  "pnpm": {
-    "overrides": {
-      "@types/react": "18.2.79"
-    }
   }
 }
