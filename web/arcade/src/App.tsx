@@ -39,6 +39,10 @@ import { ClearScreen as WaterSortClear } from './games/watersort/ClearScreen';
 import { HUD as WaterSortHUD } from './games/watersort/HUD';
 import { useGame as useWaterSortGame, type GameResult as WaterSortResult } from './games/watersort/useGame';
 
+// ─── BlockyQuest ───
+import { ClearScreen as BlockyQuestClear } from './games/blockyquest/ClearScreen';
+import { HUD as BlockyQuestHUD } from './games/blockyquest/HUD';
+import { useGame as useBlockyQuestGame, type GameResult as BlockyQuestResult } from './games/blockyquest/useGame';
 // ─── TrafficJam ───
 import { ClearScreen as TrafficJamClear } from './games/trafficjam/ClearScreen';
 import { HUD as TrafficJamHUD } from './games/trafficjam/HUD';
@@ -652,6 +656,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── BlockyQuest Routes ────────────────────────────────
+
+function BlockyQuestTitleRoute() {
 // ─── ToonBlast Routes ──────────────────────────────────
 
 function ToonBlastTitleRoute() {
@@ -680,6 +687,10 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Blocky Quest</h1>
+      <p style={{ fontSize: 16, color: '#6B7280' }}>Place blocks & clear lines!</p>
+      <button
+        onClick={() => navigate('/games/blockyquest/v1/stage/1')}
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Yarn Fever</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Untangle the yarn!</p>
       <button
@@ -700,6 +711,7 @@ function BrainOutTitleRoute() {
   );
 }
 
+function BlockyQuestStageRoute() {
 function ToonBlastStageRoute() {
 function YarnFeverStageRoute() {
 function ArrowsStageRoute() {
@@ -708,6 +720,34 @@ function BrainOutStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<BlockyQuestResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: BlockyQuestResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleGameOver = useCallback((r: BlockyQuestResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/blockyquest/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/blockyquest/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <BlockyQuestClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <BlockyQuestPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} onGameOver={handleGameOver} />;
+}
+
+function BlockyQuestPlaying({ stage, onClear, onGameOver }: { stage: number; onClear: (r: BlockyQuestResult) => void; onGameOver: (r: BlockyQuestResult) => void }) {
+  const { containerRef, score, combo, movesLeft, targetScore } = useBlockyQuestGame({ stage, onClear, onGameOver });
+  return (
+    <PlayLayout>
+      <BlockyQuestHUD stage={stage} score={score} targetScore={targetScore} movesLeft={movesLeft} combo={combo} />
   const [gameResult, setGameResult] = useState<ToonBlastResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -1883,6 +1923,9 @@ export function App() {
       <Route path="/games/watersort/v1" element={<WaterSortTitleRoute />} />
       <Route path="/games/watersort/v1/stage/:stageId" element={<WaterSortStageRoute />} />
 
+      {/* BlockyQuest */}
+      <Route path="/games/blockyquest/v1" element={<BlockyQuestTitleRoute />} />
+      <Route path="/games/blockyquest/v1/stage/:stageId" element={<BlockyQuestStageRoute />} />
       {/* ColorSlide */}
       <Route path="/games/colorslide/v1" element={<ColorSlideTitleRoute />} />
       <Route path="/games/colorslide/v1/stage/:stageId" element={<ColorSlideStageRoute />} />

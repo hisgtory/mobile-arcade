@@ -17,6 +17,7 @@
     "@arcade/lib-hexaaway": "workspace:*",
     "@arcade/lib-blockcrush": "workspace:*",
     "@arcade/lib-watersort": "workspace:*",
+    "@arcade/lib-blockyquest": "workspace:*",
     "@arcade/lib-colorslide": "workspace:*",
     "@arcade/lib-trafficjam": "workspace:*",
     "@arcade/lib-busjam": "workspace:*",
