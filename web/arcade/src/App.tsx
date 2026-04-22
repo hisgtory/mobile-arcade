@@ -76,6 +76,10 @@ import { useGame as useAnipang4Game, type GameResult as Anipang4Result } from '.
 import { HUD as TicTacToeHUD } from './games/tictactoe/HUD';
 import { useGame as useTicTacToeGame } from './games/tictactoe/useGame';
 
+// ─── PixelArt ───
+import { ClearScreen as PixelArtClear } from './games/pixelart/ClearScreen';
+import { HUD as PixelArtHUD } from './games/pixelart/HUD';
+import { useGame as usePixelArtGame, type GameResult as PixelArtResult } from './games/pixelart/useGame';
 // ─── ToonBlast ───
 import { ClearScreen as ToonBlastClear } from './games/toonblast/ClearScreen';
 import { HUD as ToonBlastHUD } from './games/toonblast/HUD';
@@ -104,6 +108,39 @@ const PlayLayout = styled('div', {
   flexDirection: 'column',
   backgroundColor: '$bg',
   overflow: 'hidden',
+});
+
+const GameTitle = styled('h1', {
+  fontSize: 48,
+  fontWeight: 800,
+  color: '#111827',
+  letterSpacing: -1,
+  variants: {
+    size: {
+      large: { fontSize: 48 },
+      medium: { fontSize: 36 },
+    },
+  },
+});
+
+const GameDescription = styled('p', {
+  fontSize: 16,
+  color: '#6B7280',
+});
+
+const PrimaryButton = styled('button', {
+  marginTop: 32,
+  backgroundColor: '#2563EB',
+  color: '#fff',
+  border: 'none',
+  padding: '16px 48px',
+  borderRadius: 16,
+  fontSize: 20,
+  fontWeight: 700,
+  cursor: 'pointer',
+  '&:hover': {
+    backgroundColor: '#1D4ED8',
+  },
 });
 
 const isRN = typeof window !== 'undefined' && typeof window.ReactNativeWebView !== 'undefined';
@@ -693,6 +730,9 @@ function TicTacToePlayRoute() {
   );
 }
 
+// ─── PixelArt Routes ──────────────────────────────────
+
+function PixelArtTitleRoute() {
 // ─── Root ──────────────────────────────────────────────
 // ─── BlockyQuest Routes ────────────────────────────────
 
@@ -725,6 +765,11 @@ function BrainOutTitleRoute() {
   globalStyles();
   return (
     <PlayLayout css={{ justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+      <GameTitle>Pixel Art</GameTitle>
+      <GameDescription>Number coloring puzzle! 🎨</GameDescription>
+      <PrimaryButton onClick={() => navigate('/games/pixelart/v1/stage/1')}>
+        Play
+      </PrimaryButton>
       <h1 style={{ fontSize: 48, fontWeight: 800, color: '#111827', letterSpacing: -1 }}>Blocky Quest</h1>
       <p style={{ fontSize: 16, color: '#6B7280' }}>Place blocks & clear lines!</p>
       <button
@@ -749,6 +794,7 @@ function BrainOutTitleRoute() {
   );
 }
 
+function PixelArtStageRoute() {
 function BlockyQuestStageRoute() {
 function ToonBlastStageRoute() {
 function YarnFeverStageRoute() {
@@ -758,6 +804,31 @@ function BrainOutStageRoute() {
   const navigate = useNavigate();
   const stage = parseInt(stageId || '1', 10);
   const [playKey, setPlayKey] = useState(0);
+  const [gameResult, setGameResult] = useState<PixelArtResult | null>(null);
+  const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
+
+  const handleClear = useCallback((r: PixelArtResult) => {
+    if (!isRN) { setGameResult(r); setScreen('clear'); }
+  }, []);
+  const handleNext = useCallback(() => {
+    navigate(`/games/pixelart/v1/stage/${stage + 1}`, { replace: true });
+    setPlayKey((k) => k + 1); setScreen('playing');
+  }, [navigate, stage]);
+  const handleRetry = useCallback(() => { setPlayKey((k) => k + 1); setScreen('playing'); }, []);
+  const handleHome = useCallback(() => navigate('/games/pixelart/v1', { replace: true }), [navigate]);
+
+  if (screen === 'clear' && gameResult) {
+    return <PixelArtClear result={gameResult} stage={stage} onNext={handleNext} onRetry={handleRetry} onHome={handleHome} />;
+  }
+
+  return <PixelArtPlaying key={`${stage}-${playKey}`} stage={stage} onClear={handleClear} />;
+}
+
+function PixelArtPlaying({ stage, onClear }: { stage: number; onClear: (r: PixelArtResult) => void }) {
+  const { containerRef, score, progress, doRestart } = usePixelArtGame({ stage, onClear });
+  return (
+    <PlayLayout>
+      <PixelArtHUD stage={stage} score={score} progress={progress} onRestart={doRestart} />
   const [gameResult, setGameResult] = useState<BlockyQuestResult | null>(null);
   const [screen, setScreen] = useState<'playing' | 'clear'>('playing');
 
@@ -2008,6 +2079,9 @@ export function App() {
       <Route path="/games/tictactoe/v1" element={<TicTacToeTitleRoute />} />
       <Route path="/games/tictactoe/v1/play" element={<TicTacToePlayRoute />} />
 
+      {/* PixelArt */}
+      <Route path="/games/pixelart/v1" element={<PixelArtTitleRoute />} />
+      <Route path="/games/pixelart/v1/stage/:stageId" element={<PixelArtStageRoute />} />
       {/* ToonBlast */}
       <Route path="/games/toonblast/v1" element={<ToonBlastTitleRoute />} />
       <Route path="/games/toonblast/v1/stage/:stageId" element={<ToonBlastStageRoute />} />
