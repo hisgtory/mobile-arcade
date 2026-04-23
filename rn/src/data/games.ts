@@ -192,6 +192,17 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
+    id: 'neon-vanguard',
+    name: 'Neon Vanguard',
+    description: '3v3 tactical arena shooter with hero abilities and ultimates.',
+    icon: '⚔️',
+    category: 'action',
+    color: '#2563EB',
+    webPath: '/games/neon-vanguard/v1',
+    isNew: true,
+    isFeatured: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
