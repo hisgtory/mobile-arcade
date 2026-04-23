@@ -8,16 +8,11 @@
 mobile-arcade/
 ├── lib/{game}/       # 게임 코어 로직 (Phaser scenes, shared types)
 ├── web/arcade/       # 통합 웹 앱 (React Router로 여러 게임 서빙)
-├── web/found3/       # found3 전용 웹 앱
-├── web/crunch3/      # crunch3 전용 웹 앱
+├── web/found3/       # found3 전용 웹 앱 (Legacy)
+├── web/crunch3/      # crunch3 전용 웹 앱 (Legacy)
 ├── rn/               # 단일 Arcade RN 앱 (WebView launcher)
-├── found3/rn/        # deprecated: 초기 found3 전용 RN 앱
 ├── prd/              # 게임 기획서
 └── knowledge/        # 아키텍처/결정/진행 기록
-├── lib/{game}/       # 게임 코어 로직 (Phaser.io scenes, shared types)
-├── web/{game}/       # 웹 게임 (React + Stitches + lib 사용)
-├── rn/               # RN 슈퍼앱 (WebView로 web 게임 래핑)
-└── prd/              # 게임 기획서
 ```
 
 ### Current Flow
@@ -32,13 +27,6 @@ lib/{game}  →  web/arcade  →  rn
 3. `rn`: `web/arcade`의 게임 경로를 WebView로 로드하는 단일 네이티브 앱
 
 `web/found3`, `web/crunch3`, `found3/rn`은 남아 있지만 현재 기준 구조의 중심은 아닙니다.
-lib/{game}  →  web/{game}  →  rn
-(core)        (web app)      (native shell, 슈퍼앱)
-```
-
-1. `lib/{game}`: Phaser.io 기반 게임 로직, 씬, 타입 정의
-2. `web/{game}`: lib를 import해서 React + Stitches로 웹 게임 빌드
-3. `rn`: 빌드된 웹 게임을 WebView로 표시하는 RN 슈퍼앱
 
 ## Games
 
@@ -58,9 +46,6 @@ lib/{game}  →  web/{game}  →  rn
 | Web Frontend | `web/arcade/` | 통합 웹 앱과 라우팅 |
 | RN App | `rn/` | React Native Arcade 앱 |
 | Knowledge | `knowledge/` | 구조, 결정, 진행 기록 |
-| Game Core | `lib/found3/` | Phaser.io 게임 로직 개발 |
-| Web Frontend | `web/found3/` | React + Stitches 웹 게임 |
-| RN App | `rn/` | React Native WebView 슈퍼앱 |
 
 ## Getting Started
 
@@ -75,6 +60,31 @@ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 claude
 /team
 ```
+
+## RN WebView 개발 설정
+
+RN 앱은 WebView로 Vite dev server에 접속합니다. 환경별 설정:
+
+| 환경 | 호스트 | 추가 설정 |
+|------|--------|-----------|
+| Android emulator | `10.0.2.2` (자동) | 없음 |
+| iOS simulator | `localhost` (자동) | 없음 |
+| 실기기 (WiFi) | 직접 지정 필요 | `rn/.env` 생성 필요 |
+
+**실기기 연결 시:**
+
+```bash
+# rn/.env 파일 생성 (rn/.env.example 참고)
+echo "EXPO_PUBLIC_DEV_HOST=192.168.1.100" > rn/.env
+
+# Vite dev server 시작 (web/arcade 기준)
+cd web/arcade && pnpm dev
+
+# Expo 시작
+cd rn && npx expo start
+```
+
+> **Note**: `EXPO_PUBLIC_DEV_HOST` 미설정 시 dev 콘솔에 경고 메시지가 출력됩니다. 에뮬레이터/시뮬레이터에서는 자동 기본값이 적용되므로 정상 동작합니다.
 
 ## Development Commands
 
