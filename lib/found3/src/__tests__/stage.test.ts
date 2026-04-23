@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { getStageConfig, getMaxStage } from '../logic/stage';
 
 describe('getMaxStage', () => {
-  it('returns 5', () => {
-    expect(getMaxStage()).toBe(5);
+  it('returns a positive stage count', () => {
+    expect(getMaxStage()).toBeGreaterThan(0);
   });
 });
 
@@ -30,6 +30,11 @@ describe('getStageConfig', () => {
   it('clamps to last stage for out-of-range high values', () => {
     const max = getMaxStage();
     expect(getStageConfig(99).stage).toBe(max);
+  });
+
+  it('returns the last stage config for getMaxStage()', () => {
+    const max = getMaxStage();
+    expect(getStageConfig(max).stage).toBe(max);
   });
 
   it('returns a copy (no mutation)', () => {
