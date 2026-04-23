@@ -4,10 +4,10 @@ export interface GameInfo {
   id: string;
   name: string;
   description: string;
-  icon: string; // emoji for now
+  icon: string;
   category: GameCategory;
-  color: string; // card accent color
-  webPath: string; // e.g. '/games/found3/v1'
+  color: string;
+  webPath: string;
   stageCount?: number;
   isNew?: boolean;
   isFeatured?: boolean;
@@ -36,9 +36,20 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'found3-react',
+    name: 'Found 3 (React)',
+    description: 'React version for board logic comparison.',
+    icon: '🔍',
+    category: 'puzzle',
+    color: '#F59E0B',
+    webPath: '/games/found3-react/v1',
+    stageCount: 5,
+    isNew: true,
+  },
+  {
     id: 'crunch3',
     name: 'Crunch 3',
-    description: 'Swipe & match 3 tiles to crush!',
+    description: 'Swipe and match 3 tiles to crush!',
     icon: '🍩',
     category: 'puzzle',
     color: '#8B5CF6',
@@ -53,7 +64,7 @@ export const GAMES: GameInfo[] = [
     icon: '🟧',
     category: 'puzzle',
     color: '#2563EB',
-    webPath: '/games/blockrush/v1/play',
+    webPath: '/games/blockrush/v1',
     isNew: true,
   },
   {
@@ -74,27 +85,7 @@ export const GAMES: GameInfo[] = [
     icon: '❌',
     category: 'casual',
     color: '#EF4444',
-    webPath: '/games/tictactoe/v1/play',
-    isNew: true,
-  },
-  {
-    id: 'chess',
-    name: 'Chess',
-    description: 'Classic chess vs AI - full rules.',
-    icon: '♛',
-    category: 'strategy',
-    color: '#374151',
-    webPath: '/games/chess/v1',
-    isNew: true,
-  },
-  {
-    id: 'number10',
-    name: 'Make 10',
-    description: 'Drag numbers that sum to 10!',
-    icon: '🔢',
-    category: 'puzzle',
-    color: '#3B82F6',
-    webPath: '/games/number10/v1/play',
+    webPath: '/games/tictactoe/v1',
     isNew: true,
   },
   {
@@ -108,6 +99,16 @@ export const GAMES: GameInfo[] = [
     isNew: true,
   },
   {
+    id: 'number10',
+    name: 'Make 10',
+    description: 'Drag numbers that sum to 10!',
+    icon: '🔢',
+    category: 'puzzle',
+    color: '#3B82F6',
+    webPath: '/games/number10/v1',
+    isNew: true,
+  },
+  {
     id: 'sudoku',
     name: 'Sudoku',
     description: 'Classic number brain puzzle!',
@@ -115,17 +116,6 @@ export const GAMES: GameInfo[] = [
     category: 'puzzle',
     color: '#7C3AED',
     webPath: '/games/sudoku/v1',
-    stageCount: 5,
-    isNew: true,
-  },
-  {
-    id: 'found3-react',
-    name: 'Found 3 (React)',
-    description: 'React version — performance comparison',
-    icon: '🔍',
-    category: 'puzzle',
-    color: '#F59E0B',
-    webPath: '/games/found3-react/v1',
     stageCount: 5,
     isNew: true,
   },
@@ -152,7 +142,7 @@ export const GAMES: GameInfo[] = [
   {
     id: 'woodoku',
     name: 'Woodoku Blast',
-    description: '9×9 wood block puzzle with region clears!',
+    description: '9x9 wood block puzzle with region clears!',
     icon: '🪵',
     category: 'puzzle',
     color: '#92400E',
@@ -170,21 +160,56 @@ export const GAMES: GameInfo[] = [
     stageCount: 10,
     isNew: true,
   },
+  {
+    id: 'chess',
+    name: 'Chess',
+    description: 'Classic chess vs AI with full rules.',
+    icon: '♛',
+    category: 'strategy',
+    color: '#374151',
+    webPath: '/games/chess/v1',
+    isNew: true,
+  },
+  {
+    id: 'nonogram',
+    name: 'Nonogram',
+    description: 'Fill the grid to reveal pixel art!',
+    icon: '🖼️',
+    category: 'puzzle',
+    color: '#059669',
+    webPath: '/games/nonogram/v1',
+    stageCount: 5,
+    isNew: true,
+  },
+  {
+    id: 'hexaaway',
+    name: 'Hexa Away',
+    description: 'Clear the board with hex-based moves!',
+    icon: '⬡',
+    category: 'puzzle',
+    color: '#10B981',
+    webPath: '/games/hexaaway/v1',
+    stageCount: 5,
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
-  return GAMES.find((g) => g.id === id);
+  return GAMES.find((game) => game.id === id);
 }
 
 export function getFeaturedGame(): GameInfo | undefined {
-  return GAMES.find((g) => g.isFeatured);
+  return GAMES.find((game) => game.isFeatured);
 }
 
 export function getNewGames(): GameInfo[] {
-  return GAMES.filter((g) => g.isNew);
+  return GAMES.filter((game) => game.isNew);
 }
 
 export function getGamesByCategory(category: GameCategory | 'all'): GameInfo[] {
-  if (category === 'all') return GAMES;
-  return GAMES.filter((g) => g.category === category);
+  if (category === 'all') {
+    return GAMES;
+  }
+
+  return GAMES.filter((game) => game.category === category);
 }
