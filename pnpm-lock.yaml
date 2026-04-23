@@ -8,6 +8,46 @@ importers:
 
   .: {}
 
+  lib/allinhole:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/anipang3:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/anipang4:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/arrows:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/blockcrush:
     dependencies:
       phaser:
@@ -38,7 +78,77 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/blockyquest:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/brainout:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/buscraze:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/busjam:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/candyfriends:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/candypop:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/carjam:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/carout:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -58,6 +168,16 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/colorslide:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/crunch3:
     dependencies:
       phaser:
@@ -68,7 +188,57 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/defendking:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/dop5:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/dreamstore:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/escaperoom:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/fishdom:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/forestpop:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -114,7 +284,83 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/hellotown:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/heroarena:
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/hexaaway:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/linedraw:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/mahjong-match:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/matchfactory:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/minesweeper:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/mystery-town:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/nonogram:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -134,7 +380,127 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/pixelart:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/pixelflow:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/puzzle3go:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/savedoge:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/screwdom:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/skewerjam:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/slidematch:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/spotdiff:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/spotit:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/starrynight:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/sudoku:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/tangledrope:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/tangram:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -154,7 +520,7 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
-  lib/trickyprank:
+  lib/tidymaster:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -165,6 +531,46 @@ importers:
         version: 5.9.3
 
   lib/tileconnect:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/toonblast:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/trafficjam:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/trickyprank:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/trickytwist:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -185,6 +591,26 @@ importers:
         version: 5.9.3
 
   lib/woodoku:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/wordpuzzle:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/yarnfever:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -242,6 +668,18 @@ importers:
 
   web/arcade:
     dependencies:
+      '@arcade/lib-allinhole':
+        specifier: workspace:*
+        version: link:../../lib/allinhole
+      '@arcade/lib-anipang3':
+        specifier: workspace:*
+        version: link:../../lib/anipang3
+      '@arcade/lib-anipang4':
+        specifier: workspace:*
+        version: link:../../lib/anipang4
+      '@arcade/lib-arrows':
+        specifier: workspace:*
+        version: link:../../lib/arrows
       '@arcade/lib-blockcrush':
         specifier: workspace:*
         version: link:../../lib/blockcrush
@@ -251,18 +689,57 @@ importers:
       '@arcade/lib-blockrush':
         specifier: workspace:*
         version: link:../../lib/blockrush
+      '@arcade/lib-blockyquest':
+        specifier: workspace:*
+        version: link:../../lib/blockyquest
+      '@arcade/lib-brainout':
+        specifier: workspace:*
+        version: link:../../lib/brainout
+      '@arcade/lib-buscraze':
+        specifier: workspace:*
+        version: link:../../lib/buscraze
+      '@arcade/lib-busjam':
+        specifier: workspace:*
+        version: link:../../lib/busjam
       '@arcade/lib-candyfriends':
         specifier: workspace:*
         version: link:../../lib/candyfriends
+      '@arcade/lib-candypop':
+        specifier: workspace:*
+        version: link:../../lib/candypop
+      '@arcade/lib-carjam':
+        specifier: workspace:*
+        version: link:../../lib/carjam
+      '@arcade/lib-carout':
+        specifier: workspace:*
+        version: link:../../lib/carout
       '@arcade/lib-chess':
         specifier: workspace:*
         version: link:../../lib/chess
+      '@arcade/lib-colorslide':
+        specifier: workspace:*
+        version: link:../../lib/colorslide
       '@arcade/lib-crunch3':
         specifier: workspace:*
         version: link:../../lib/crunch3
+      '@arcade/lib-defendking':
+        specifier: workspace:*
+        version: link:../../lib/defendking
       '@arcade/lib-dop5':
         specifier: workspace:*
         version: link:../../lib/dop5
+      '@arcade/lib-dreamstore':
+        specifier: workspace:*
+        version: link:../../lib/dreamstore
+      '@arcade/lib-escaperoom':
+        specifier: workspace:*
+        version: link:../../lib/escaperoom
+      '@arcade/lib-fishdom':
+        specifier: workspace:*
+        version: link:../../lib/fishdom
+      '@arcade/lib-forestpop':
+        specifier: workspace:*
+        version: link:../../lib/forestpop
       '@arcade/lib-found3':
         specifier: workspace:*
         version: link:../../lib/found3
@@ -272,30 +749,108 @@ importers:
       '@arcade/lib-getcolor':
         specifier: workspace:*
         version: link:../../lib/getcolor
+      '@arcade/lib-hellotown':
+        specifier: workspace:*
+        version: link:../../lib/hellotown
+      '@arcade/lib-heroarena':
+        specifier: workspace:*
+        version: link:../../lib/heroarena
+      '@arcade/lib-hexaaway':
+        specifier: workspace:*
+        version: link:../../lib/hexaaway
+      '@arcade/lib-linedraw':
+        specifier: workspace:*
+        version: link:../../lib/linedraw
+      '@arcade/lib-mahjong-match':
+        specifier: workspace:*
+        version: link:../../lib/mahjong-match
+      '@arcade/lib-matchfactory':
+        specifier: workspace:*
+        version: link:../../lib/matchfactory
       '@arcade/lib-minesweeper':
         specifier: workspace:*
         version: link:../../lib/minesweeper
+      '@arcade/lib-mystery-town':
+        specifier: workspace:*
+        version: link:../../lib/mystery-town
+      '@arcade/lib-nonogram':
+        specifier: workspace:*
+        version: link:../../lib/nonogram
       '@arcade/lib-number10':
         specifier: workspace:*
         version: link:../../lib/number10
+      '@arcade/lib-pixelart':
+        specifier: workspace:*
+        version: link:../../lib/pixelart
+      '@arcade/lib-pixelflow':
+        specifier: workspace:*
+        version: link:../../lib/pixelflow
+      '@arcade/lib-puzzle3go':
+        specifier: workspace:*
+        version: link:../../lib/puzzle3go
+      '@arcade/lib-savedoge':
+        specifier: workspace:*
+        version: link:../../lib/savedoge
+      '@arcade/lib-screwdom':
+        specifier: workspace:*
+        version: link:../../lib/screwdom
+      '@arcade/lib-skewerjam':
+        specifier: workspace:*
+        version: link:../../lib/skewerjam
+      '@arcade/lib-slidematch':
+        specifier: workspace:*
+        version: link:../../lib/slidematch
+      '@arcade/lib-spotdiff':
+        specifier: workspace:*
+        version: link:../../lib/spotdiff
+      '@arcade/lib-spotit':
+        specifier: workspace:*
+        version: link:../../lib/spotit
+      '@arcade/lib-starrynight':
+        specifier: workspace:*
+        version: link:../../lib/starrynight
       '@arcade/lib-sudoku':
         specifier: workspace:*
         version: link:../../lib/sudoku
+      '@arcade/lib-tangledrope':
+        specifier: workspace:*
+        version: link:../../lib/tangledrope
+      '@arcade/lib-tangram':
+        specifier: workspace:*
+        version: link:../../lib/tangram
       '@arcade/lib-tictactoe':
         specifier: workspace:*
         version: link:../../lib/tictactoe
-      '@arcade/lib-trickyprank':
+      '@arcade/lib-tidymaster':
         specifier: workspace:*
-        version: link:../../lib/trickyprank
+        version: link:../../lib/tidymaster
       '@arcade/lib-tileconnect':
         specifier: workspace:*
         version: link:../../lib/tileconnect
+      '@arcade/lib-toonblast':
+        specifier: workspace:*
+        version: link:../../lib/toonblast
+      '@arcade/lib-trafficjam':
+        specifier: workspace:*
+        version: link:../../lib/trafficjam
+      '@arcade/lib-trickyprank':
+        specifier: workspace:*
+        version: link:../../lib/trickyprank
+      '@arcade/lib-trickytwist':
+        specifier: workspace:*
+        version: link:../../lib/trickytwist
       '@arcade/lib-watersort':
         specifier: workspace:*
         version: link:../../lib/watersort
       '@arcade/lib-woodoku':
         specifier: workspace:*
         version: link:../../lib/woodoku
+      '@arcade/lib-wordpuzzle':
+        specifier: workspace:*
+        version: link:../../lib/wordpuzzle
+      '@arcade/lib-yarnfever':
+        specifier: workspace:*
+        version: link:../../lib/yarnfever
       '@stitches/react':
         specifier: ^1.2.8
         version: 1.2.8(react@18.3.1)

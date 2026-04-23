@@ -192,6 +192,17 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
+    id: 'heroarena',
+    name: 'Nexus Arena',
+    description: 'Fast-paced hero arena combat!',
+    icon: '⚔️',
+    category: 'action',
+    color: '#00f0ff',
+    webPath: '/games/heroarena/v1',
+    isNew: true,
+    isFeatured: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

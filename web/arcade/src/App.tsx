@@ -18,6 +18,7 @@ import './games/sudoku/routes';
 import './games/tictactoe/routes';
 import './games/watersort/routes';
 import './games/woodoku/routes';
+import './games/heroarena/routes';
 
 export function App() {
   globalStyles();
