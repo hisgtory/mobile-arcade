@@ -256,15 +256,8 @@ export class BridgeHost {
     'mistake-made':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
     // ─── Block Puzzle ─── (piece-placed, line-cleared shared with BlockRush)
     'combo-cleared': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
-    // ─── Block Crush ───
-    'block-tapped':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
-    'blocks-crushed': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
-    // ─── Chess ───
-    'chess-piece-tapped': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
-    'chess-piece-moved': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
-    'chess-capture': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 1 },
-    'chess-check': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 3 },
-    'chess-checkmate': { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
+    // ─── Nonogram ───
+    'puzzle-clear':  { style: Haptics.ImpactFeedbackStyle.Heavy, count: 6 },
     // ─── Fallback (direct style names) ───
     light:  { style: Haptics.ImpactFeedbackStyle.Light, count: 1 },
     medium: { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 },
@@ -276,14 +269,11 @@ export class BridgeHost {
     const pattern = BridgeHost.HAPTIC_PATTERNS[event]
       ?? { style: Haptics.ImpactFeedbackStyle.Medium, count: 1 };
 
+    for (let i = 0; i < pattern.count; i++) {
+      await Haptics.impactAsync(pattern.style);
+      if (i < pattern.count - 1) await new Promise((r) => setTimeout(r, 60));
+    }
     this.sendResponse(msg.msgId, 'ACK', 'ack');
-
-    void (async () => {
-      for (let i = 0; i < pattern.count; i++) {
-        await Haptics.impactAsync(pattern.style);
-        if (i < pattern.count - 1) await new Promise((r) => setTimeout(r, 60));
-      }
-    })();
   }
 
   // ─── Safe Storage Read ─────────────────────────────────

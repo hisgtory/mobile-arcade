@@ -1,26 +1,27 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import { globalStyles } from './styles/global';
+import { getRegisteredRoutes } from './router';
 
-// Game route registrations (side-effect imports)
-import './games/found3/routes';
-import './games/crunch3/routes';
+import './games/blockcrush/routes';
+import './games/blockpuzzle/routes';
 import './games/blockrush/routes';
-import './games/watersort/routes';
-import './games/tictactoe/routes';
+import './games/chess/routes';
+import './games/crunch3/routes';
+import './games/found3/routes';
+import './games/found3-react/routes';
+import './games/getcolor/routes';
+import './games/hexaaway/routes';
 import './games/minesweeper/routes';
+import './games/nonogram/routes';
 import './games/number10/routes';
 import './games/sudoku/routes';
-import './games/blockpuzzle/routes';
-import './games/found3-react/routes';
-import './games/blockcrush/routes';
+import './games/tictactoe/routes';
+import './games/watersort/routes';
 import './games/woodoku/routes';
-import './games/getcolor/routes';
-import './games/chess/routes';
-
-import { getRegisteredRoutes } from './router';
 
 export function App() {
   globalStyles();
+
   return (
     <Routes>
       {getRegisteredRoutes().map((route) => (

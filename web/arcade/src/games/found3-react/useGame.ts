@@ -1,5 +1,8 @@
-import { useState, useCallback, useRef } from 'react';
-import { stageComplete, haptic } from '../../utils/bridge';
+import { useCallback, useRef, useState } from 'react';
+import type { GameState } from '@arcade/lib-found3-react';
+import { haptic, stageComplete } from '../../utils/bridge';
+
+export { haptic };
 
 export interface GameResult {
   score: number;
@@ -7,17 +10,12 @@ export interface GameResult {
   cleared: boolean;
 }
 
-export interface SlotItem {
-  type: number;
-  color: string;
-}
-
-interface GameState {
+interface HUDGameState {
   score: number;
   elapsedMs: number;
   remainingTiles: number;
   totalTiles: number;
-  slotItems: SlotItem[];
+  slotItems: GameState['slotItems'];
 }
 
 interface UseGameOptions {
@@ -29,24 +27,17 @@ interface UseGameOptions {
 export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
   const onClearRef = useRef(onClear);
   onClearRef.current = onClear;
+
   const onGameOverRef = useRef(onGameOver);
   onGameOverRef.current = onGameOver;
 
-  const [gameState, setGameState] = useState<GameState>({
+  const [gameState, setGameState] = useState<HUDGameState>({
     score: 0,
     elapsedMs: 0,
     remainingTiles: 0,
     totalTiles: 0,
     slotItems: [],
   });
-
-  const handleTileSelect = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const handleMatch = useCallback(() => {
-    haptic('slot-matched');
-  }, []);
 
   const handleStateUpdate = useCallback((state: GameState) => {
     setGameState({
@@ -58,38 +49,42 @@ export function useGame({ stage, onClear, onGameOver }: UseGameOptions) {
     });
   }, []);
 
-  const handleClear = useCallback((result: { score: number; elapsedMs: number }) => {
-    haptic('game-clear');
-    stageComplete({ stage, score: result.score, elapsedMs: result.elapsedMs, cleared: true });
-    onClearRef.current?.({ ...result, cleared: true });
-  }, [stage]);
+  const handleClear = useCallback(
+    (result: { score: number; elapsedMs: number }) => {
+      haptic('game-clear');
+      stageComplete({
+        stage,
+        score: result.score,
+        elapsedMs: result.elapsedMs,
+        cleared: true,
+      });
+      onClearRef.current?.({ ...result, cleared: true });
+    },
+    [stage],
+  );
 
-  const handleGameOver = useCallback((result: { score: number; elapsedMs: number }) => {
-    stageComplete({ stage, score: result.score, elapsedMs: result.elapsedMs, cleared: false });
-    onGameOverRef.current?.({ ...result, cleared: false });
-  }, [stage]);
+  const handleGameOver = useCallback(
+    (result: { score: number; elapsedMs: number }) => {
+      stageComplete({
+        stage,
+        score: result.score,
+        elapsedMs: result.elapsedMs,
+        cleared: false,
+      });
+      onGameOverRef.current?.({ ...result, cleared: false });
+    },
+    [stage],
+  );
 
-  const doShuffle = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const doUndo = useCallback(() => {
-    haptic('tile-tapped');
-  }, []);
-
-  const doHint = useCallback(() => {
-    haptic('tile-tapped');
+  const handleHaptic = useCallback((event: string) => {
+    haptic(event);
   }, []);
 
   return {
     gameState,
-    onTileSelect: handleTileSelect,
-    onMatch: handleMatch,
+    haptic: handleHaptic,
     onStateUpdate: handleStateUpdate,
     onClear: handleClear,
     onGameOver: handleGameOver,
-    doShuffle,
-    doUndo,
-    doHint,
   };
 }
