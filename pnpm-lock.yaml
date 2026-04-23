@@ -38,7 +38,37 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  lib/candyfriends:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/chess:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
   lib/crunch3:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/dop5:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -115,6 +145,26 @@ importers:
         version: 5.9.3
 
   lib/tictactoe:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/trickyprank:
+    dependencies:
+      phaser:
+        specifier: ^3.80.0
+        version: 3.90.0
+    devDependencies:
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+
+  lib/tileconnect:
     dependencies:
       phaser:
         specifier: ^3.80.0
@@ -201,9 +251,18 @@ importers:
       '@arcade/lib-blockrush':
         specifier: workspace:*
         version: link:../../lib/blockrush
+      '@arcade/lib-candyfriends':
+        specifier: workspace:*
+        version: link:../../lib/candyfriends
+      '@arcade/lib-chess':
+        specifier: workspace:*
+        version: link:../../lib/chess
       '@arcade/lib-crunch3':
         specifier: workspace:*
         version: link:../../lib/crunch3
+      '@arcade/lib-dop5':
+        specifier: workspace:*
+        version: link:../../lib/dop5
       '@arcade/lib-found3':
         specifier: workspace:*
         version: link:../../lib/found3
@@ -225,6 +284,12 @@ importers:
       '@arcade/lib-tictactoe':
         specifier: workspace:*
         version: link:../../lib/tictactoe
+      '@arcade/lib-trickyprank':
+        specifier: workspace:*
+        version: link:../../lib/trickyprank
+      '@arcade/lib-tileconnect':
+        specifier: workspace:*
+        version: link:../../lib/tileconnect
       '@arcade/lib-watersort':
         specifier: workspace:*
         version: link:../../lib/watersort
