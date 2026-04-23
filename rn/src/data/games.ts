@@ -192,6 +192,37 @@ export const GAMES: GameInfo[] = [
     stageCount: 5,
     isNew: true,
   },
+  {
+    id: 'heroarena',
+    name: 'Nexus Arena',
+    description: 'Fast-paced hero arena combat!',
+    icon: '⚔️',
+    category: 'action',
+    color: '#00f0ff',
+    webPath: '/games/heroarena/v1',
+    isNew: true,
+    isFeatured: true,
+  },
+  {
+    id: 'tidymaster',
+    name: 'Tidy Master',
+    description: 'Organize items perfectly in this satisfying puzzle!',
+    icon: '📦',
+    category: 'puzzle',
+    color: '#6366F1',
+    webPath: '/games/tidymaster/v1',
+    isNew: true,
+  },
+  {
+    id: 'tileconnect',
+    name: 'Tile Connect',
+    description: 'Link pairs of identical tiles to clear them!',
+    icon: '🔗',
+    category: 'puzzle',
+    color: '#EC4899',
+    webPath: '/games/tileconnect/v1',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {
