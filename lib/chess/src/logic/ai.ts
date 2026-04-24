@@ -34,7 +34,11 @@ class GreedyAI implements ChessAI {
     let bestScore = -Infinity;
     let bestMoves: Move[] = [];
     for (const m of moves) {
-      const score = m.captured ? PIECE_VALUE[m.captured.type] : 0;
+      let score = m.captured ? PIECE_VALUE[m.captured.type] : 0;
+      if (m.promotion) {
+        score += PIECE_VALUE[m.promotion];
+      }
+
       if (score > bestScore) {
         bestScore = score;
         bestMoves = [m];
