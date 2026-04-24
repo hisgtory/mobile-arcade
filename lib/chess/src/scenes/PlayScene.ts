@@ -241,6 +241,15 @@ export class PlayScene extends Phaser.Scene {
     } else if (this.state.status === 'stalemate') {
       text = 'Stalemate - Draw';
       color = '#EAB308';
+    } else if (this.state.status === 'draw_repetition') {
+      text = 'Draw - 3-fold Repetition';
+      color = '#EAB308';
+    } else if (this.state.status === 'draw_50move') {
+      text = 'Draw - 50-Move Rule';
+      color = '#EAB308';
+    } else if (this.state.status === 'draw_material') {
+      text = 'Draw - Insufficient Material';
+      color = '#EAB308';
     } else if (this.state.status === 'check') {
       text = this.state.turn === this.playerColor ? 'Check!' : 'AI in Check';
       color = '#F97316';
