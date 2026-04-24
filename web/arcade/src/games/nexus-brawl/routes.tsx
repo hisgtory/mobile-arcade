@@ -1,21 +1,17 @@
+import { lazy, Suspense } from 'react';
 import { registerRoutes } from '../../router';
 
-function NexusBrawlRoute() {
-  return (
-    <iframe
-      src="/nexus-brawl/index.html"
-      title="NEXUS BRAWL"
-      style={{
-        width: '100vw',
-        height: '100vh',
-        border: 0,
-        display: 'block',
-      }}
-      allow="autoplay; fullscreen"
-    />
-  );
-}
+const NexusBrawlRoute = lazy(() =>
+  import('./content').then((m) => ({ default: m.NexusBrawlRoute })),
+);
 
 registerRoutes('/games/nexus-brawl/v1', [
-  { path: '', element: <NexusBrawlRoute /> },
+  {
+    path: '',
+    element: (
+      <Suspense fallback={null}>
+        <NexusBrawlRoute />
+      </Suspense>
+    ),
+  },
 ]);
