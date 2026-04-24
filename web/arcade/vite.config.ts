@@ -10,5 +10,23 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsInlineLimit: 0,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/phaser')) return 'phaser';
+          if (
+            id.includes('node_modules/react-router-dom') ||
+            id.includes('node_modules/react-router/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/react/') ||
+            id.includes('node_modules/scheduler/')
+          ) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@stitches/react')) return 'vendor-stitches';
+          return undefined;
+        },
+      },
+    },
   },
 });
