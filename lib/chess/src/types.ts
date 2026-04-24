@@ -50,6 +50,7 @@ export interface BoardState {
   winner: Color | 'draw' | null;
   lastMove: Move | null;
   positionHistory: Record<string, number>; // hash -> count for 3-fold repetition
+  history: string[]; // SAN strings
 }
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
