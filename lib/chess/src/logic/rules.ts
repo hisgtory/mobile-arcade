@@ -104,6 +104,7 @@ export function createInitialBoard(): BoardState {
     lastMove: null,
     positionHistory: {},
     history: [],
+    clocks: { w: 600000, b: 600000 },
   };
   initial.positionHistory[hashPosition(initial)] = 1;
   return initial;
@@ -522,6 +523,7 @@ export function applyMove(state: BoardState, move: Move): BoardState {
     lastMove: { ...move, captured },
     positionHistory,
     history: [...state.history],
+    clocks: { ...state.clocks },
   };
 
   const hash = hashPosition(next);
