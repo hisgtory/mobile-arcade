@@ -366,19 +366,21 @@ class Character extends GameObject {
   }
 
   useSkill(key: SkillKey, target: Vec2) {
-    const skill = this.heroDef.skills[key];
-    if (!skill) return;
-
     const cdMult = this.buffs.find((buff) => buff.type === 'overdrive') ? 0.5 : 1;
 
     if (key === 'ultimate') {
-      if (this.ultCharge >= skill.cost) {
+      const ultimate = this.heroDef.skills.ultimate;
+      if (!ultimate) return;
+      if (this.ultCharge >= ultimate.cost) {
         this.ultCharge = 0;
-        skill.use(this.engine, this, target);
+        ultimate.use(this.engine, this, target);
         if (this.isPlayer) haptic('ultimate');
       }
       return;
     }
+
+    const skill = this.heroDef.skills[key];
+    if (!skill) return;
 
     if (this.cds[key] <= 0) {
       this.cds[key] = skill.cd * cdMult;
@@ -912,7 +914,7 @@ class GameEngine {
     const allies = this.entities.filter((entity) => entity.active && entity.team === bot.team && entity !== bot);
     const enemies = this.entities.filter((entity) => entity.active && entity.team !== bot.team);
 
-    let enemy: Character | null = null;
+    let enemy = null as Character | null;
     let enemyDist = Number.POSITIVE_INFINITY;
     enemies.forEach((candidate) => {
       const dist = bot.pos.dist(candidate.pos);
@@ -923,7 +925,7 @@ class GameEngine {
     });
 
     const isSupport = bot.heroDef.role === 'Support';
-    let healTarget: Character | null = null;
+    let healTarget = null as Character | null;
     if (isSupport) {
       let lowestHpRatio = 0.8;
       allies.forEach((ally) => {
