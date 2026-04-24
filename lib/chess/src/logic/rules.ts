@@ -39,7 +39,7 @@ export function createInitialBoard(): BoardState {
     board[sq(7, c)] = { type: backRank[c], color: 'w' };
   }
 
-  return {
+  const initial: BoardState = {
     board,
     turn: 'w',
     castling: { wk: true, wq: true, bk: true, bq: true },
@@ -49,7 +49,74 @@ export function createInitialBoard(): BoardState {
     status: 'playing',
     winner: null,
     lastMove: null,
+    positionHistory: {},
   };
+  initial.positionHistory[hashPosition(initial)] = 1;
+  return initial;
+}
+
+// ─── Position Hashing (for 3-fold repetition) ──────────────────
+
+export function hashPosition(state: BoardState): string {
+  let res = '';
+  // 1. Pieces
+  for (let i = 0; i < 64; i++) {
+    const p = state.board[i];
+    if (!p) {
+      res += '.';
+    } else {
+      const char = p.type === 'n' ? 'n' : p.type;
+      res += p.color === 'w' ? char.toUpperCase() : char;
+    }
+  }
+  // 2. Turn
+  res += state.turn;
+  // 3. Castling
+  res += state.castling.wk ? 'K' : '';
+  res += state.castling.wq ? 'Q' : '';
+  res += state.castling.bk ? 'k' : '';
+  res += state.castling.bq ? 'q' : '';
+  if (!state.castling.wk && !state.castling.wq && !state.castling.bk && !state.castling.bq) res += '-';
+  // 4. En Passant
+  res += state.enPassantTarget !== null ? colOf(state.enPassantTarget).toString() : '-';
+  return res;
+}
+
+// ─── Insufficient Material Detection ───────────────────────
+
+export function isInsufficientMaterial(board: (Piece | null)[]): boolean {
+  const pieces: Piece[] = [];
+  for (const p of board) {
+    if (p) pieces.push(p);
+  }
+
+  // K vs K
+  if (pieces.length === 2) return true;
+
+  // K+B vs K or K+N vs K
+  if (pieces.length === 3) {
+    return pieces.some((p) => p.type === 'b' || p.type === 'n');
+  }
+
+  // K+B vs K+B (same color bishops)
+  if (pieces.length === 4) {
+    const whiteBishops = pieces.filter((p) => p.color === 'w' && p.type === 'b');
+    const blackBishops = pieces.filter((p) => p.color === 'b' && p.type === 'b');
+    if (whiteBishops.length === 1 && blackBishops.length === 1) {
+      // Find squares of the bishops
+      let wIdx = -1, bIdx = -1;
+      for (let i = 0; i < 64; i++) {
+        const p = board[i];
+        if (p?.color === 'w' && p?.type === 'b') wIdx = i;
+        if (p?.color === 'b' && p?.type === 'b') bIdx = i;
+      }
+      const wLight = (rowOf(wIdx) + colOf(wIdx)) % 2 === 0;
+      const bLight = (rowOf(bIdx) + colOf(bIdx)) % 2 === 0;
+      return wLight === bLight;
+    }
+  }
+
+  return false;
 }
 
 // ─── Pseudo-legal move generation ──────────────────────────
@@ -385,6 +452,10 @@ export function applyMove(state: BoardState, move: Move): BoardState {
   const halfmoveClock = piece.type === 'p' || captured ? 0 : state.halfmoveClock + 1;
   const fullmoveNumber = state.turn === 'b' ? state.fullmoveNumber + 1 : state.fullmoveNumber;
 
+  // Repetition history.
+  // Irreversible moves (pawn moves or captures) reset the history.
+  const positionHistory: Record<string, number> = halfmoveClock === 0 ? {} : { ...state.positionHistory };
+
   const next: BoardState = {
     board,
     turn: opposite(state.turn),
@@ -395,7 +466,11 @@ export function applyMove(state: BoardState, move: Move): BoardState {
     status: 'playing',
     winner: null,
     lastMove: { ...move, captured },
+    positionHistory,
   };
+
+  const hash = hashPosition(next);
+  next.positionHistory[hash] = (next.positionHistory[hash] || 0) + 1;
 
   const statusInfo = getGameStatus(next);
   next.status = statusInfo.status;
@@ -470,6 +545,22 @@ function applyMoveRaw(state: BoardState, move: Move): BoardState {
 // ─── Game status ───────────────────────────────────────────
 
 export function getGameStatus(state: BoardState): { status: BoardState['status']; winner: BoardState['winner'] } {
+  // 1. Material draw
+  if (isInsufficientMaterial(state.board)) {
+    return { status: 'draw_material', winner: 'draw' };
+  }
+
+  // 2. 50-move rule
+  if (state.halfmoveClock >= 100) {
+    return { status: 'draw_50move', winner: 'draw' };
+  }
+
+  // 3. 3-fold repetition
+  const currentHash = hashPosition(state);
+  if ((state.positionHistory[currentHash] || 0) >= 3) {
+    return { status: 'draw_repetition', winner: 'draw' };
+  }
+
   const moves = getAllLegalMoves(state, state.turn);
   const inCheck = isInCheck(state, state.turn);
 

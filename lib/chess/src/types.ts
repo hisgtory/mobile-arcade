@@ -30,7 +30,14 @@ export interface CastlingRights {
   bq: boolean;
 }
 
-export type GameStatus = 'playing' | 'check' | 'checkmate' | 'stalemate' | 'draw';
+export type GameStatus =
+  | 'playing'
+  | 'check'
+  | 'checkmate'
+  | 'stalemate'
+  | 'draw_repetition'
+  | 'draw_50move'
+  | 'draw_material';
 
 export interface BoardState {
   board: (Piece | null)[]; // length 64
@@ -42,6 +49,7 @@ export interface BoardState {
   status: GameStatus;
   winner: Color | 'draw' | null;
   lastMove: Move | null;
+  positionHistory: Record<string, number>; // hash -> count for 3-fold repetition
 }
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
