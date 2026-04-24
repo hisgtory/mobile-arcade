@@ -6,6 +6,16 @@
 - Legacy: `found3/rn`은 초기 전용 앱으로 남아 있으나 deprecated
 - Documentation baseline updated on 2026-04-21
 
+## 2026-04-24
+
+### NEXUS BRAWL 내부 게임 추가 (#248, PR #249)
+- 완성된 단일 HTML (3v3 hero arena shooter MVP)을 arcade에 통합
+- 통합 방식: `web/arcade/public/nexus-brawl/index.html` 정적 파일 + `routes.tsx` iframe wrapper
+- 기존 `lib/{game} -> web/arcade` Phaser 파이프라인과 다른 **첫 iframe 패턴**
+- 오버레이 close 버그 동시 수정: `.screen`에 `opacity: 0` 기본값 지정
+- action 카테고리 첫 게임 등록 (RN `games.ts`)
+- 모바일 터치 매핑, 햅틱 연동은 후속 과제
+
 ## 2026-03-27 (Day 1)
 
 ### Infrastructure
