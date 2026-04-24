@@ -113,11 +113,34 @@ interface ChessAI {
 
 - ✅ PvAI 모드만 (PvP, 온라인 미포함)
 - ✅ 플레이어는 White 고정 (색 선택은 추후)
-- ✅ 자동 퀸 프로모션 (선택 UI는 추후)
+- ✅ 프로모션 선택 UI (PR #230 구현됨)
 - ✅ 모든 표준 룰 (캐슬링 / 앙파상 / 프로모션 / 체크메이트 / 스테일메이트)
 - ✅ 난이도 3단계 (easy=Random, medium=Greedy, hard=Greedy)
 - ✅ 햅틱 4종
-- ❌ 50수 룰, 3회 반복 무승부 (추후)
-- ❌ 무브 히스토리 / SAN / PGN export (추후)
-- ❌ 무르기, 힌트, 분석 (추후)
-- ❌ 사운드 효과 (햅틱만)
+- ❌ 엔진 프로모션 로직 연동 (#221)
+- ❌ 50수 룰, 3회 반복 무승부 (#222)
+- ❌ 무브 히스토리 / SAN / PGN export (#229)
+- ❌ 체스 시계 / Time Control (#228)
+
+## Phase 2: Chess Parity (실작업 항목)
+
+다음 기능들은 실제 서비스급 체스 플레이 경험을 위해 순차적으로 구현한다.
+
+- [ ] **프로모션 로직 연동 (#221)**: UI 선택값이 엔진 `applyMove`에 반영되도록 수정 (현재 퀸 고정)
+- [ ] **무승부 규칙 상세 구현 (#222)**: Threefold repetition, 50-move rule, Insufficient material 판정 및 UI 알림
+- [ ] **AI 및 플레이 옵션 고도화 (#223)**: Hard 난이도용 MinimaxAI 도입, 플레이어 색상(Black/White) 선택 지원
+- [ ] **보드 UX 개선 (#225)**: 드래그 앤 드롭 이동, 좌표(a-h, 1-8) 표시, 보드 뒤집기, 화살표/마킹 기능
+- [ ] **매치 제어 플로우 (#226)**: 기권(Resign), 무승부 제안/수락, Abort 정책, Rematch/New Game 흐름
+- [ ] **Premove 지원 (#227)**: 고속 플레이를 위한 상대 턴 중 수 예약 및 자동 실행 UX
+- [ ] **체스 시계 도입 (#228)**: 플레이어별 타이머, Time Control 프리셋(Bullet/Blitz/Rapid), Increment 지원
+- [ ] **기보 및 복기 시스템 (#229)**: SAN 생성, PGN export, Move List UI, 게임 히스토리 탐색(되감기)
+
+## Phase 3: Platform Parity (Roadmap)
+
+온라인 플랫폼으로서의 확장을 위한 기술 로드맵 (구현 이슈 #224 해결).
+
+1. **온라인 대전 인프라**: 서버 Authoritative state 관리, 실시간 PvP 매치메이킹, 재접속 처리
+2. **레이팅 시스템**: Glicko-2 또는 ELO 기반 유저 레이팅, Rated/Unrated 모드 분리
+3. **사용자 데이터**: 계정 기반 전적 관리, 히스토리 저장소, 전역 리더보드
+4. **분석 및 학습**: 게임 종료 후 엔진 기반 리뷰 (Accuracy, Blunder 감지), 분석 보드 모드
+5. **운영 및 보안**: Anti-cheat 시스템, 유저 신고 및 매너 점수 관리
