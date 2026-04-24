@@ -186,6 +186,8 @@ pnpm -r --filter @arcade/lib-found3 test
 - **Mobile**: Expo SDK 54 + React Native 0.81 + react-native-webview
 - **Quality**: ESLint 10 + Vitest (루트 flat config, 워크스페이스별 확장)
 
+See `knowledge/architecture-decisions.md` ADR-019 for the dep version policy.
+
 ## Docs
 
 - 지식베이스 인덱스: `knowledge/README.md`

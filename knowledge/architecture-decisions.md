@@ -378,3 +378,50 @@ rn/src/data/games.ts                         # webPath: '/games/{game-id}/v1'
 - iframe ↔ RN bridge 연동이 필요하면 `window.postMessage` relay 레이어 추가 필요
 - 첫 사례: NEXUS BRAWL (#248, PR #249)
 
+---
+
+## ADR-019: Monorepo Dependency Policy
+
+### Context
+워크스페이스 전반에 걸쳐 핵심 의존성 버전이 흩어져 있었다. `web/*`는 React 18 계열, `rn`은 React 19 계열을 쓰고, `lib/found3-react`에 로컬 `pnpm.overrides`로 `@types/react@18.2.79`를 고정하는 설정이 있어 설치 시 경고가 발생했다. pnpm은 `pnpm.overrides`를 워크스페이스 루트에서만 존중하므로 하위 패키지의 overrides는 아무 효과 없이 경고만 유발한다.
+
+이슈 #237은 이런 분산 상태를 정리하고, 루트 기준으로 "무엇을 왜 고정하는지" 명확히 하는 정책성 작업이다. 대규모 React 업그레이드는 범위 밖으로 명시됐다.
+
+### Decision
+
+1. **React 18 (web/lib) + React 19 (rn) 공존**
+   - RN 0.81은 React 19 요구 (peer dependency)
+   - 웹은 React 18 계열에서 안정적으로 동작 중 — 무리한 통일을 하지 않는다
+2. **TypeScript는 루트 `pnpm.overrides`로 워크스페이스 전체 핀**
+   - 현재 해상도 `5.9.3`을 그대로 고정 (캐럿 특성상 `^5.5.0` 지정자는 5.9.x까지 허용됐음)
+   - 향후 드리프트 방지
+3. **Vite도 루트 `pnpm.overrides`로 워크스페이스 전체 핀**
+   - 현재 해상도 `5.4.21` 고정
+4. **`@types/react`는 루트 overrides에 넣지 않음**
+   - 웹(`^18.3.0`)과 RN(`^19.1.17`)이 **의도적으로** 분리
+   - 루트에서 한 쪽으로 고정하면 반대편 타입이 깨진다
+5. **`pnpm.overrides`는 워크스페이스 루트에만 존재**
+   - 하위 패키지의 `pnpm` 키는 무효 + 경고 유발 → 금지
+   - `lib/found3-react`의 로컬 `pnpm.overrides` 제거, 직접 의존성만 `^18.3.0`으로 정렬
+
+### Version Matrix
+
+| Package | React | ReactDOM | React Native | @types/react | TypeScript | Vite |
+|---------|-------|----------|--------------|--------------|------------|------|
+| `web/arcade` | `^18.3.0` | `^18.3.0` | — | `^18.3.0` | `5.9.3` (pinned) | `5.4.21` (pinned) |
+| `web/found3` | `^18.3.0` | `^18.3.0` | — | `^18.3.0` | `5.9.3` (pinned) | `5.4.21` (pinned) |
+| `web/crunch3` | `^18.3.0` | `^18.3.0` | — | `^18.3.0` | `5.9.3` (pinned) | `5.4.21` (pinned) |
+| `lib/found3-react` | `^18.3.0` | — | — | `^18.3.0` | `5.9.3` (pinned) | — |
+| `rn` | `19.1.0` | — | `0.81.5` | `^19.1.17` | `5.9.3` (pinned) | — |
+
+### Trade-offs
+- **Split `@types/react`**: 공용 라이브러리 코드를 쓸 때 기여자는 React 18의 API surface를 **최소 공통 분모**로 가정하고 작성해야 한다 (e.g. React 19 전용 훅/API 사용 금지).
+- **TypeScript/Vite를 루트에서 고정**: 하위 패키지가 `devDependencies`에 느슨한 캐럿을 유지해도 실제 설치 버전이 하나로 수렴 → lock 안정성↑. 단, 버전을 올릴 땐 루트 overrides를 수정해야 함.
+- **React 공존**: 타입 공유 불가(의도), 런타임은 각자 번들이라 충돌 없음.
+
+### Rationale
+- 설치 경고 제거: 하위 `pnpm.overrides`가 만들던 경고 사라짐
+- 드리프트 방지: TS/Vite 패치 릴리스가 어느 패키지에서 먼저 튀어오르는 상황을 원천 차단
+- 이슈 #237의 "루트 기준 정책" 요구 충족
+- React 대규모 업그레이드는 별도 이슈로 분리 (이 ADR의 비범위)
+
