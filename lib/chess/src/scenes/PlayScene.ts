@@ -116,6 +116,33 @@ export class PlayScene extends Phaser.Scene {
         const x = this.boardOriginX + col * this.cellSize + this.cellSize / 2;
         const y = this.boardOriginY + row * this.cellSize + this.cellSize / 2;
         this.add.rectangle(x, y, this.cellSize, this.cellSize, baseColor);
+
+        // Coordinates
+        const coordColor = isLight ? '#b58863' : '#f0d9b5';
+        const fontSize = Math.floor(10 * scale);
+        const padding = 2 * scale;
+
+        // Rank (1-8) on the left side
+        if (col === 0) {
+          const rank = 8 - row;
+          this.add.text(x - this.cellSize / 2 + padding, y - this.cellSize / 2 + padding, rank.toString(), {
+            fontSize: `${fontSize}px`,
+            fontFamily: 'system-ui, sans-serif',
+            color: coordColor,
+            fontStyle: 'bold',
+          });
+        }
+
+        // File (a-h) on the bottom side
+        if (row === 7) {
+          const file = String.fromCharCode(97 + col);
+          this.add.text(x + this.cellSize / 2 - padding, y + this.cellSize / 2 - padding, file, {
+            fontSize: `${fontSize}px`,
+            fontFamily: 'system-ui, sans-serif',
+            color: coordColor,
+            fontStyle: 'bold',
+          }).setOrigin(1, 1);
+        }
       }
     }
 
