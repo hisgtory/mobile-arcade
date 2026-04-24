@@ -203,6 +203,16 @@ export const GAMES: GameInfo[] = [
     isNew: true,
     isFeatured: true,
   },
+  {
+    id: 'nexus-brawl',
+    name: 'Nexus Brawl',
+    description: '3v3 hero arena shooter — pick a role and brawl!',
+    icon: '⚔️',
+    category: 'action',
+    color: '#00F0FF',
+    webPath: '/games/nexus-brawl/v1',
+    isNew: true,
+  },
 ];
 
 export function getGameById(id: string): GameInfo | undefined {

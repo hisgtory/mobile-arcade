@@ -13,6 +13,7 @@ import './games/getcolor/routes';
 import './games/hexaaway/routes';
 import './games/minesweeper/routes';
 import './games/neon-vanguard/routes';
+import './games/nexus-brawl/routes';
 import './games/nonogram/routes';
 import './games/number10/routes';
 import './games/sudoku/routes';
