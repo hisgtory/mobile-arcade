@@ -77,8 +77,13 @@ function ChessPlayRoute() {
     promotionMove,
     handleSquareClick,
     handlePromotion,
-    cancelPromotion
+    cancelPromotion,
+    resign,
+    abort,
+    offerDraw
   } = useChessGame({ difficulty });
+
+  const isGameOver = ['checkmate', 'stalemate', 'draw_repetition', 'draw_50move', 'draw_material', 'timeout', 'draw_timeout', 'resignation', 'draw_agreement', 'aborted'].includes(state.status);
 
   return (
     <PlayLayout>
@@ -91,7 +96,7 @@ function ChessPlayRoute() {
         whiteMaterial={whiteMaterial}
         blackMaterial={blackMaterial}
       />
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16, gap: 16 }}>
         <Board 
           state={state}
           selectedSquare={selectedSquare}
@@ -101,6 +106,36 @@ function ChessPlayRoute() {
           onSelectPromotion={handlePromotion}
           onCancelPromotion={cancelPromotion}
         />
+        
+        {!isGameOver && (
+          <div style={{ display: 'flex', gap: 8, width: '100%', maxWidth: 500 }}>
+            {state.fullmoveNumber === 1 && (
+              <button 
+                onClick={abort}
+                style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #E5E7EB', backgroundColor: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+              >
+                Abort
+              </button>
+            )}
+            <button 
+              onClick={() => {
+                if (offerDraw()) alert('AI accepted the draw!');
+                else alert('AI declined the draw.');
+              }}
+              style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #E5E7EB', backgroundColor: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              Offer Draw
+            </button>
+            <button 
+              onClick={() => {
+                if (confirm('Are you sure you want to resign?')) resign();
+              }}
+              style={{ flex: 1, padding: '10px', borderRadius: 8, border: '1px solid #fee2e2', backgroundColor: '#fff', color: '#dc2626', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              Resign
+            </button>
+          </div>
+        )}
       </div>
     </PlayLayout>
   );

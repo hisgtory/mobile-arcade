@@ -335,6 +335,7 @@ export class PlayScene extends Phaser.Scene {
         this.legalForSelected = getLegalMoves(this.state, square);
         this.game.events.emit('piece-tapped');
         
+        // Temporarily detach from layer to stay on top
         this.pieceLayer.remove(text);
         this.add.existing(text);
         
@@ -400,6 +401,16 @@ export class PlayScene extends Phaser.Scene {
     } else if (this.state.status === 'draw_timeout') {
       text = 'Time Out - Draw (Insufficient Material)';
       color = '#EAB308';
+    } else if (this.state.status === 'resignation') {
+      const youWon = this.state.winner === this.playerColor;
+      text = youWon ? 'AI Resigned - You Win!' : 'You Resigned - AI Wins';
+      color = youWon ? '#22C55E' : '#EF4444';
+    } else if (this.state.status === 'draw_agreement') {
+      text = 'Draw by Agreement';
+      color = '#EAB308';
+    } else if (this.state.status === 'aborted') {
+      text = 'Game Aborted';
+      color = '#9CA3AF';
     } else if (this.state.status === 'check') {
       text = this.state.turn === this.playerColor ? 'Check!' : 'AI in Check';
       color = '#F97316';
@@ -520,8 +531,6 @@ export class PlayScene extends Phaser.Scene {
     const turn = this.state.turn;
     const opponent = turn === 'w' ? 'b' : 'w';
 
-    // FIDE rule: If opponent has no legal sequence to mate, it's a draw.
-    // We simplify by using isInsufficientMaterial.
     const isOpponentInsufficient = isInsufficientMaterial(this.state.board);
     
     if (isOpponentInsufficient) {
@@ -718,17 +727,17 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private isTerminal(state: BoardState): boolean {
-    return state.status === 'checkmate' || state.status.startsWith('draw') || state.status === 'stalemate';
+    return state.status === 'checkmate' || state.status.startsWith('draw') || state.status === 'stalemate' || state.status === 'resignation' || state.status === 'aborted' || state.status === 'timeout';
   }
 
   private handleGameEnd() {
     this.phase = 'game_over';
-    if (this.state.status === 'checkmate') {
-      this.game.events.emit('checkmate');
+    if (this.state.status === 'checkmate' || this.state.status === 'resignation' || this.state.status === 'timeout') {
+      if (this.state.status === 'checkmate') this.game.events.emit('checkmate');
       if (this.state.winner === this.playerColor) this.playerWins++;
       else this.aiWins++;
     } else {
-      this.draws++;
+      if (this.state.status !== 'aborted') this.draws++;
     }
 
     this.draw();
@@ -758,5 +767,47 @@ export class PlayScene extends Phaser.Scene {
 
   private emitState() {
     this.game.events.emit('state-changed', this.state);
+  }
+
+  // ─── Match Control ────────────────────────────────────
+
+  public resign(playerColor: Color) {
+    if (this.phase === 'game_over') return;
+    this.state.status = 'resignation';
+    this.state.winner = playerColor === 'w' ? 'b' : 'w';
+    this.handleGameEnd();
+  }
+
+  public abort() {
+    if (this.phase === 'game_over') return;
+    if (this.state.fullmoveNumber > 1) return;
+    this.state.status = 'aborted';
+    this.state.winner = 'draw';
+    this.handleGameEnd();
+  }
+
+  public offerDraw(): boolean {
+    if (this.phase === 'game_over') return false;
+
+    // AI accepts if the material is equal and it's not a checkmate/check.
+    let wScore = 0;
+    let bScore = 0;
+    const values: Record<PieceType, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+    for (const p of this.state.board) {
+      if (!p) continue;
+      if (p.color === 'w') wScore += values[p.type];
+      else bScore += values[p.type];
+    }
+
+    const diff = Math.abs(wScore - bScore);
+    const accepted = diff <= 1 && (this.state.status === 'playing' || this.state.status === 'check');
+
+    if (accepted) {
+      this.state.status = 'draw_agreement';
+      this.state.winner = 'draw';
+      this.handleGameEnd();
+    }
+
+    return accepted;
   }
 }

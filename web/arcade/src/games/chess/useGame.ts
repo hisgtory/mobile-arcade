@@ -44,6 +44,35 @@ export function useGame({ difficulty = 'medium' }: UseGameOptions) {
     setPromotionMove(null);
   }, []);
 
+  const resign = useCallback(() => {
+    setState(prev => ({ ...prev, status: 'resignation' as GameStatus, winner: 'b' as Color }));
+  }, []);
+
+  const abort = useCallback(() => {
+    setState(prev => {
+      if (prev.fullmoveNumber > 1) return prev;
+      return { ...prev, status: 'aborted' as GameStatus, winner: 'draw' as Color | 'draw' };
+    });
+  }, []);
+
+  const offerDraw = useCallback(() => {
+    // Simplified draw acceptance logic: AI accepts if material is equal
+    const values: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
+    let w = 0, b = 0;
+    state.board.forEach(p => {
+      if (p) {
+        if (p.color === 'w') w += values[p.type];
+        else b += values[p.type];
+      }
+    });
+    
+    if (Math.abs(w - b) <= 1) {
+      setState(prev => ({ ...prev, status: 'draw_agreement' as GameStatus, winner: 'draw' as Color | 'draw' }));
+      return true;
+    }
+    return false;
+  }, [state.board]);
+
   const executeMove = useCallback((move: Move) => {
     setState(prev => {
       const isCapture = !!move.captured || !!move.isEnPassant;
@@ -62,7 +91,8 @@ export function useGame({ difficulty = 'medium' }: UseGameOptions) {
   }, []);
 
   const handleSquareClick = useCallback((square: Square) => {
-    if (state.turn !== 'w' || state.status === 'checkmate' || state.status === 'stalemate') return;
+    const terminal = ['checkmate', 'stalemate', 'draw_repetition', 'draw_50move', 'draw_material', 'timeout', 'draw_timeout', 'resignation', 'draw_agreement', 'aborted'];
+    if (state.turn !== 'w' || terminal.includes(state.status)) return;
 
     // If a move is selected
     const move = legalMoves.find(m => m.to === square);
@@ -95,7 +125,8 @@ export function useGame({ difficulty = 'medium' }: UseGameOptions) {
 
   // AI Turn
   useEffect(() => {
-    if (state.turn === 'b' && state.status !== 'checkmate' && state.status !== 'stalemate') {
+    const terminal = ['checkmate', 'stalemate', 'draw_repetition', 'draw_50move', 'draw_material', 'timeout', 'draw_timeout', 'resignation', 'draw_agreement', 'aborted'];
+    if (state.turn === 'b' && !terminal.includes(state.status)) {
       aiTimerRef.current = setTimeout(() => {
         const move = aiRef.current.selectMove(state);
         if (move) {
@@ -110,12 +141,15 @@ export function useGame({ difficulty = 'medium' }: UseGameOptions) {
 
   // Game End Logic
   useEffect(() => {
-    if (state.status === 'checkmate' || state.status === 'stalemate') {
-      const winner = state.status === 'checkmate' ? (state.winner === 'w' ? 'player' : 'ai') : 'draw';
+    const terminal = ['checkmate', 'stalemate', 'draw_repetition', 'draw_50move', 'draw_material', 'timeout', 'draw_timeout', 'resignation', 'draw_agreement', 'aborted'];
+    if (terminal.includes(state.status)) {
+      const winner = (state.status === 'checkmate' || state.status === 'timeout' || state.status === 'resignation') 
+        ? (state.winner === 'w' ? 'player' : 'ai') 
+        : 'draw';
       
       if (winner === 'player') setPlayerWins(prev => prev + 1);
       else if (winner === 'ai') setAiWins(prev => prev + 1);
-      else setDraws(prev => prev + 1);
+      else if (state.status !== 'aborted') setDraws(prev => prev + 1);
 
       stageComplete({
         stage: 0,
@@ -156,6 +190,9 @@ export function useGame({ difficulty = 'medium' }: UseGameOptions) {
     handleSquareClick,
     handlePromotion,
     resetGame,
+    resign,
+    abort,
+    offerDraw,
     cancelPromotion: () => setPromotionMove(null),
   };
 }

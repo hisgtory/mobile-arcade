@@ -51,7 +51,15 @@ interface HUDProps {
 
 function statusLabel(status: GameStatus, turn: Color): { text: string; color: string } {
   if (status === 'checkmate') return { text: 'Checkmate', color: '#EF4444' };
-  if (status === 'stalemate') return { text: 'Stalemate', color: '#EAB308' };
+  if (status === 'stalemate') return { text: 'Stalemate - Draw', color: '#EAB308' };
+  if (status === 'draw_repetition') return { text: '3-fold Repetition - Draw', color: '#EAB308' };
+  if (status === 'draw_50move') return { text: '50-Move Rule - Draw', color: '#EAB308' };
+  if (status === 'draw_material') return { text: 'Insufficient Material - Draw', color: '#EAB308' };
+  if (status === 'timeout') return { text: 'Time Out', color: '#EF4444' };
+  if (status === 'draw_timeout') return { text: 'Time Out - Draw', color: '#EAB308' };
+  if (status === 'resignation') return { text: 'Resigned', color: '#EF4444' };
+  if (status === 'draw_agreement') return { text: 'Draw by Agreement', color: '#EAB308' };
+  if (status === 'aborted') return { text: 'Game Aborted', color: '#9CA3AF' };
   if (status === 'check') return { text: 'Check!', color: '#F97316' };
   return { text: turn === 'w' ? 'Your turn' : 'AI thinking…', color: '#6B7280' };
 }

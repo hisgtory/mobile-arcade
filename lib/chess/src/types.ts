@@ -39,7 +39,10 @@ export type GameStatus =
   | 'draw_50move'
   | 'draw_material'
   | 'timeout'
-  | 'draw_timeout';
+  | 'draw_timeout'
+  | 'resignation'
+  | 'draw_agreement'
+  | 'aborted';
 
 export interface BoardState {
   board: (Piece | null)[]; // length 64
