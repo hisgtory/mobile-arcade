@@ -53,6 +53,7 @@ export interface BoardState {
   lastMove: Move | null;
   positionHistory: Record<string, number>; // hash -> count for 3-fold repetition
   clocks: { w: number; b: number }; // remaining milliseconds
+  history: string[]; // SAN strings
 }
 
 export type Difficulty = 'easy' | 'medium' | 'hard';

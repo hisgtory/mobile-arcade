@@ -200,7 +200,35 @@ export class PlayScene extends Phaser.Scene {
     }
 
     this.drawStatus();
+    this.drawMoveHistory();
     this.drawPromotionPrompt();
+  }
+
+  private drawMoveHistory() {
+    const scale = this.dpr;
+    const width = DEFAULT_WIDTH * scale;
+
+    let historyText = '';
+    const history = this.state.history;
+    for (let i = 0; i < history.length; i += 2) {
+      const moveNum = Math.floor(i / 2) + 1;
+      const whiteMove = history[i];
+      const blackMove = history[i + 1] || '';
+      historyText += `${moveNum}. ${whiteMove} ${blackMove}  `;
+    }
+
+    const turns = historyText.trim().split('  ');
+    if (turns.length > 3) {
+      historyText = '... ' + turns.slice(-3).join('  ');
+    }
+
+    const y = this.boardOriginY - 52 * scale;
+    const text = this.add.text(width / 2, y, historyText.trim(), {
+      fontSize: `${13 * scale}px`,
+      fontFamily: 'system-ui, sans-serif',
+      color: '#9CA3AF',
+    });
+    text.setOrigin(0.5);
   }
 
   private tintSquare(square: Square, color: number, alpha: number) {
