@@ -14,6 +14,7 @@ import {
   applyMove,
   createInitialBoard,
   getLegalMoves,
+  isInsufficientMaterial,
 } from '../logic/rules';
 import { createAI, type ChessAI } from '../logic/ai';
 
@@ -74,6 +75,11 @@ export class PlayScene extends Phaser.Scene {
   private startNewGame() {
     this.clearScheduledCallbacks();
     this.state = createInitialBoard();
+
+    // Initialize clocks from config
+    const initialTime = (this.gameConfig?.timeControl?.initialSeconds ?? 600) * 1000;
+    this.state.clocks = { w: initialTime, b: initialTime };
+
     this.selected = null;
     this.legalForSelected = [];
     this.promotionPrompt = null;
@@ -250,6 +256,13 @@ export class PlayScene extends Phaser.Scene {
     } else if (this.state.status === 'draw_material') {
       text = 'Draw - Insufficient Material';
       color = '#EAB308';
+    } else if (this.state.status === 'timeout') {
+      const youWon = this.state.winner === this.playerColor;
+      text = youWon ? 'Time Out - You Win!' : 'Time Out - AI Wins';
+      color = youWon ? '#22C55E' : '#EF4444';
+    } else if (this.state.status === 'draw_timeout') {
+      text = 'Time Out - Draw (Insufficient Material)';
+      color = '#EAB308';
     } else if (this.state.status === 'check') {
       text = this.state.turn === this.playerColor ? 'Check!' : 'AI in Check';
       color = '#F97316';
@@ -267,6 +280,8 @@ export class PlayScene extends Phaser.Scene {
       fontStyle: 'bold',
     });
     status.setOrigin(0.5);
+
+    this.drawClocks();
 
     if (this.phase === 'game_over') {
       const buttonY = this.boardOriginY + 8 * this.cellSize + 36 * scale;
@@ -288,6 +303,120 @@ export class PlayScene extends Phaser.Scene {
         .setAlpha(0.001);
       hitArea.on('pointerdown', () => this.startNewGame());
     }
+  }
+
+  private formatTime(ms: number): string {
+    const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    
+    if (ms < 10000 && ms > 0) {
+      const tenths = Math.floor((ms % 1000) / 100);
+      return `${totalSeconds - 1}.${tenths}`;
+    }
+    
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  private drawClocks() {
+    const scale = this.dpr;
+    const width = DEFAULT_WIDTH * scale;
+    const height = DEFAULT_HEIGHT * scale;
+
+    const whiteClockStr = this.formatTime(this.state.clocks.w);
+    const blackClockStr = this.formatTime(this.state.clocks.b);
+
+    const clockWidth = 70 * scale;
+    const clockHeight = 32 * scale;
+    const margin = 10 * scale;
+
+    // AI Clock (Top Right)
+    const aiX = this.boardOriginX + 8 * this.cellSize - clockWidth / 2;
+    const aiY = this.boardOriginY - clockHeight / 2 - 28 * scale;
+    this.drawClock(aiX, aiY, blackClockStr, this.state.turn === 'b');
+
+    // Player Clock (Bottom Right)
+    const pX = this.boardOriginX + 8 * this.cellSize - clockWidth / 2;
+    const pY = this.boardOriginY + 8 * this.cellSize + clockHeight / 2 + 8 * scale;
+    this.drawClock(pX, pY, whiteClockStr, this.state.turn === 'w');
+  }
+
+  private drawClock(x: number, y: number, timeStr: string, isActive: boolean) {
+    const scale = this.dpr;
+    const width = 72 * scale;
+    const height = 30 * scale;
+
+    const bg = this.add.graphics();
+    bg.fillStyle(isActive ? 0xffffff : 0x000000, isActive ? 1 : 0.4);
+    bg.fillRoundedRect(x - width / 2, y - height / 2, width, height, 4 * scale);
+
+    const text = this.add.text(x, y, timeStr, {
+      fontSize: `${18 * scale}px`,
+      fontFamily: 'monospace',
+      color: isActive ? '#000000' : '#ffffff',
+      fontStyle: 'bold',
+    });
+    text.setOrigin(0.5);
+  }
+
+  update(time: number, delta: number) {
+    if (this.phase === 'game_over') return;
+
+    // Tick the current player's clock
+    this.state.clocks[this.state.turn] -= delta;
+
+    if (this.state.clocks[this.state.turn] <= 0) {
+      this.state.clocks[this.state.turn] = 0;
+      this.handleTimeout();
+    }
+
+    this.drawStatus(); // This includes drawClocks()
+  }
+
+  private handleTimeout() {
+    const turn = this.state.turn;
+    const opponent = turn === 'w' ? 'b' : 'w';
+
+    // FIDE rule: If opponent has no legal sequence to mate, it's a draw.
+    // We simplify by using isInsufficientMaterial.
+    const isOpponentInsufficient = isInsufficientMaterial(this.state.board);
+    
+    if (isOpponentInsufficient) {
+      this.state.status = 'draw_timeout';
+      this.state.winner = 'draw';
+    } else {
+      this.state.status = 'timeout';
+      this.state.winner = opponent;
+    }
+
+    this.handleGameEnd();
+  }
+
+  private executeMove(move: Move) {
+    const isCapture = !!move.captured || !!move.isEnPassant;
+    
+    // Add increment
+    const increment = (this.gameConfig?.timeControl?.incrementSeconds ?? 0) * 1000;
+    this.state.clocks[this.state.turn] += increment;
+
+    this.state = applyMove(this.state, move);
+    this.selected = null;
+    this.legalForSelected = [];
+    this.promotionPrompt = null;
+
+    this.game.events.emit('piece-moved');
+    if (isCapture) this.game.events.emit('piece-captured');
+    if (this.state.status === 'check') this.game.events.emit('check');
+
+    if (this.isTerminal(this.state)) {
+      this.handleGameEnd();
+      return;
+    }
+
+    this.phase = 'ai_turn';
+    this.draw();
+    this.emitState();
+    this.scheduleAI();
   }
 
   private drawPromotionPrompt() {
@@ -355,8 +484,6 @@ export class PlayScene extends Phaser.Scene {
     }
   }
 
-  // ─── Interaction ──────────────────────────────────────
-
   private onSquareTap(square: Square) {
     if (this.phase !== 'player_turn' || this.promotionPrompt) return;
 
@@ -402,28 +529,6 @@ export class PlayScene extends Phaser.Scene {
     this.executeMove(move);
   }
 
-  private executeMove(move: Move) {
-    const isCapture = !!move.captured || !!move.isEnPassant;
-    this.state = applyMove(this.state, move);
-    this.selected = null;
-    this.legalForSelected = [];
-    this.promotionPrompt = null;
-
-    this.game.events.emit('piece-moved');
-    if (isCapture) this.game.events.emit('piece-captured');
-    if (this.state.status === 'check') this.game.events.emit('check');
-
-    if (this.isTerminal(this.state)) {
-      this.handleGameEnd();
-      return;
-    }
-
-    this.phase = 'ai_turn';
-    this.draw();
-    this.emitState();
-    this.scheduleAI();
-  }
-
   private scheduleAI() {
     this.aiMoveTimer?.remove(false);
     this.aiMoveTimer = this.time.delayedCall(400 + Math.random() * 250, () => {
@@ -442,6 +547,11 @@ export class PlayScene extends Phaser.Scene {
     }
 
     const isCapture = !!move.captured || !!move.isEnPassant;
+
+    // Add increment
+    const increment = (this.gameConfig?.timeControl?.incrementSeconds ?? 0) * 1000;
+    this.state.clocks[this.state.turn] += increment;
+
     this.state = applyMove(this.state, move);
 
     this.game.events.emit('piece-moved');
@@ -459,13 +569,21 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private isTerminal(state: BoardState): boolean {
-    return state.status === 'checkmate' || state.status === 'stalemate';
+    return (
+      state.status === 'checkmate' ||
+      state.status === 'stalemate' ||
+      state.status === 'timeout' ||
+      state.status === 'draw_timeout'
+    );
   }
 
   private handleGameEnd() {
     this.phase = 'game_over';
     if (this.state.status === 'checkmate') {
       this.game.events.emit('checkmate');
+      if (this.state.winner === this.playerColor) this.playerWins++;
+      else this.aiWins++;
+    } else if (this.state.status === 'timeout') {
       if (this.state.winner === this.playerColor) this.playerWins++;
       else this.aiWins++;
     } else {
