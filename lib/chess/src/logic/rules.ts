@@ -103,7 +103,9 @@ function pawnMoves(state: BoardState, from: Square, color: Color, out: Move[]): 
   const fwd = r + dir;
   if (inBounds(fwd, c) && !state.board[sq(fwd, c)]) {
     if (fwd === promoRow) {
-      out.push({ from, to: sq(fwd, c), promotion: 'q' });
+      for (const p of ['q', 'r', 'b', 'n'] as PieceType[]) {
+        out.push({ from, to: sq(fwd, c), promotion: p });
+      }
     } else {
       out.push({ from, to: sq(fwd, c) });
       // Forward 2 from start
@@ -122,7 +124,9 @@ function pawnMoves(state: BoardState, from: Square, color: Color, out: Move[]): 
     const target = state.board[to];
     if (target && target.color !== color) {
       if (fwd === promoRow) {
-        out.push({ from, to, promotion: 'q', captured: target });
+        for (const p of ['q', 'r', 'b', 'n'] as PieceType[]) {
+          out.push({ from, to, promotion: p, captured: target });
+        }
       } else {
         out.push({ from, to, captured: target });
       }

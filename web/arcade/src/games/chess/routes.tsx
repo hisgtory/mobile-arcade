@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { GameCanvas } from '../../components/GameCanvas';
 import { GameHomeLayout } from '../../components/GameHomeLayout';
 import { PlayLayout } from '../../components/PlayLayout';
 import { registerRoutes } from '../../router';
 import { HUD as ChessHUD } from './HUD';
 import { useGame as useChessGame } from './useGame';
 import type { Difficulty } from '@arcade/lib-chess';
+import { Board } from './Board';
 
 const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; desc: string }[] = [
   { value: 'easy', label: 'Easy', desc: 'Beginner' },
@@ -63,8 +63,23 @@ function ChessHomeRoute() {
 function ChessPlayRoute() {
   const [params] = useSearchParams();
   const difficulty = parseDifficulty(params.get('difficulty'));
-  const { containerRef, turn, status, playerWins, aiWins, draws, whiteMaterial, blackMaterial } =
-    useChessGame({ difficulty });
+  const { 
+    state, 
+    turn, 
+    status, 
+    playerWins, 
+    aiWins, 
+    draws, 
+    whiteMaterial, 
+    blackMaterial,
+    selectedSquare,
+    legalMoves,
+    promotionMove,
+    handleSquareClick,
+    handlePromotion,
+    cancelPromotion
+  } = useChessGame({ difficulty });
+
   return (
     <PlayLayout>
       <ChessHUD
@@ -76,7 +91,17 @@ function ChessPlayRoute() {
         whiteMaterial={whiteMaterial}
         blackMaterial={blackMaterial}
       />
-      <GameCanvas ref={containerRef} />
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+        <Board 
+          state={state}
+          selectedSquare={selectedSquare}
+          legalMoves={legalMoves}
+          promotionMove={promotionMove}
+          onSquareClick={handleSquareClick}
+          onSelectPromotion={handlePromotion}
+          onCancelPromotion={cancelPromotion}
+        />
+      </div>
     </PlayLayout>
   );
 }
