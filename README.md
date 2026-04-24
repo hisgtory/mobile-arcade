@@ -112,6 +112,8 @@ pnpm test
 - **Mobile**: React Native + WebView
 - **Build**: Vite
 
+See `knowledge/architecture-decisions.md` ADR-019 for the dep version policy.
+
 ## Docs
 
 - 지식베이스 인덱스: `knowledge/README.md`

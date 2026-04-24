@@ -4,6 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  typescript: 5.9.3
+  vite: 5.4.21
+
 importers:
 
   .:
@@ -37,7 +41,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/anipang3:
@@ -47,7 +51,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/anipang4:
@@ -57,7 +61,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/arrows:
@@ -67,7 +71,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/blockcrush:
@@ -77,7 +81,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/blockpuzzle:
@@ -87,7 +91,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/blockrush:
@@ -97,7 +101,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/blockyquest:
@@ -107,7 +111,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/brainout:
@@ -117,7 +121,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/buscraze:
@@ -127,7 +131,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/busjam:
@@ -137,7 +141,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/candyfriends:
@@ -147,7 +151,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/candypop:
@@ -157,7 +161,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/carjam:
@@ -167,7 +171,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/carout:
@@ -177,7 +181,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/chess:
@@ -187,7 +191,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/colorslide:
@@ -197,7 +201,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/crunch3:
@@ -207,7 +211,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
       vitest:
         specifier: ^2.1.9
@@ -220,7 +224,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/dop5:
@@ -230,7 +234,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/dreamstore:
@@ -240,7 +244,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/escaperoom:
@@ -250,7 +254,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/fishdom:
@@ -260,7 +264,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/forestpop:
@@ -270,7 +274,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/found3:
@@ -280,7 +284,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
       vitest:
         specifier: ^2.1.9
@@ -296,10 +300,10 @@ importers:
         version: 18.3.1
     devDependencies:
       '@types/react':
-        specifier: 18.2.79
-        version: 18.2.79
+        specifier: ^18.3.0
+        version: 18.3.28
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/getcolor:
@@ -309,7 +313,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/hellotown:
@@ -319,7 +323,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/hexaaway:
@@ -329,7 +333,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/linedraw:
@@ -339,7 +343,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/mahjong-match:
@@ -349,7 +353,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/matchfactory:
@@ -359,7 +363,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/minesweeper:
@@ -369,7 +373,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/mystery-town:
@@ -379,7 +383,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/nonogram:
@@ -389,7 +393,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/number10:
@@ -399,7 +403,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/pixelart:
@@ -409,7 +413,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/pixelflow:
@@ -419,7 +423,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/puzzle3go:
@@ -429,7 +433,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/savedoge:
@@ -439,7 +443,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/screwdom:
@@ -449,7 +453,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/skewerjam:
@@ -459,7 +463,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/slidematch:
@@ -469,7 +473,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/spotdiff:
@@ -479,7 +483,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/spotit:
@@ -489,7 +493,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/starrynight:
@@ -499,7 +503,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/sudoku:
@@ -509,7 +513,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/tangledrope:
@@ -519,7 +523,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/tangram:
@@ -529,7 +533,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/tictactoe:
@@ -539,7 +543,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/tidymaster:
@@ -549,7 +553,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/tileconnect:
@@ -559,7 +563,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/toonblast:
@@ -569,7 +573,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/trafficjam:
@@ -579,7 +583,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/trickyprank:
@@ -589,7 +593,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/trickytwist:
@@ -599,7 +603,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/watersort:
@@ -609,7 +613,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/woodoku:
@@ -619,7 +623,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/wordpuzzle:
@@ -629,7 +633,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   lib/yarnfever:
@@ -639,7 +643,7 @@ importers:
         version: 3.90.0
     devDependencies:
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   rn:
@@ -685,7 +689,7 @@ importers:
         specifier: ^19.1.17
         version: 19.1.17
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
 
   web/arcade:
@@ -893,10 +897,10 @@ importers:
         specifier: ^4.3.0
         version: 4.7.0(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1))
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
       vite:
-        specifier: ^5.4.0
+        specifier: 5.4.21
         version: 5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1)
 
   web/crunch3:
@@ -927,10 +931,10 @@ importers:
         specifier: ^4.3.0
         version: 4.7.0(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1))
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
       vite:
-        specifier: ^5.4.0
+        specifier: 5.4.21
         version: 5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1)
 
   web/found3:
@@ -961,10 +965,10 @@ importers:
         specifier: ^4.3.0
         version: 4.7.0(vite@5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1))
       typescript:
-        specifier: ^5.5.0
+        specifier: 5.9.3
         version: 5.9.3
       vite:
-        specifier: ^5.4.0
+        specifier: 5.4.21
         version: 5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(terser@5.46.1)
 
 packages:
@@ -2127,9 +2131,6 @@ packages:
     peerDependencies:
       '@types/react': ^18.0.0
 
-  '@types/react@18.2.79':
-    resolution: {integrity: sha512-RwGAGXPl9kSXwdNTafkOEuFrTBD5SA2B3iEB96xi8+xu5ddUa/cpvyVCSNn+asgLCTHkb5ZxN8gbuibYJi4s1w==}
-
   '@types/react@18.3.28':
     resolution: {integrity: sha512-z9VXpC7MWrhfWipitjNdgCauoMLRdIILQsAEV+ZesIzBq/oUlxk0m3ApZuMFCXdnS4U7KrI+l3WRUEGQ8K1QKw==}
 
@@ -2151,20 +2152,20 @@ packages:
     peerDependencies:
       '@typescript-eslint/parser': ^8.59.0
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 5.9.3
 
   '@typescript-eslint/parser@8.59.0':
     resolution: {integrity: sha512-TI1XGwKbDpo9tRW8UDIXCOeLk55qe9ZFGs8MTKU6/M08HWTw52DD/IYhfQtOEhEdPhLMT26Ka/x7p70nd3dzDg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 5.9.3
 
   '@typescript-eslint/project-service@8.59.0':
     resolution: {integrity: sha512-Lw5ITrR5s5TbC19YSvlr63ZfLaJoU6vtKTHyB0GQOpX0W7d5/Ir6vUahWi/8Sps/nOukZQ0IB3SmlxZnjaKVnw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 5.9.3
 
   '@typescript-eslint/scope-manager@8.59.0':
     resolution: {integrity: sha512-UzR16Ut8IpA3Mc4DbgAShlPPkVm8xXMWafXxB0BocaVRHs8ZGakAxGRskF7FId3sdk9lgGD73GSFaWmWFDE4dg==}
@@ -2174,14 +2175,14 @@ packages:
     resolution: {integrity: sha512-91Sbl3s4Kb3SybliIY6muFBmHVv+pYXfybC4Oolp3dvk8BvIE3wOPc+403CWIT7mJNkfQRGtdqghzs2+Z91Tqg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 5.9.3
 
   '@typescript-eslint/type-utils@8.59.0':
     resolution: {integrity: sha512-3TRiZaQSltGqGeNrJzzr1+8YcEobKH9rHnqIp/1psfKFmhRQDNMGP5hBufanYTGznwShzVLs3Mz+gDN7HkWfXg==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 5.9.3
 
   '@typescript-eslint/types@8.59.0':
     resolution: {integrity: sha512-nLzdsT1gdOgFxxxwrlNVUBzSNBEEHJ86bblmk4QAS6stfig7rcJzWKqCyxFy3YRRHXDWEkb2NralA1nOYkkm/A==}
@@ -2191,14 +2192,14 @@ packages:
     resolution: {integrity: sha512-O9Re9P1BmBLFJyikRbQpLku/QA3/AueZNO9WePLBwQrvkixTmDe8u76B6CYUAITRl/rHawggEqUGn5QIkVRLMw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 5.9.3
 
   '@typescript-eslint/utils@8.59.0':
     resolution: {integrity: sha512-I1R/K7V07XsMJ12Oaxg/O9GfrysGTmCRhvZJBv0RE0NcULMzjqVpR5kRRQjHsz3J/bElU7HwCO7zkqL+MSUz+g==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: ^8.57.0 || ^9.0.0 || ^10.0.0
-      typescript: '>=4.8.4 <6.1.0'
+      typescript: 5.9.3
 
   '@typescript-eslint/visitor-keys@8.59.0':
     resolution: {integrity: sha512-/uejZt4dSere1bx12WLlPfv8GktzcaDtuJ7s42/HEZ5zGj9oxRaD4bj7qwSunXkf+pbAhFt2zjpHYUiT5lHf0Q==}
@@ -2219,7 +2220,7 @@ packages:
     resolution: {integrity: sha512-gUu9hwfWvvEDBBmgtAowQCojwZmJ5mcLn3aufeCsitijs3+f2NsrPtlAWIR6OPiqljl96GVCUbLe0HyqIpVaoA==}
     engines: {node: ^14.18.0 || >=16.0.0}
     peerDependencies:
-      vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
+      vite: 5.4.21
 
   '@vitest/expect@2.1.9':
     resolution: {integrity: sha512-UJCIkTBenHeKT1TTlKMJWy1laZewsRIzYighyYiJKZreqtdxSos/S1t+ktRMQWu2CKqaarrkeszJx1cgC5tGZw==}
@@ -2228,7 +2229,7 @@ packages:
     resolution: {integrity: sha512-tVL6uJgoUdi6icpxmdrn5YNo3g3Dxv+IHJBr0GXHaEdTcw3F+cPKnsXFhli6nO+f/6SDKPHEK1UN+k+TQv0Ehg==}
     peerDependencies:
       msw: ^2.4.9
-      vite: ^5.0.0
+      vite: 5.4.21
     peerDependenciesMeta:
       msw:
         optional: true
@@ -4439,7 +4440,7 @@ packages:
     resolution: {integrity: sha512-OJ/ibxhPlqrMM0UiNHJ/0CKQkoKF243/AEmplt3qpRgkW8VG7IfOS41h7V8TjITqdByHzrjcS/2si+y4lIh8NA==}
     engines: {node: '>=18.12'}
     peerDependencies:
-      typescript: '>=4.8.4'
+      typescript: 5.9.3
 
   ts-interface-checker@0.1.13:
     resolution: {integrity: sha512-Y/arvbn+rrz3JCKl9C4kVNfTfSm2/mEp5FSz5EsZSANGPSlQrpRI5M4PKF+mJnE52jOO90PnPSc3Ur3bTQw0gA==}
@@ -6183,11 +6184,6 @@ snapshots:
   '@types/react-dom@18.3.7(@types/react@18.3.28)':
     dependencies:
       '@types/react': 18.3.28
-
-  '@types/react@18.2.79':
-    dependencies:
-      '@types/prop-types': 15.7.15
-      csstype: 3.2.3
 
   '@types/react@18.3.28':
     dependencies:
