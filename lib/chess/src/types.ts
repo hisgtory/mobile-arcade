@@ -37,7 +37,9 @@ export type GameStatus =
   | 'stalemate'
   | 'draw_repetition'
   | 'draw_50move'
-  | 'draw_material';
+  | 'draw_material'
+  | 'timeout'
+  | 'draw_timeout';
 
 export interface BoardState {
   board: (Piece | null)[]; // length 64
@@ -50,6 +52,7 @@ export interface BoardState {
   winner: Color | 'draw' | null;
   lastMove: Move | null;
   positionHistory: Record<string, number>; // hash -> count for 3-fold repetition
+  clocks: { w: number; b: number }; // remaining milliseconds
 }
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -57,4 +60,8 @@ export type Difficulty = 'easy' | 'medium' | 'hard';
 export interface GameConfig {
   difficulty?: Difficulty;
   playerColor?: Color; // MVP: always 'w'
+  timeControl?: {
+    initialSeconds: number;
+    incrementSeconds: number;
+  };
 }
