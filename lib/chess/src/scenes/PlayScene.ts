@@ -48,18 +48,24 @@ export class PlayScene extends Phaser.Scene {
   private selected: Square | null = null;
   private legalForSelected: Move[] = [];
   private promotionPrompt: PromotionPrompt | null = null;
+  private isDragging = false;
   private playerWins = 0;
   private aiWins = 0;
   private draws = 0;
   private aiMoveTimer: Phaser.Time.TimerEvent | null = null;
   private roundEndTimer: Phaser.Time.TimerEvent | null = null;
 
+  // Persistent layers
+  private boardLayer!: Phaser.GameObjects.Container;
+  private highlightLayer!: Phaser.GameObjects.Container;
+  private pieceLayer!: Phaser.GameObjects.Container;
+  private uiLayer!: Phaser.GameObjects.Container;
+
   constructor() {
     super({ key: 'PlayScene' });
   }
 
   init(data: { stage?: number }): void {
-    // TODO: Use Phaser registry or scene data for better type safety
     this.gameConfig = this.game.registry.get('chessConfig') as GameConfig;
     this.dpr = this.game.registry.get('dpr') || 1;
     this.playerColor = this.gameConfig?.playerColor ?? 'w';
@@ -67,6 +73,11 @@ export class PlayScene extends Phaser.Scene {
   }
 
   create() {
+    this.boardLayer = this.add.container();
+    this.highlightLayer = this.add.container();
+    this.pieceLayer = this.add.container();
+    this.uiLayer = this.add.container();
+
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clearScheduledCallbacks());
     this.startNewGame();
   }
@@ -95,81 +106,102 @@ export class PlayScene extends Phaser.Scene {
   // ─── Drawing ──────────────────────────────────────────
 
   private draw() {
-    this.children.removeAll(true);
-
     const scale = this.dpr;
     const width = DEFAULT_WIDTH * scale;
     const height = DEFAULT_HEIGHT * scale;
-
-    this.add.rectangle(width / 2, height / 2, width, height, BG_COLOR);
 
     const boardSize = Math.min(width - 16 * scale, height - 140 * scale);
     this.cellSize = boardSize / 8;
     this.boardOriginX = (width - boardSize) / 2;
     this.boardOriginY = (height - boardSize) / 2 + 10 * scale;
 
-    // Squares
+    this.drawBoard();
+    this.drawHighlights();
+    this.drawPieces();
+    this.drawStatus();
+    this.drawPromotionPrompt();
+  }
+
+  private drawBoard() {
+    this.boardLayer.removeAll(true);
+    const scale = this.dpr;
+    const width = DEFAULT_WIDTH * scale;
+    const height = DEFAULT_HEIGHT * scale;
+
+    this.boardLayer.add(this.add.rectangle(width / 2, height / 2, width, height, BG_COLOR));
+
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
         const isLight = (row + col) % 2 === 0;
         const baseColor = isLight ? LIGHT_SQUARE : DARK_SQUARE;
         const x = this.boardOriginX + col * this.cellSize + this.cellSize / 2;
         const y = this.boardOriginY + row * this.cellSize + this.cellSize / 2;
-        this.add.rectangle(x, y, this.cellSize, this.cellSize, baseColor);
+        this.boardLayer.add(this.add.rectangle(x, y, this.cellSize, this.cellSize, baseColor));
 
         // Coordinates
         const coordColor = isLight ? '#b58863' : '#f0d9b5';
         const fontSize = Math.floor(10 * scale);
         const padding = 2 * scale;
 
-        // Rank (1-8) on the left side
         if (col === 0) {
-          const rank = 8 - row;
-          this.add.text(x - this.cellSize / 2 + padding, y - this.cellSize / 2 + padding, rank.toString(), {
+          const logicalRow = this.playerColor === 'b' ? 7 - row : row;
+          const rank = 8 - logicalRow;
+          this.boardLayer.add(this.add.text(x - this.cellSize / 2 + padding, y - this.cellSize / 2 + padding, rank.toString(), {
             fontSize: `${fontSize}px`,
             fontFamily: 'system-ui, sans-serif',
             color: coordColor,
             fontStyle: 'bold',
-          });
+          }));
         }
 
-        // File (a-h) on the bottom side
         if (row === 7) {
-          const file = String.fromCharCode(97 + col);
-          this.add.text(x + this.cellSize / 2 - padding, y + this.cellSize / 2 - padding, file, {
+          const logicalCol = this.playerColor === 'b' ? 7 - col : col;
+          const file = String.fromCharCode(97 + logicalCol);
+          this.boardLayer.add(this.add.text(x + this.cellSize / 2 - padding, y + this.cellSize / 2 - padding, file, {
             fontSize: `${fontSize}px`,
             fontFamily: 'system-ui, sans-serif',
             color: coordColor,
             fontStyle: 'bold',
-          }).setOrigin(1, 1);
+          }).setOrigin(1, 1));
         }
+
+        const logicalSq = this.getLogicalSquare(row, col);
+        const hitArea = this.add
+          .rectangle(x, y, this.cellSize, this.cellSize)
+          .setInteractive()
+          .setAlpha(0.001);
+        hitArea.on('pointerdown', () => this.onSquareTap(logicalSq));
+        this.boardLayer.add(hitArea);
+      }
+    }
+  }
+
+  private drawHighlights() {
+    this.highlightLayer.removeAll(true);
+    const scale = this.dpr;
+
+    if (this.state.lastMove) {
+      this.tintSquare(this.state.lastMove.from, LAST_MOVE_TINT, 0.35, this.highlightLayer);
+      this.tintSquare(this.state.lastMove.to, LAST_MOVE_TINT, 0.35, this.highlightLayer);
+    }
+
+    if (this.state.status === 'check') {
+      const kingSq = this.findKingOnBoard(this.state.turn);
+      if (kingSq !== -1) {
+        this.tintSquare(kingSq, 0xef4444, 0.45, this.highlightLayer);
       }
     }
 
-    // Last-move tint
-    if (this.state.lastMove) {
-      this.tintSquare(this.state.lastMove.from, LAST_MOVE_TINT, 0.35);
-      this.tintSquare(this.state.lastMove.to, LAST_MOVE_TINT, 0.35);
-    }
-
-    // Selected highlight
     if (this.selected !== null) {
-      this.tintSquare(this.selected, SELECTED_SQUARE, 0.55);
+      this.tintSquare(this.selected, SELECTED_SQUARE, 0.55, this.highlightLayer);
     }
 
-    // Pieces
-    for (let index = 0; index < 64; index++) {
-      const piece = this.state.board[index];
-      if (piece) this.drawPiece(index, piece);
-    }
-
-    // Legal-move dots
     const markerKeys = new Set<string>();
     for (const move of this.legalForSelected) {
       const markerKey = `${move.to}:${move.captured ? 'capture' : move.isEnPassant ? 'capture' : 'quiet'}`;
       if (markerKeys.has(markerKey)) continue;
       markerKeys.add(markerKey);
-      
+
       const { cx, cy } = this.squareCenter(move.to);
       const isCapture = !!move.captured || !!move.isEnPassant;
       const marker = this.add.graphics();
@@ -180,35 +212,66 @@ export class PlayScene extends Phaser.Scene {
         marker.fillStyle(LEGAL_DOT_COLOR, 0.55);
         marker.fillCircle(cx, cy, this.cellSize * 0.14);
       }
+      this.highlightLayer.add(marker);
     }
-
-    if (this.phase === 'player_turn' && !this.promotionPrompt) {
-      for (let index = 0; index < 64; index++) {
-        const { cx, cy } = this.squareCenter(index);
-        const hitArea = this.add
-          .rectangle(cx, cy, this.cellSize, this.cellSize)
-          .setInteractive()
-          .setAlpha(0.001);
-        hitArea.on('pointerdown', () => this.onSquareTap(index));
-      }
-    }
-
-    this.drawStatus();
-    this.drawPromotionPrompt();
   }
 
-  private tintSquare(square: Square, color: number, alpha: number) {
+  private drawPieces() {
+    this.pieceLayer.removeAll(true);
+    for (let i = 0; i < 64; i++) {
+      const piece = this.state.board[i];
+      if (piece) {
+        if (this.isDragging && this.selected === i) continue;
+        this.drawPiece(i, piece);
+      }
+    }
+  }
+
+  private findKingOnBoard(color: Color): Square {
+    for (let i = 0; i < 64; i++) {
+      const p = this.state.board[i];
+      if (p && p.type === 'k' && p.color === color) return i;
+    }
+    return -1;
+  }
+
+  private tintSquare(square: Square, color: number, alpha: number, container: Phaser.GameObjects.Container) {
     const { cx, cy } = this.squareCenter(square);
-    this.add.rectangle(cx, cy, this.cellSize, this.cellSize, color, alpha);
+    container.add(this.add.rectangle(cx, cy, this.cellSize, this.cellSize, color, alpha));
+  }
+
+  private getLogicalSquare(drawRow: number, drawCol: number): Square {
+    const row = this.playerColor === 'b' ? 7 - drawRow : drawRow;
+    const col = this.playerColor === 'b' ? 7 - drawCol : drawCol;
+    return (row << 3) | col;
   }
 
   private squareCenter(square: Square): { cx: number; cy: number } {
-    const row = square >> 3;
-    const col = square & 7;
+    const { drawRow, drawCol } = this.getDrawPos(square);
     return {
-      cx: this.boardOriginX + col * this.cellSize + this.cellSize / 2,
-      cy: this.boardOriginY + row * this.cellSize + this.cellSize / 2,
+      cx: this.boardOriginX + drawCol * this.cellSize + this.cellSize / 2,
+      cy: this.boardOriginY + drawRow * this.cellSize + this.cellSize / 2,
     };
+  }
+
+  private getDrawPos(square: Square): { drawRow: number; drawCol: number } {
+    let row = square >> 3;
+    let col = square & 7;
+    if (this.playerColor === 'b') {
+      row = 7 - row;
+      col = 7 - col;
+    }
+    return { drawRow: row, drawCol: col };
+  }
+
+  private getSquareFromPointer(x: number, y: number): Square | null {
+    const col = Math.floor((x - this.boardOriginX) / this.cellSize);
+    const row = Math.floor((y - this.boardOriginY) / this.cellSize);
+    if (col < 0 || col >= 8 || row < 0 || row >= 8) return null;
+
+    const logicalRow = this.playerColor === 'b' ? 7 - row : row;
+    const logicalCol = this.playerColor === 'b' ? 7 - col : col;
+    return (logicalRow << 3) | logicalCol;
   }
 
   private drawPiece(square: Square, piece: Piece) {
@@ -225,9 +288,55 @@ export class PlayScene extends Phaser.Scene {
       strokeThickness: Math.max(1, Math.floor(this.cellSize * 0.025)),
     });
     text.setOrigin(0.5, 0.55);
+    this.pieceLayer.add(text);
+
+    if (this.phase === 'player_turn' && !this.promotionPrompt && piece.color === this.playerColor) {
+      text.setInteractive({ draggable: true });
+      this.input.setDraggable(text);
+
+      text.on('dragstart', () => {
+        this.isDragging = true;
+        this.selected = square;
+        this.legalForSelected = getLegalMoves(this.state, square);
+        this.game.events.emit('piece-tapped');
+        
+        // Temporarily detach from layer to stay on top
+        this.pieceLayer.remove(text);
+        this.add.existing(text);
+        
+        this.drawHighlights();
+        this.drawPieces();
+      });
+
+      text.on('drag', (pointer: Phaser.Input.Pointer, dragX: number, dragY: number) => {
+        text.x = dragX;
+        text.y = dragY;
+      });
+
+      text.on('dragend', (pointer: Phaser.Input.Pointer) => {
+        this.isDragging = false;
+        const targetSq = this.getSquareFromPointer(pointer.x, pointer.y);
+        if (targetSq !== null) {
+          const move = this.legalForSelected.find((m) => m.to === targetSq);
+          if (move) {
+            text.destroy();
+            if (move.promotion) {
+              this.promotionPrompt = { moves: this.legalForSelected.filter(m => m.to === targetSq) };
+              this.draw();
+              return;
+            }
+            this.executeMove(move);
+            return;
+          }
+        }
+        text.destroy();
+        this.draw();
+      });
+    }
   }
 
   private drawStatus() {
+    this.uiLayer.removeAll(true);
     const scale = this.dpr;
     const width = DEFAULT_WIDTH * scale;
 
@@ -267,12 +376,14 @@ export class PlayScene extends Phaser.Scene {
       fontStyle: 'bold',
     });
     status.setOrigin(0.5);
+    this.uiLayer.add(status);
 
     if (this.phase === 'game_over') {
       const buttonY = this.boardOriginY + 8 * this.cellSize + 36 * scale;
       const button = this.add.graphics();
       button.fillStyle(0x2563eb, 1);
       button.fillRoundedRect(width / 2 - 80 * scale, buttonY - 22 * scale, 160 * scale, 44 * scale, 12 * scale);
+      this.uiLayer.add(button);
 
       const buttonText = this.add.text(width / 2, buttonY, 'Play Again', {
         fontSize: `${16 * scale}px`,
@@ -281,12 +392,14 @@ export class PlayScene extends Phaser.Scene {
         fontStyle: 'bold',
       });
       buttonText.setOrigin(0.5);
+      this.uiLayer.add(buttonText);
 
       const hitArea = this.add
         .rectangle(width / 2, buttonY, 160 * scale, 44 * scale)
         .setInteractive()
         .setAlpha(0.001);
       hitArea.on('pointerdown', () => this.startNewGame());
+      this.uiLayer.add(hitArea);
     }
   }
 
@@ -310,12 +423,14 @@ export class PlayScene extends Phaser.Scene {
       this.promotionPrompt = null;
       this.draw();
     });
+    this.uiLayer.add(backdrop);
 
     const panel = this.add.graphics();
     panel.fillStyle(0x111827, 0.98);
     panel.fillRoundedRect(panelX, panelY, panelWidth, panelHeight, 16 * scale);
     panel.lineStyle(2 * scale, 0xf9fafb, 0.12);
     panel.strokeRoundedRect(panelX, panelY, panelWidth, panelHeight, 16 * scale);
+    this.uiLayer.add(panel);
 
     const title = this.add.text(width / 2, panelY + 22 * scale, 'Choose Promotion', {
       fontSize: `${16 * scale}px`,
@@ -324,6 +439,7 @@ export class PlayScene extends Phaser.Scene {
       fontStyle: 'bold',
     });
     title.setOrigin(0.5);
+    this.uiLayer.add(title);
 
     for (let index = 0; index < options.length; index++) {
       const pieceType = options[index];
@@ -336,6 +452,7 @@ export class PlayScene extends Phaser.Scene {
       const button = this.add.graphics();
       button.fillStyle(0xf9fafb, 1);
       button.fillRoundedRect(buttonX, buttonY, optionWidth - 16 * scale, optionHeight, 12 * scale);
+      this.uiLayer.add(button);
 
       const glyph = PIECE_GLYPH[`${this.playerColor}${pieceType}`];
       const pieceText = this.add.text(centerX, centerY, glyph, {
@@ -346,12 +463,14 @@ export class PlayScene extends Phaser.Scene {
         strokeThickness: Math.max(1, Math.floor(this.cellSize * 0.02)),
       });
       pieceText.setOrigin(0.5, 0.55);
+      this.uiLayer.add(pieceText);
 
       const hitArea = this.add
         .rectangle(centerX, centerY, optionWidth - 16 * scale, optionHeight)
         .setInteractive()
         .setAlpha(0.001);
       hitArea.on('pointerdown', () => this.confirmPromotion(pieceType));
+      this.uiLayer.add(hitArea);
     }
   }
 
@@ -379,14 +498,14 @@ export class PlayScene extends Phaser.Scene {
       this.selected = square;
       this.legalForSelected = getLegalMoves(this.state, square);
       this.game.events.emit('piece-tapped');
-      this.draw();
+      this.drawHighlights();
       return;
     }
 
     if (this.selected !== null) {
       this.selected = null;
       this.legalForSelected = [];
-      this.draw();
+      this.drawHighlights();
     }
   }
 
@@ -459,7 +578,7 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private isTerminal(state: BoardState): boolean {
-    return state.status === 'checkmate' || state.status === 'stalemate';
+    return state.status === 'checkmate' || state.status.startsWith('draw') || state.status === 'stalemate';
   }
 
   private handleGameEnd() {
@@ -497,37 +616,7 @@ export class PlayScene extends Phaser.Scene {
     });
   }
 
-  // ─── Events ───────────────────────────────────────────
-
   private emitState() {
-    const { whiteMaterial, blackMaterial } = this.computeMaterial();
-    this.game.events.emit('score-update', {
-      turn: this.state.turn,
-      status: this.state.status,
-      playerWins: this.playerWins,
-      aiWins: this.aiWins,
-      draws: this.draws,
-      whiteMaterial,
-      blackMaterial,
-    });
-  }
-
-  private computeMaterial(): { whiteMaterial: number; blackMaterial: number } {
-    const value: Record<string, number> = { p: 1, n: 3, b: 3, r: 5, q: 9, k: 0 };
-    let whiteMaterial = 0;
-    let blackMaterial = 0;
-
-    for (const piece of this.state.board) {
-      if (!piece) continue;
-      if (piece.color === 'w') whiteMaterial += value[piece.type];
-      else blackMaterial += value[piece.type];
-    }
-
-    return { whiteMaterial, blackMaterial };
-  }
-
-  shutdown(): void {
-    this.clearScheduledCallbacks();
-    this.tweens.killAll();
+    this.game.events.emit('state-changed', this.state);
   }
 }
