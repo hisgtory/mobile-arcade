@@ -26,6 +26,59 @@ export function inBounds(row: number, col: number): boolean {
 
 const opposite = (c: Color): Color => (c === 'w' ? 'b' : 'w');
 
+export function sqToName(s: Square): string {
+  return String.fromCharCode(97 + colOf(s)) + (8 - rowOf(s));
+}
+
+export function moveToSAN(state: BoardState, move: Move, nextStatus: BoardState['status']): string {
+  if (move.isCastle) {
+    return move.isCastle === 'k' ? 'O-O' : 'O-O-O';
+  }
+
+  const piece = state.board[move.from];
+  if (!piece) return '';
+
+  let san = '';
+  if (piece.type === 'p') {
+    if (move.captured || move.isEnPassant) {
+      san += String.fromCharCode(97 + colOf(move.from)) + 'x';
+    }
+  } else {
+    san += piece.type.toUpperCase();
+
+    // Disambiguation: find other pieces of same type that could move to the same square
+    const others = getAllLegalMoves(state, piece.color).filter(
+      (m) => m.to === move.to && m.from !== move.from && state.board[m.from]?.type === piece.type
+    );
+
+    if (others.length > 0) {
+      const sameFile = others.some((m) => colOf(m.from) === colOf(move.from));
+      const sameRank = others.some((m) => rowOf(m.from) === rowOf(move.from));
+
+      if (!sameFile) {
+        san += String.fromCharCode(97 + colOf(move.from));
+      } else if (!sameRank) {
+        san += (8 - rowOf(move.from)).toString();
+      } else {
+        san += String.fromCharCode(97 + colOf(move.from)) + (8 - rowOf(move.from));
+      }
+    }
+
+    if (move.captured) san += 'x';
+  }
+
+  san += sqToName(move.to);
+
+  if (move.promotion) {
+    san += '=' + move.promotion.toUpperCase();
+  }
+
+  if (nextStatus === 'checkmate') san += '#';
+  else if (nextStatus === 'check') san += '+';
+
+  return san;
+}
+
 // ─── Initial position ──────────────────────────────────────
 
 export function createInitialBoard(): BoardState {
@@ -51,6 +104,7 @@ export function createInitialBoard(): BoardState {
     lastMove: null,
     positionHistory: {},
     clocks: { w: 600000, b: 600000 },
+    history: [],
   };
   initial.positionHistory[hashPosition(initial)] = 1;
   return initial;
@@ -469,6 +523,7 @@ export function applyMove(state: BoardState, move: Move): BoardState {
     lastMove: { ...move, captured },
     positionHistory,
     clocks: { ...state.clocks },
+    history: [...state.history],
   };
 
   const hash = hashPosition(next);
@@ -477,6 +532,10 @@ export function applyMove(state: BoardState, move: Move): BoardState {
   const statusInfo = getGameStatus(next);
   next.status = statusInfo.status;
   next.winner = statusInfo.winner;
+
+  // Generate SAN and add to history
+  next.history.push(moveToSAN(state, move, next.status));
+
   return next;
 }
 
