@@ -49,7 +49,7 @@ export class PlayScene extends Phaser.Scene {
   private cellSize = 0;
   private selected: Square | null = null;
   private legalForSelected: Move[] = [];
-  private premove: { from: Square; to: Square; promotion?: PieceType } | null = null;
+  private premove: { from: Square; to: Square } | null = null;
   private promotionPrompt: PromotionPrompt | null = null;
   private isDragging = false;
   private playerWins = 0;
@@ -57,6 +57,7 @@ export class PlayScene extends Phaser.Scene {
   private draws = 0;
   private aiMoveTimer: Phaser.Time.TimerEvent | null = null;
   private roundEndTimer: Phaser.Time.TimerEvent | null = null;
+  private premoveTimer: Phaser.Time.TimerEvent | null = null;
 
   // Persistent layers
   private boardLayer!: Phaser.GameObjects.Container;
@@ -81,6 +82,7 @@ export class PlayScene extends Phaser.Scene {
     this.pieceLayer = this.add.container();
     this.uiLayer = this.add.container();
 
+    this.input.mouse?.disableContextMenu();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clearScheduledCallbacks());
     this.startNewGame();
   }
@@ -96,6 +98,7 @@ export class PlayScene extends Phaser.Scene {
     this.selected = null;
     this.legalForSelected = [];
     this.promotionPrompt = null;
+    this.premove = null;
     this.phase = this.state.turn === this.playerColor ? 'player_turn' : 'ai_turn';
     this.draw();
     this.emitState();
@@ -107,8 +110,10 @@ export class PlayScene extends Phaser.Scene {
   private clearScheduledCallbacks() {
     this.aiMoveTimer?.remove(false);
     this.roundEndTimer?.remove(false);
+    this.premoveTimer?.remove(false);
     this.aiMoveTimer = null;
     this.roundEndTimer = null;
+    this.premoveTimer = null;
   }
 
   // ─── Drawing ──────────────────────────────────────────
@@ -177,7 +182,13 @@ export class PlayScene extends Phaser.Scene {
           .rectangle(x, y, this.cellSize, this.cellSize)
           .setInteractive()
           .setAlpha(0.001);
-        hitArea.on('pointerdown', () => this.onSquareTap(logicalSq));
+        hitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          if (pointer.rightButtonDown()) {
+            this.cancelPremoveAndSelection();
+            return;
+          }
+          this.onSquareTap(logicalSq);
+        });
         this.boardLayer.add(hitArea);
       }
     }
@@ -198,17 +209,14 @@ export class PlayScene extends Phaser.Scene {
         this.tintSquare(kingSq, 0xef4444, 0.45, this.highlightLayer);
       }
     }
-if (this.selected !== null) {
-  this.tintSquare(this.selected, SELECTED_SQUARE, 0.55, this.highlightLayer);
-}
+    if (this.selected !== null) {
+      this.tintSquare(this.selected, SELECTED_SQUARE, 0.55, this.highlightLayer);
+    }
 
-// Premove
-if (this.premove) {
-  this.tintSquare(this.premove.from, PREMOVE_TINT, 0.45, this.highlightLayer);
-  this.tintSquare(this.premove.to, PREMOVE_TINT, 0.45, this.highlightLayer);
-}
-
-// Legal dots
+    if (this.premove) {
+      this.tintSquare(this.premove.from, PREMOVE_TINT, 0.45, this.highlightLayer);
+      this.tintSquare(this.premove.to, PREMOVE_TINT, 0.45, this.highlightLayer);
+    }
 
     const markerKeys = new Set<string>();
     for (const move of this.legalForSelected) {
@@ -781,7 +789,10 @@ if (this.premove) {
       const legal = getLegalMoves(this.state, pm.from);
       const matchingMove = legal.find(m => m.to === pm.to);
       if (matchingMove) {
-        this.time.delayedCall(50, () => {
+        this.premoveTimer?.remove(false);
+        this.premoveTimer = this.time.delayedCall(50, () => {
+          this.premoveTimer = null;
+          if (this.phase !== 'player_turn' || this.promotionPrompt) return;
           if (matchingMove.promotion) {
             this.promotionPrompt = { moves: legal.filter(m => m.to === pm.to) };
             this.draw();
@@ -793,6 +804,14 @@ if (this.premove) {
         this.drawHighlights();
       }
     }
+  }
+
+  private cancelPremoveAndSelection() {
+    if (this.premove === null && this.selected === null) return;
+    this.premove = null;
+    this.selected = null;
+    this.legalForSelected = [];
+    this.drawHighlights();
   }
 
   private isTerminal(state: BoardState): boolean {
