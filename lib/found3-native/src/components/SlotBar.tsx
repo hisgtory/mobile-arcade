@@ -1,33 +1,49 @@
 import React from 'react';
-import { StyleSheet, View, Image } from 'react-native';
-import { SlotItem, MAX_SLOT, TILE_COLORS, TILE_IMAGES } from '../types';
-import { TILE_ASSETS } from '../assets';
+import { StyleSheet, View, Dimensions } from 'react-native';
+import { SlotItem } from '../types';
+import { Tile } from './Tile';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface SlotBarProps {
   slots: SlotItem[];
+  maxSlot: number;
 }
 
-export const SlotBar: React.FC<SlotBarProps> = ({ slots }) => {
+export const SlotBar: React.FC<SlotBarProps> = ({ slots, maxSlot }) => {
+  // 화면 너비에 맞춰 슬롯 한 칸의 최대 크기를 동적으로 계산
+  // (화면 너비 - 컨테이너 마진 30 - 내부 패딩) / 최대 슬롯 수
+  const containerPadding = 12;
+  const horizontalMargin = 30;
+  const availableWidth = SCREEN_WIDTH - horizontalMargin - (containerPadding * 2);
+  
+  // 슬롯 개수가 늘어나면 칸 사이즈를 줄임 (최대 46, 최소 30)
+  const calculatedSlotSize = Math.min(46, Math.floor(availableWidth / maxSlot) - 4);
+  const GAP = Math.min(8, Math.floor(calculatedSlotSize * 0.15));
+  const TILE_SIZE = calculatedSlotSize - 4;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { padding: containerPadding }]}>
       <View style={styles.slotGrid}>
-        {Array.from({ length: MAX_SLOT }).map((_, index) => {
+        {Array.from({ length: maxSlot }).map((_, index) => {
           const item = slots[index];
           return (
-            <View key={index} style={styles.slotItem}>
+            <View 
+              key={index} 
+              style={[
+                styles.slotItem, 
+                { 
+                  width: calculatedSlotSize, 
+                  height: calculatedSlotSize, 
+                  marginHorizontal: 2 
+                }
+              ]}
+            >
               {item && (
-                <View
-                  style={[
-                    styles.tile,
-                    { backgroundColor: TILE_COLORS[item.type] || '#fff' },
-                  ]}
-                >
-                  <Image
-                    source={TILE_ASSETS[TILE_IMAGES[item.type]]}
-                    style={styles.image}
-                    resizeMode="contain"
-                  />
-                </View>
+                <Tile 
+                  tile={item}
+                  size={TILE_SIZE} 
+                />
               )}
             </View>
           );
@@ -39,48 +55,27 @@ export const SlotBar: React.FC<SlotBarProps> = ({ slots }) => {
 
 const styles = StyleSheet.create({
   container: {
-    padding: 12,
-    backgroundColor: '#E9ECEF', // 부드러운 연회색
+    backgroundColor: '#FFF',
     borderRadius: 20,
-    marginHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 10,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
-    elevation: 2,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F1F3F5',
+    alignSelf: 'center',
   },
   slotGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    height: 54,
   },
   slotItem: {
-    width: 44,
-    height: 44,
-    backgroundColor: '#FFF',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#F1F3F5',
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    // 빈 슬롯 그림자 생략 또는 아주 연하게
-  },
-  tile: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  image: {
-    width: '75%',
-    height: '75%',
   },
 });

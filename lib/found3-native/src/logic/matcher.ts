@@ -13,14 +13,16 @@ export interface MatchResult {
 }
 
 export function addToSlotAndMatch(
-  currentSlot: SlotItem[],
+  currentSlot: SlotItem[] = [],
   newItem: SlotItem,
+  maxSlot: number = MAX_SLOT,
 ): MatchResult {
-  const slot = [...currentSlot];
+  const slot = [...(currentSlot || [])];
 
+  // Find insertion point (keep same types together)
   let insertIdx = slot.length;
   for (let i = slot.length - 1; i >= 0; i--) {
-    if (slot[i].type === newItem.type) {
+    if (slot[i] && slot[i].type === newItem.type) {
       insertIdx = i + 1;
       break;
     }
@@ -28,10 +30,10 @@ export function addToSlotAndMatch(
 
   slot.splice(insertIdx, 0, newItem);
 
-  const sameTypeCount = slot.filter((s) => s.type === newItem.type).length;
+  const sameTypeCount = slot.filter((s) => s && s.type === newItem.type).length;
 
   if (sameTypeCount >= 3) {
-    const filtered = slot.filter((s) => s.type !== newItem.type);
+    const filtered = slot.filter((s) => s && s.type !== newItem.type);
     return {
       slotItems: filtered,
       matched: true,
@@ -40,7 +42,7 @@ export function addToSlotAndMatch(
     };
   }
 
-  const isFull = slot.length >= MAX_SLOT;
+  const isFull = slot.length >= maxSlot;
   return {
     slotItems: slot,
     matched: false,
@@ -49,9 +51,9 @@ export function addToSlotAndMatch(
 }
 
 export function undoLastSlotItem(
-  currentSlot: SlotItem[],
+  currentSlot: SlotItem[] = [],
 ): { slotItems: SlotItem[]; removed: SlotItem | null } {
-  if (currentSlot.length === 0) {
+  if (!currentSlot || currentSlot.length === 0) {
     return { slotItems: [], removed: null };
   }
   const slot = [...currentSlot];

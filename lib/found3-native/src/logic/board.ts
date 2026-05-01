@@ -113,6 +113,19 @@ export function generateBoard(config: StageConfig): TileData[] {
 }
 
 /**
+ * Shuffles the types of existing tiles while keeping their positions and IDs.
+ */
+export function shuffleBoard(tiles: TileData[]): TileData[] {
+  const types = tiles.map(t => t.type);
+  shuffle(types);
+  
+  return tiles.map((tile, index) => ({
+    ...tile,
+    type: types[index]
+  }));
+}
+
+/**
  * Check if a tile is blocked by any tile on a higher layer.
  * A tile is blocked if any upper-layer tile overlaps it.
  */

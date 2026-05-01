@@ -11,7 +11,23 @@
       "bundleIdentifier": "com.arcade.found3"
     },
     "android": {
-      "package": "com.arcade.found3"
-    }
+      "package": "com.arcade.found3",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "softwareKeyboardLayoutMode": "pan",
+      "navigationBar": {
+        "visible": "immersive"
+      }
+    },
+    "plugins": [
+      [
+        "expo-navigation-bar",
+        {
+          "visible": "immersive"
+        }
+      ]
+    ]
   }
 }

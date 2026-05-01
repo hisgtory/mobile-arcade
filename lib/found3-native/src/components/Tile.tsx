@@ -1,45 +1,56 @@
 import React from 'react';
 import { StyleSheet, Image, TouchableOpacity, View } from 'react-native';
-import { TileData, TILE_COLORS, TILE_IMAGES } from '../types';
+import { TileData, SlotItem, TILE_COLORS, TILE_IMAGES } from '../types';
 import { TILE_ASSETS } from '../assets';
 
 interface TileProps {
-  tile: TileData;
+  tile: TileData | SlotItem;
   size: number;
-  gap: number;
-  boardPad: number;
-  onPress: (tile: TileData) => void;
+  gap?: number;
+  boardPad?: number;
+  onPress?: (tile: any) => void;
   disabled?: boolean;
 }
 
 export const Tile: React.FC<TileProps> = ({ 
   tile, 
   size, 
-  gap, 
-  boardPad, 
+  gap = 0, 
+  boardPad = 0, 
   onPress, 
   disabled 
 }) => {
-  const isBlocked = !tile.isSelectable;
-  const left = tile.col * (size + gap) + boardPad;
-  const top = tile.row * (size + gap) + boardPad;
+  if (!tile) return null;
+
+  // TileData인지 SlotItem인지 판별하여 값 할당
+  const isTileData = 'col' in tile;
+  const isBlocked = isTileData ? !(tile as TileData).isSelectable : false;
+  const col = isTileData ? (tile as TileData).col : 0;
+  const row = isTileData ? (tile as TileData).row : 0;
+  const layer = isTileData ? (tile as TileData).layer : 0;
+
+  const left = boardPad + col * (size + gap);
+  const top = row * (size + gap);
+  
+  const Container = onPress ? TouchableOpacity : View;
   
   return (
-    <TouchableOpacity
+    <Container
       activeOpacity={0.7}
-      onPress={() => onPress(tile)}
+      onPress={() => onPress?.(tile)}
       disabled={disabled || isBlocked}
       style={[
         styles.tile,
         {
           backgroundColor: TILE_COLORS[tile.type] || '#fff',
-          left,
-          top,
+          position: onPress ? 'absolute' : 'relative',
+          left: onPress ? left : undefined,
+          top: onPress ? top : undefined,
           width: size,
           height: size,
           opacity: isBlocked ? 0.5 : 1,
-          zIndex: Math.floor((tile.layer || 0) * 100 + (tile.id || 0)),
-          elevation: Math.floor((tile.layer || 0) * 10 + 1),
+          zIndex: Math.floor(layer * 100 + (Number(tile.id.split('_')[1]) || 0)),
+          elevation: Math.floor(layer * 10 + 1),
         },
       ]}
     >
@@ -51,21 +62,19 @@ export const Tile: React.FC<TileProps> = ({
         />
       </View>
       {isBlocked && <View style={styles.overlay} />}
-    </TouchableOpacity>
+    </Container>
   );
 };
 
 const styles = StyleSheet.create({
   tile: {
-    position: 'absolute',
-    borderRadius: 14, // 더 둥근 모서리
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.05)', // 거의 보이지 않는 테두리
+    borderColor: 'rgba(0,0,0,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFF',
-    overflow: 'hidden', // 이미지 잘림 처리
-    // 소프트한 그림자
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -78,7 +87,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     height: '100%',
-    overflow: 'hidden', // 안전을 위해 내부도 추가
+    overflow: 'hidden',
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,

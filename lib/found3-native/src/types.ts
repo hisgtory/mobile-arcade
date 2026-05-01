@@ -70,14 +70,14 @@ export interface GameState {
 export interface ItemCounts {
   shuffle: number;
   undo: number;
-  magnet: number;
+  expand: number;
 }
 
 /** Default item counts per game */
 export const DEFAULT_ITEM_COUNTS: ItemCounts = {
-  shuffle: 1,
-  undo: 1,
-  magnet: 1,
+  shuffle: 3,
+  undo: 3,
+  expand: 3,
 };
 
 /** Undo history entry */
@@ -86,7 +86,7 @@ export interface UndoEntry {
   tileData: TileData;
 }
 
-/** Max slot capacity */
+/** Base slot capacity */
 export const MAX_SLOT = 7;
 
 /** @deprecated Use TILE_IMAGES instead */
@@ -120,6 +120,7 @@ export const TILE_IMAGES: string[] = [
   'strawberry',
   'watermelon',
   'mangosteen',
+  'pomegranate',
 ];
 
 /** Pastel background colors corresponding to tile types */
@@ -137,6 +138,7 @@ export const TILE_COLORS: string[] = [
   '#ffcdd2', // strawberry
   '#c8e6c9', // watermelon
   '#e1bee7', // mangosteen
+  '#ffcdd2', // pomegranate
 ];
 
 /** Haptic callback type */

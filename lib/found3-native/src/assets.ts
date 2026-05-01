@@ -5,7 +5,7 @@
 export const TILE_ASSETS: Record<string, any> = {
   apple: require('../../../found3/rn/assets/tiles/apple.png'),
   banana: require('../../../found3/rn/assets/tiles/banana.png'),
-  cherry: require('../../../found3/rn/assets/tiles/cherry.png'),
+  cherry: require('../../../found3/rn/assets/tiles/cherry_new.png'),
   grape: require('../../../found3/rn/assets/tiles/grape.png'),
   kiwi: require('../../../found3/rn/assets/tiles/kiwi.png'),
   lemon: require('../../../found3/rn/assets/tiles/lemon.png'),
@@ -16,4 +16,26 @@ export const TILE_ASSETS: Record<string, any> = {
   strawberry: require('../../../found3/rn/assets/tiles/strawberry.png'),
   watermelon: require('../../../found3/rn/assets/tiles/watermelon.png'),
   mangosteen: require('../../../found3/rn/assets/tiles/mangosteen.png'),
+  pomegranate: require('../../../found3/rn/assets/tiles/pomegranate.png'),
+  background: require('../../../found3/rn/assets/background.png'),
+  
+  // UNDO 세트
+  item_undo: require('../../../found3/rn/assets/items/undo_normal.png'),
+  item_undo_pressed: require('../../../found3/rn/assets/items/undo_pressed.png'),
+  
+  // SHUFFLE 세트 (기본 아이콘 수정)
+  item_shuffle: require('../../../found3/rn/assets/items/shuffle_normal.png'), 
+  item_shuffle_pressed: require('../../../found3/rn/assets/items/expand_pressed.png'), 
+  
+  // EXPAND 세트 (기본 아이콘 수정)
+  item_expand: require('../../../found3/rn/assets/items/expand_normal.png'), 
+  item_expand_pressed: require('../../../found3/rn/assets/items/extra.png'), 
+  
+  ui_settings: require('../../../found3/rn/assets/ui/icon_settings.png'),
+  ui_play: require('../../../found3/rn/assets/ui/btn_play.png'),
+  ui_home: require('../../../found3/rn/assets/ui/btn_home.png'),
+  ui_restart: require('../../../found3/rn/assets/ui/btn_restart.png'),
+  ui_exit: require('../../../found3/rn/assets/ui/btn_exit.png'),
+  ui_status: require('../../../found3/rn/assets/ui/status_bar.png'),
+  ui_magnet: require('../../../found3/rn/assets/items/shuffle_pressed.png'), 
 };
