@@ -24,6 +24,7 @@ const SELECTED_SQUARE = 0xf7ec74;
 const LAST_MOVE_TINT = 0xf7ec74;
 const LEGAL_DOT_COLOR = 0x646f40;
 const BG_COLOR = 0x312e2b;
+const PREMOVE_TINT = 0xf42a32;
 
 const PIECE_GLYPH: Record<string, string> = {
   wk: '♔', wq: '♕', wr: '♖', wb: '♗', wn: '♘', wp: '♙',
@@ -48,6 +49,7 @@ export class PlayScene extends Phaser.Scene {
   private cellSize = 0;
   private selected: Square | null = null;
   private legalForSelected: Move[] = [];
+  private premove: { from: Square; to: Square } | null = null;
   private promotionPrompt: PromotionPrompt | null = null;
   private isDragging = false;
   private playerWins = 0;
@@ -55,6 +57,7 @@ export class PlayScene extends Phaser.Scene {
   private draws = 0;
   private aiMoveTimer: Phaser.Time.TimerEvent | null = null;
   private roundEndTimer: Phaser.Time.TimerEvent | null = null;
+  private premoveTimer: Phaser.Time.TimerEvent | null = null;
 
   // Persistent layers
   private boardLayer!: Phaser.GameObjects.Container;
@@ -79,6 +82,7 @@ export class PlayScene extends Phaser.Scene {
     this.pieceLayer = this.add.container();
     this.uiLayer = this.add.container();
 
+    this.input.mouse?.disableContextMenu();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.clearScheduledCallbacks());
     this.startNewGame();
   }
@@ -94,6 +98,7 @@ export class PlayScene extends Phaser.Scene {
     this.selected = null;
     this.legalForSelected = [];
     this.promotionPrompt = null;
+    this.premove = null;
     this.phase = this.state.turn === this.playerColor ? 'player_turn' : 'ai_turn';
     this.draw();
     this.emitState();
@@ -105,8 +110,10 @@ export class PlayScene extends Phaser.Scene {
   private clearScheduledCallbacks() {
     this.aiMoveTimer?.remove(false);
     this.roundEndTimer?.remove(false);
+    this.premoveTimer?.remove(false);
     this.aiMoveTimer = null;
     this.roundEndTimer = null;
+    this.premoveTimer = null;
   }
 
   // ─── Drawing ──────────────────────────────────────────
@@ -175,7 +182,13 @@ export class PlayScene extends Phaser.Scene {
           .rectangle(x, y, this.cellSize, this.cellSize)
           .setInteractive()
           .setAlpha(0.001);
-        hitArea.on('pointerdown', () => this.onSquareTap(logicalSq));
+        hitArea.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          if (pointer.rightButtonDown()) {
+            this.cancelPremoveAndSelection();
+            return;
+          }
+          this.onSquareTap(logicalSq);
+        });
         this.boardLayer.add(hitArea);
       }
     }
@@ -196,9 +209,13 @@ export class PlayScene extends Phaser.Scene {
         this.tintSquare(kingSq, 0xef4444, 0.45, this.highlightLayer);
       }
     }
-
     if (this.selected !== null) {
       this.tintSquare(this.selected, SELECTED_SQUARE, 0.55, this.highlightLayer);
+    }
+
+    if (this.premove) {
+      this.tintSquare(this.premove.from, PREMOVE_TINT, 0.45, this.highlightLayer);
+      this.tintSquare(this.premove.to, PREMOVE_TINT, 0.45, this.highlightLayer);
     }
 
     const markerKeys = new Set<string>();
@@ -295,14 +312,19 @@ export class PlayScene extends Phaser.Scene {
     text.setOrigin(0.5, 0.55);
     this.pieceLayer.add(text);
 
-    if (this.phase === 'player_turn' && !this.promotionPrompt && piece.color === this.playerColor) {
+    // Drag and Drop
+    if (!this.promotionPrompt && piece.color === this.playerColor) {
       text.setInteractive({ draggable: true });
       this.input.setDraggable(text);
 
       text.on('dragstart', () => {
         this.isDragging = true;
         this.selected = square;
-        this.legalForSelected = getLegalMoves(this.state, square);
+        if (this.phase === 'player_turn') {
+          this.legalForSelected = getLegalMoves(this.state, square);
+        } else {
+          this.legalForSelected = [];
+        }
         this.game.events.emit('piece-tapped');
         
         // Temporarily detach from layer to stay on top
@@ -321,16 +343,24 @@ export class PlayScene extends Phaser.Scene {
       text.on('dragend', (pointer: Phaser.Input.Pointer) => {
         this.isDragging = false;
         const targetSq = this.getSquareFromPointer(pointer.x, pointer.y);
-        if (targetSq !== null) {
-          const move = this.legalForSelected.find((m) => m.to === targetSq);
-          if (move) {
-            text.destroy();
-            if (move.promotion) {
-              this.promotionPrompt = { moves: this.legalForSelected.filter(m => m.to === targetSq) };
-              this.draw();
+        if (targetSq !== null && targetSq !== square) {
+          if (this.phase === 'player_turn') {
+            const move = this.legalForSelected.find((m) => m.to === targetSq);
+            if (move) {
+              text.destroy();
+              if (move.promotion) {
+                this.promotionPrompt = { moves: this.legalForSelected.filter(m => m.to === targetSq) };
+                this.draw();
+                return;
+              }
+              this.executeMove(move);
               return;
             }
-            this.executeMove(move);
+          } else if (this.phase === 'ai_turn') {
+            this.premove = { from: square, to: targetSq };
+            this.selected = null;
+            text.destroy();
+            this.draw();
             return;
           }
         }
@@ -637,35 +667,68 @@ export class PlayScene extends Phaser.Scene {
   }
 
   private onSquareTap(square: Square) {
-    if (this.phase !== 'player_turn' || this.promotionPrompt) return;
+    if (this.promotionPrompt) return;
 
-    if (this.selected !== null) {
-      const candidates = this.legalForSelected.filter((candidate) => candidate.to === square);
-      if (candidates.length > 0) {
-        const promotionMoves = candidates.filter((candidate) => candidate.promotion);
-        if (promotionMoves.length > 0) {
-          this.promotionPrompt = { moves: promotionMoves };
-          this.draw();
+    if (this.phase === 'player_turn') {
+      if (this.selected !== null) {
+        const candidates = this.legalForSelected.filter((candidate) => candidate.to === square);
+        if (candidates.length > 0) {
+          const promotionMoves = candidates.filter((candidate) => candidate.promotion);
+          if (promotionMoves.length > 0) {
+            this.promotionPrompt = { moves: promotionMoves };
+            this.draw();
+            return;
+          }
+          this.executeMove(candidates[0]);
           return;
         }
-        this.executeMove(candidates[0]);
+      }
+
+      const piece = this.state.board[square];
+      if (piece && piece.color === this.playerColor) {
+        this.selected = square;
+        this.legalForSelected = getLegalMoves(this.state, square);
+        this.game.events.emit('piece-tapped');
+        this.drawHighlights();
         return;
       }
-    }
 
-    const piece = this.state.board[square];
-    if (piece && piece.color === this.playerColor) {
-      this.selected = square;
-      this.legalForSelected = getLegalMoves(this.state, square);
-      this.game.events.emit('piece-tapped');
-      this.drawHighlights();
-      return;
-    }
+      if (this.selected !== null) {
+        this.selected = null;
+        this.legalForSelected = [];
+        this.drawHighlights();
+      }
+    } else if (this.phase === 'ai_turn') {
+      // Premove logic
+      if (this.selected !== null) {
+        // If we selected a piece and click a square, queue it as premove
+        if (this.selected === square) {
+          // Cancel selection
+          this.selected = null;
+          this.legalForSelected = [];
+        } else {
+          this.premove = { from: this.selected, to: square };
+          this.selected = null;
+          this.legalForSelected = [];
+        }
+        this.drawHighlights();
+        return;
+      }
 
-    if (this.selected !== null) {
-      this.selected = null;
-      this.legalForSelected = [];
-      this.drawHighlights();
+      const piece = this.state.board[square];
+      if (piece && piece.color === this.playerColor) {
+        this.selected = square;
+        // In AI turn, we don't have "final" legal moves, so we use current state pseudo-moves or just don't show dots.
+        // For simplicity, let's just allow selection and not show dots.
+        this.legalForSelected = [];
+        this.game.events.emit('piece-tapped');
+        this.drawHighlights();
+      } else {
+        // Clear selection or premove
+        this.selected = null;
+        this.premove = null;
+        this.drawHighlights();
+      }
     }
   }
 
@@ -718,6 +781,37 @@ export class PlayScene extends Phaser.Scene {
     this.phase = 'player_turn';
     this.draw();
     this.emitState();
+
+    // Check for premove
+    if (this.premove) {
+      const pm = this.premove;
+      this.premove = null;
+      const legal = getLegalMoves(this.state, pm.from);
+      const matchingMove = legal.find(m => m.to === pm.to);
+      if (matchingMove) {
+        this.premoveTimer?.remove(false);
+        this.premoveTimer = this.time.delayedCall(50, () => {
+          this.premoveTimer = null;
+          if (this.phase !== 'player_turn' || this.promotionPrompt) return;
+          if (matchingMove.promotion) {
+            this.promotionPrompt = { moves: legal.filter(m => m.to === pm.to) };
+            this.draw();
+          } else {
+            this.executeMove(matchingMove);
+          }
+        });
+      } else {
+        this.drawHighlights();
+      }
+    }
+  }
+
+  private cancelPremoveAndSelection() {
+    if (this.premove === null && this.selected === null) return;
+    this.premove = null;
+    this.selected = null;
+    this.legalForSelected = [];
+    this.drawHighlights();
   }
 
   private isTerminal(state: BoardState): boolean {
