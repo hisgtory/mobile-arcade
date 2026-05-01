@@ -1,0 +1,14 @@
+node_modules/
+.expo/
+dist/
+npm-debug.*
+*.jks
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+ios/Pods/
+ios/build/
+android/build/
+android/app/build/
+*.tsbuildinfo

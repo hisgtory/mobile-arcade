@@ -103,9 +103,19 @@
 - 공유 에셋 (`/assets/tiles/`, `/assets/audio/`)
 - `allowedHosts: true` + Bonjour hostname
 
+## 2026-05-01
+
+### Found3 Standalone App (#264)
+- 기존 아케이드 통합 앱에서 `found3`를 독립된 앱으로 분리하기 위한 작업 시작
+- `found3/rn` 디렉토리에 전용 Expo 프로젝트 복구 및 초기화
+- `pnpm-workspace.yaml`에 `found3/rn` 다시 추가
+- `@arcade/lib-found3-react`를 사용하는 기본 `App.tsx` 구현
+- 독립 실행을 위한 `README.md` 및 가이드 작성
+
 ---
 
-## 2026-04-21
+## 2026-04-24
+
 
 ### Documentation
 - 루트 문서를 현재 구조 기준으로 정리

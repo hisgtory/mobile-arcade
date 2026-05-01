@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "name": "Found3",
+    "slug": "found3",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.arcade.found3"
+    },
+    "android": {
+      "package": "com.arcade.found3"
+    }
+  }
+}
