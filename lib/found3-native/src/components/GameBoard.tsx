@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, Text, Modal, TouchableOpacity, Dimensions, ImageBackground, Image } from 'react-native';
+import { StyleSheet, View, Text, Modal, TouchableOpacity, Dimensions, ImageBackground, Animated, Vibration, Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { 
   TileData, 
   SlotItem, 
@@ -39,7 +40,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const [itemCounts, setItemCounts] = useState({ undo: 3, shuffle: 3, expand: 3 });
   const [maxSlot, setMaxSlot] = useState(MAX_SLOT);
   const [elapsedTime, setElapsedTime] = useState(0); 
-  
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -47,106 +49,99 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const horizontalMargin = 20; 
   const boardAvailW = SCREEN_WIDTH - horizontalMargin * 2; 
   const boardAvailH = SCREEN_HEIGHT - 350; 
-  
-  const extraOffset = (config.layers - 1) * 0.5;
-  const effectiveCols = config.cols + extraOffset;
-  const effectiveRows = config.rows + extraOffset;
-  
-  const maxTileW = boardAvailW / (effectiveCols + (effectiveCols - 1) * BASE_TILE_GAP_RATIO);
-  const maxTileH = boardAvailH / (effectiveRows + (effectiveRows - 1) * BASE_TILE_GAP_RATIO);
-  
   const countScale = Math.max(1.0, 1.2 - (config.tileCount / 150));
-  const tileSize = Math.floor(Math.min(maxTileW, maxTileH) * countScale); 
+  const tileSize = Math.floor(Math.min(boardAvailW / (config.cols + 0.5), boardAvailH / (config.rows + 0.5)) * countScale); 
   const gap = Math.floor(tileSize * BASE_TILE_GAP_RATIO);
-
-  const gridWidth = effectiveCols * (tileSize + gap) - gap;
-  const gridHeight = effectiveRows * (tileSize + gap) - gap;
+  const gridWidth = (config.cols + (config.layers - 1) * 0.5) * (tileSize + gap) - gap;
+  const gridHeight = (config.rows + (config.layers - 1) * 0.5) * (tileSize + gap) - gap;
   const actualBoardOffsetX = (SCREEN_WIDTH - gridWidth) / 2;
 
-  useEffect(() => {
-    const newTiles = generateBoard(config).map(t => ({ ...t, isSelectable: true }));
-    const updated = newTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, newTiles) }));
-    setTiles(updated);
-    setSlots([]);
-    setMaxSlot(MAX_SLOT);
-    setElapsedTime(0);
-    undoHistoryRef.current = [];
-    setPhase(GamePhase.PLAYING);
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    Animated.sequence([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.delay(1500),
+      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => setToastMsg(null));
+  }, [toastOpacity]);
 
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setElapsedTime(prev => prev + 1);
-    }, 1000);
-
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [stageId]);
-
-  const handleGameEnd = useCallback((result: 'win' | 'lose') => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setPhase(result === 'win' ? GamePhase.CLEAR : GamePhase.GAMEOVER);
-    const timeUsed = config.timeLimit - elapsedTime; // 혹은 그냥 elapsedTime 전달
-    onGameEnd?.(result, { time: elapsedTime, limit: config.timeLimit });
-  }, [elapsedTime, config.timeLimit, onGameEnd]);
+  const triggerMatchHaptic = useCallback(() => {
+    if (Platform.OS === 'android') {
+      Vibration.vibrate([0, 50, 40, 60, 30, 80, 20, 150]); 
+    } else {
+      const pattern = [0, 60, 110, 170, 240];
+      pattern.forEach((delay, index) => {
+        setTimeout(() => {
+          Haptics.impactAsync(index === pattern.length - 1 ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Medium);
+        }, delay);
+      });
+    }
+  }, []);
 
   const handleTilePress = useCallback((tile: TileData) => {
     if (phase !== GamePhase.PLAYING || !tile) return;
-    
-    undoHistoryRef.current.push({
-      slotItem: { id: tile.id, type: tile.type },
-      tileData: { ...tile }
-    });
+    Vibration.vibrate(35);
+    if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
+    undoHistoryRef.current.push({ slotItem: { id: tile.id, type: tile.type }, tileData: { ...tile } });
     const nextTiles = tiles.filter(t => t && t.id !== tile.id);
-    const updatedTiles = nextTiles.map(t => ({
-      ...t,
-      isSelectable: !isTileBlocked(t, nextTiles)
-    }));
-    
+    const updatedTiles = nextTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, nextTiles) }));
     const result = addToSlotAndMatch(slots, tile, maxSlot);
-    const nextSlots = result.slotItems || [];
-    const matched = result.matched;
-    
-    setTiles(updatedTiles);
-    setSlots(nextSlots);
+    if (result.matched) triggerMatchHaptic();
 
-    if (updatedTiles.length === 0 && nextSlots.length === 0) {
-      handleGameEnd('win');
-    } else if (nextSlots.length >= maxSlot && !matched) {
-      handleGameEnd('lose');
-    }
-  }, [tiles, slots, phase, handleGameEnd, maxSlot]);
+    setTiles(updatedTiles);
+    setSlots(result.slotItems || []);
+    if (updatedTiles.length === 0 && (result.slotItems || []).length === 0) handleGameEnd('win');
+    else if ((result.slotItems || []).length >= maxSlot && !result.matched) handleGameEnd('lose');
+  }, [tiles, slots, phase, handleGameEnd, maxSlot, triggerMatchHaptic]);
 
   const handleUndo = () => {
-    if (itemCounts.undo <= 0 || undoHistoryRef.current.length === 0) return;
+    if (undoHistoryRef.current.length === 0 || itemCounts.undo <= 0) return;
+    Vibration.vibrate(50);
     const lastAction = undoHistoryRef.current.pop()!;
     const { slotItems } = undoLastSlotItem(slots);
     const newTiles = [...tiles, lastAction.tileData];
-    const updatedTiles = newTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, newTiles) }));
-    setTiles(updatedTiles);
+    setTiles(newTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, newTiles) })));
     setSlots(slotItems);
     setItemCounts(prev => ({ ...prev, undo: prev.undo - 1 }));
   };
 
   const handleShuffle = () => {
-    if (itemCounts.shuffle <= 0 || tiles.length === 0) return;
+    if (tiles.length === 0 || itemCounts.shuffle <= 0) return;
+    Vibration.vibrate([0, 30, 30, 30, 30, 50]);
     const shuffled = shuffleBoard(tiles);
-    setTiles(shuffled);
+    setTiles(shuffled.map(t => ({ ...t, isSelectable: !isTileBlocked(t, shuffled) })));
     setItemCounts(prev => ({ ...prev, shuffle: prev.shuffle - 1 }));
   };
 
   const handleExpand = () => {
     if (itemCounts.expand <= 0) return;
+    Vibration.vibrate(100);
     setMaxSlot(prev => prev + 1);
     setItemCounts(prev => ({ ...prev, expand: prev.expand - 1 }));
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+  useEffect(() => {
+    const generated = generateBoard(config);
+    const initialTiles = generated.map(t => ({ ...t, isSelectable: !isTileBlocked(t, generated) }));
+    setTiles(initialTiles);
+    setSlots([]);
+    setMaxSlot(MAX_SLOT);
+    setElapsedTime(0);
+    undoHistoryRef.current = [];
+    setPhase(GamePhase.PLAYING);
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setElapsedTime(v => v + 1), 1000);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [stageId]);
 
-  const sortedTiles = [...tiles].sort((a, b) => a.layer - b.layer);
+  const handleGameEnd = useCallback((res: 'win' | 'lose') => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setPhase(res === 'win' ? GamePhase.CLEAR : GamePhase.GAMEOVER);
+    onGameEnd?.(res, { time: elapsedTime, limit: config.timeLimit });
+  }, [elapsedTime, config.timeLimit, onGameEnd]);
+
+  const formatTime = (s: number) => `${Math.floor(s/60)}:${s%60 < 10 ? '0' : ''}${s%60}`;
 
   return (
     <ImageBackground source={TILE_ASSETS['background']} style={styles.container} resizeMode="cover">
@@ -166,32 +161,28 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           </View>
         </View>
       </Modal>
-
-      {/* Header Area: No ImageBackground, Pure View and Text */}
+      {toastMsg && (
+        <Animated.View style={[styles.toastContainer, { opacity: toastOpacity }]}>
+          <Text style={styles.toastText}>{toastMsg}</Text>
+        </Animated.View>
+      )}
       <View style={styles.header}>
-        <View style={styles.headerSide}>
-           <Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text>
-        </View>
-        <View style={styles.centerContainer}>
-           <Text style={styles.stageText}>STAGE {stageId}</Text>
-        </View>
+        <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text></View>
+        <View style={styles.centerContainer}><Text style={styles.stageText}>STAGE {stageId}</Text></View>
         <View style={[styles.headerSide, { alignItems: 'flex-end' }]}>
           <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}>
             <Text style={styles.settingsIcon}>⚙️</Text>
           </TouchableOpacity>
         </View>
       </View>
-
       <SlotBar slots={slots} maxSlot={maxSlot} />
-
       <View style={styles.boardContainer}>
         <View style={{ width: SCREEN_WIDTH, height: gridHeight, position: 'relative' }}>
-          {sortedTiles.map(tile => (
+          {[...tiles].sort((a,b)=>a.layer-b.layer).map(tile => (
             <Tile key={tile.id} tile={tile} size={tileSize} gap={gap} boardPad={actualBoardOffsetX} onPress={handleTilePress} />
           ))}
         </View>
       </View>
-
       <ItemBar itemCounts={itemCounts} onUndo={handleUndo} onShuffle={handleShuffle} onExpand={handleExpand} />
     </ImageBackground>
   );
@@ -199,15 +190,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingVertical: 10 },
-  header: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 20, 
-    alignItems: 'center', 
-    height: 60, 
-    width: '100%',
-    marginBottom: 5 
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, alignItems: 'center', height: 60, width: '100%', marginBottom: 5 },
   headerSide: { width: 100 },
   timerText: { fontSize: 18, fontWeight: '800', color: '#333' },
   centerContainer: { flex: 1, alignItems: 'center' },
@@ -222,4 +205,6 @@ const styles = StyleSheet.create({
   modalBtnText: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   closeButton: { marginTop: 10, padding: 10 },
   closeButtonText: { color: '#adb5bd', fontSize: 16, fontWeight: '600' },
+  toastContainer: { position: 'absolute', top: SCREEN_HEIGHT / 2 - 25, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 25, zIndex: 9999 },
+  toastText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });

@@ -12,16 +12,11 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 export default function GameScreen({ route, navigation }: Props) {
   const { stageId } = route.params;
 
-  // 안드로이드 뒤로가기 버튼 차단
   useFocusEffect(
     React.useCallback(() => {
-      const onBackPress = () => {
-        // true를 반환하면 뒤로가기 동작을 무시합니다.
-        return true;
-      };
-
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      const onBackPress = () => true;
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove(); // .remove() 사용
     }, [])
   );
 
@@ -37,14 +32,8 @@ export default function GameScreen({ route, navigation }: Props) {
             if (result === 'win' && stats) {
               ProgressService.saveProgress(stageId, stats.time);
             }
-            
             setTimeout(() => {
-              navigation.replace('Result', { 
-                result, 
-                stageId,
-                score: 0,
-                stats
-              });
+              navigation.replace('Result', { result, stageId, score: 0, stats });
             }, 500);
           }} 
           onExit={() => navigation.navigate('Home')}
@@ -56,11 +45,6 @@ export default function GameScreen({ route, navigation }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  safeArea: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: '#000' },
+  safeArea: { flex: 1 },
 });

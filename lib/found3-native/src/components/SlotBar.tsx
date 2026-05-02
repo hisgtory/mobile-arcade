@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, View, Dimensions } from 'react-native';
-import { SlotItem } from '../types';
+import { SlotItem, MAX_SLOT } from '../types';
 import { Tile } from './Tile';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -12,21 +12,20 @@ interface SlotBarProps {
 
 export const SlotBar: React.FC<SlotBarProps> = ({ slots, maxSlot }) => {
   // 화면 너비에 맞춰 슬롯 한 칸의 최대 크기를 동적으로 계산
-  // (화면 너비 - 컨테이너 마진 30 - 내부 패딩) / 최대 슬롯 수
-  const containerPadding = 12;
+  // 컨테이너 패딩을 0으로 설정하여 가용 너비 확보
   const horizontalMargin = 30;
-  const availableWidth = SCREEN_WIDTH - horizontalMargin - (containerPadding * 2);
+  const availableWidth = SCREEN_WIDTH - horizontalMargin;
   
-  // 슬롯 개수가 늘어나면 칸 사이즈를 줄임 (최대 46, 최소 30)
-  const calculatedSlotSize = Math.min(46, Math.floor(availableWidth / maxSlot) - 4);
-  const GAP = Math.min(8, Math.floor(calculatedSlotSize * 0.15));
-  const TILE_SIZE = calculatedSlotSize - 4;
+  const calculatedSlotSize = Math.min(46, Math.floor(availableWidth / maxSlot) - 2);
+  const TILE_SIZE = calculatedSlotSize; // 타일이 슬롯 칸을 꽉 채우도록 함
 
   return (
-    <View style={[styles.container, { padding: containerPadding }]}>
+    <View style={styles.container}>
       <View style={styles.slotGrid}>
         {Array.from({ length: maxSlot }).map((_, index) => {
           const item = slots[index];
+          const isExpandedSlot = index >= MAX_SLOT;
+          
           return (
             <View 
               key={index} 
@@ -35,7 +34,8 @@ export const SlotBar: React.FC<SlotBarProps> = ({ slots, maxSlot }) => {
                 { 
                   width: calculatedSlotSize, 
                   height: calculatedSlotSize, 
-                  marginHorizontal: 2 
+                  marginHorizontal: 1, // 최소한의 구분선
+                  backgroundColor: isExpandedSlot ? '#E3F2FD' : '#F8F9FA'
                 }
               ]}
             >
@@ -56,16 +56,16 @@ export const SlotBar: React.FC<SlotBarProps> = ({ slots, maxSlot }) => {
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFF',
-    borderRadius: 20,
+    borderRadius: 15,
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
-    borderWidth: 1,
-    borderColor: '#F1F3F5',
     alignSelf: 'center',
+    padding: 0, // 패딩 완전 제거
+    overflow: 'hidden', // 내부 요소가 라운드를 벗어나지 않게 처리
   },
   slotGrid: {
     flexDirection: 'row',
@@ -73,8 +73,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   slotItem: {
-    backgroundColor: '#F8F9FA',
-    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },

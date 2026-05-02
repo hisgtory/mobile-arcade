@@ -11,12 +11,12 @@ export default function ResultScreen({ route, navigation }: Props) {
   const { result, stageId, stats } = route.params;
   const isWin = result === 'win';
 
-  // 뒤로가기 차단
+  // 뒤로가기 차단 (최신 remove() 방식 적용)
   useFocusEffect(
     useCallback(() => {
       const onBackPress = () => true;
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
     }, [])
   );
 
