@@ -5,6 +5,14 @@
 import { TileData, StageConfig } from '../types';
 import { isInsideShape } from './shapes';
 
+const OVERLAP_THRESHOLD = 0.25;
+const OVERLAP_SHIFTS: Array<[number, number]> = [
+  [0, 0],
+  [0.25, 0], [0, 0.25], [0.25, 0.25],
+  [0.5, 0], [0, 0.5], [0.5, 0.25], [0.25, 0.5],
+  [0.5, 0.5],
+];
+
 let _nextId = 0;
 function nextTileId(): string {
   return `tile_${_nextId++}`;
@@ -75,11 +83,32 @@ export function generateBoard(config: StageConfig): TileData[] {
       const pos = positionsToUse[i % positionsToUse.length];
       const offset = layer * 0.5;
       const jitter = Math.floor(Math.random() * 2) * 0.25;
+      const baseCol = pos.col + offset + jitter;
+      const baseRow = pos.row + offset + jitter;
+
+      // 같은 레이어 내 75% 이상 겹침 방지: dx<0.25 && dy<0.25 인 경우 양수 방향으로 shift
+      let finalCol = baseCol;
+      let finalRow = baseRow;
+      for (const [dc, dr] of OVERLAP_SHIFTS) {
+        const c = baseCol + dc;
+        const r = baseRow + dr;
+        const conflict = tiles.some(t =>
+          t.layer === layer &&
+          Math.abs(t.col - c) < OVERLAP_THRESHOLD &&
+          Math.abs(t.row - r) < OVERLAP_THRESHOLD
+        );
+        if (!conflict) {
+          finalCol = c;
+          finalRow = r;
+          break;
+        }
+      }
+
       tiles.push({
         id: nextTileId(),
         type: types[typeIdx],
-        col: pos.col + offset + jitter,
-        row: pos.row + offset + jitter,
+        col: finalCol,
+        row: finalRow,
         layer,
       });
       typeIdx++;
