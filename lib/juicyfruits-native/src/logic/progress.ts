@@ -27,6 +27,9 @@ export const ProgressService = {
     }
   },
 
+  /**
+   * 새로운 진행도를 저장하고 순차 검증 로직 기반의 보상을 반환합니다.
+   */
   saveProgress: async (stageId: number, timeUsed: number) => {
     try {
       const current = await ProgressService.loadProgress();
@@ -34,8 +37,22 @@ export const ProgressService = {
       const prevBest = current.bestTimes[stageId];
       const nextBest = prevBest ? Math.min(prevBest, timeUsed) : timeUsed;
       
-      // 랜덤 코인 보상 범위를 5 ~ 10으로 축소
-      const rewardCoins = Math.floor(Math.random() * (10 - 5 + 1)) + 5;
+      /**
+       * [순차 검증형 보상 로직]
+       * - 시작: 5골드
+       * - 각 단계 성공 확률: 73.6% (0.736)
+       * - 15단계를 모두 통과하여 20골드에 도달할 확률: 0.736^15 ≒ 0.01 (1/100)
+       */
+      let rewardCoins = 5;
+      const passProbability = 0.736;
+      
+      while (rewardCoins < 20) {
+        if (Math.random() < passProbability) {
+          rewardCoins++;
+        } else {
+          break; // 검증 실패 시 현재 값에서 멈춤
+        }
+      }
       
       const newProgress: GameProgress = {
         ...current,
@@ -71,6 +88,17 @@ export const ProgressService = {
     } catch (e) {
       console.error('Failed to update coins', e);
       return 0;
+    }
+  },
+
+  setHighestStage: async (stage: number) => {
+    try {
+      const current = await ProgressService.loadProgress();
+      const newProgress: GameProgress = { ...current, highestStage: stage };
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProgress));
+      return newProgress;
+    } catch (e) {
+      console.error('Failed to set highest stage', e);
     }
   }
 };

@@ -23,8 +23,8 @@ export const AD_UNIT_IDS = {
   REWARDED: __DEV__
     ? TestIds.REWARDED
     : Platform.select({
-        android: 'ca-app-pub-6129946475801358/1209516797', // 보상형 광고 ID 적용
-        ios: TestIds.REWARDED, // iOS는 아직 없으므로 테스트 ID
+        android: 'ca-app-pub-6129946475801358/1209516797', 
+        ios: TestIds.REWARDED, 
       }) || TestIds.REWARDED,
 };
 
@@ -36,8 +36,7 @@ export const interstitial = InterstitialAd.createForAdRequest(AD_UNIT_IDS.INTERS
 });
 
 /**
- * 보상형 광고 인스턴스 생성 함수
- * (보상형은 상태 관리가 중요하므로 필요할 때마다 생성하거나 전역 인스턴스를 잘 관리해야 합니다)
+ * 보상형 광고 인스턴스
  */
 export const rewarded = RewardedAd.createForAdRequest(AD_UNIT_IDS.REWARDED, {
   keywords: ['games', 'puzzle', 'fruits'],

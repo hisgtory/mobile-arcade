@@ -24,15 +24,7 @@ import { TILE_ASSETS } from '../assets';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BASE_TILE_GAP_RATIO = 0.05;
-
 const ITEM_PRICES = { undo: 50, shuffle: 100, magnet: 150 };
-
-interface GameBoardProps {
-  stageId: number;
-  onGameEnd?: (result: 'win' | 'lose', stats?: { time: number, limit: number }) => void;
-  onExit?: () => void;
-  onRestart?: () => void;
-}
 
 export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit, onRestart }) => {
   const insets = useSafeAreaInsets();
@@ -54,27 +46,28 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const horizontalMargin = 25; 
-  const boardAvailW = SCREEN_WIDTH - horizontalMargin * 2; 
-  const boardAvailH = SCREEN_HEIGHT - 450 - insets.top - insets.bottom; 
+  // --- Rigid Layout Constants ---
+  const SAFE_TOP = insets.top || 10;
+  const HEADER_H = 60 + SAFE_TOP;
+  const SLOT_BAR_H = 100;
+  const BOTTOM_AREA_H = 180 + (insets.bottom || 10);
+  
+  const boardAvailH = SCREEN_HEIGHT - HEADER_H - SLOT_BAR_H - BOTTOM_AREA_H - 20;
+  const boardAvailW = SCREEN_WIDTH - 30; 
+
   const gridEffectiveCols = config.cols + (config.layers - 1) * 0.5;
   const gridEffectiveRows = config.rows + (config.layers - 1) * 0.5;
-  const tileSize = Math.floor(Math.min(boardAvailW / gridEffectiveCols, boardAvailH / gridEffectiveRows));
+  
+  // Calculate tileSize with an aggressive 1.4x scale for visibility
+  const baseTileSize = Math.floor(Math.min(boardAvailW / gridEffectiveCols, boardAvailH / gridEffectiveRows));
+  const tileSize = Math.floor(baseTileSize * 1.4);
+  
   const gap = Math.floor(tileSize * BASE_TILE_GAP_RATIO);
   const gridWidth = gridEffectiveCols * (tileSize + gap) - gap;
   const gridHeight = gridEffectiveRows * (tileSize + gap) - gap;
-  const actualBoardOffsetX = (SCREEN_WIDTH - gridWidth) / 2;
-
-  const showToast = useCallback((msg: string) => {
-    setToastMsg(msg);
-    Animated.sequence([
-      Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.delay(1200),
-      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
-    ]).start(() => setToastMsg(null));
-  }, [toastOpacity]);
 
   const handleTilePress = useCallback((tile: TileData) => {
+    console.log('Tile pressed:', tile.id);
     if (phase !== GamePhase.PLAYING || !tile) return;
     Vibration.vibrate(35);
     if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -99,7 +92,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
 
   const buyItem = async (itemType: keyof typeof ITEM_PRICES) => {
     const price = ITEM_PRICES[itemType];
-    if (coins < price) { showToast("Not enough coins!"); Vibration.vibrate([0, 30, 50, 30]); return; }
+    if (coins < price) { Vibration.vibrate([0, 30, 50, 30]); return; }
     const newCoins = await ProgressService.updateCoins(-price);
     setCoins(newCoins);
     const newCounts = { ...itemCounts, [itemType]: itemCounts[itemType] + 1 };
@@ -121,7 +114,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     if (targetType === null) {
       for (const type in typeCountsOnBoard) { if (typeCountsOnBoard[type].length >= 3) { targetType = Number(type); break; } }
     }
-    if (targetType === null) { showToast("No triplets available!"); return; }
+    if (targetType === null) return;
     const neededFromBoard = 3 - slots.filter(s => s.type === targetType).length;
     const targetTilesFromBoard = typeCountsOnBoard[targetType].slice(0, neededFromBoard);
     const removedIds = targetTilesFromBoard.map(t => t.id);
@@ -175,7 +168,53 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
 
   return (
     <ImageBackground source={TILE_ASSETS['background']} style={styles.background} resizeMode="cover">
-      <Modal visible={showSettings} transparent animationType="fade">
+      <View style={styles.fullContainer} pointerEvents="box-none">
+        {/* Header - Z-index high and explicit Slop */}
+        <View style={[styles.header, { paddingTop: SAFE_TOP + 5 }]} pointerEvents="box-none">
+            <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text></View>
+            <View style={styles.centerContainer}><Text style={styles.stageText}>{stageId}</Text></View>
+            <View style={[styles.headerSide, styles.headerRight]}>
+              <Pressable style={({ pressed }) => [styles.coinBadge, pressed && styles.badgePressed]} onPress={() => setShowShop(true)}>
+                <Text style={styles.coinIcon}>🪙</Text>
+                <Text style={styles.coinText}>{coins.toLocaleString()}</Text>
+              </Pressable>
+              <TouchableOpacity 
+                style={styles.settingsButton} 
+                onPress={() => setShowSettings(true)}
+                hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+              >
+                <Text style={styles.settingsIcon}>⚙️</Text>
+              </TouchableOpacity>
+            </View>
+        </View>
+
+        <View style={styles.slotBarArea} pointerEvents="box-none">
+          <SlotBar slots={slots} maxSlot={maxSlot} />
+        </View>
+        
+        {/* Board Container - pointerEvents="box-none" ensures children (tiles) get touches */}
+        <View style={styles.boardContainer} pointerEvents="box-none">
+          <View style={{ width: gridWidth, height: gridHeight, position: 'relative' }} pointerEvents="box-none">
+            {[...tiles].sort((a,b)=>a.layer-b.layer).map(tile => (
+              <Tile key={tile.id} tile={tile} size={tileSize} gap={gap} boardPad={0} onPress={handleTilePress} />
+            ))}
+          </View>
+        </View>
+        
+        <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom, 15) }]} pointerEvents="box-none">
+          <View style={styles.adWrapper}>
+            <BannerAd
+                unitId={AD_UNIT_IDS.BANNER}
+                size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+            />
+          </View>
+          <ItemBar itemCounts={itemCounts} onUndo={() => {}} onShuffle={() => {}} onMagnet={handleMagnet} />
+        </View>
+      </View>
+
+      {/* Modals placed outside main flex flow */}
+      <Modal visible={showSettings} transparent animationType="fade" onRequestClose={() => setShowSettings(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.duoModalDepth}>
             <View style={styles.duoModalInner}>
@@ -190,7 +229,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
         </View>
       </Modal>
 
-      <Modal visible={showShop} transparent animationType="slide">
+      <Modal visible={showShop} transparent animationType="slide" onRequestClose={() => setShowShop(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.duoModalDepth, { width: '90%' }]}>
             <View style={styles.duoModalInner}>
@@ -201,11 +240,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
                   <View key={key} style={styles.shopItem}>
                     <Image source={TILE_ASSETS[key === 'magnet' ? 'ui_magnet' : `item_${key}`]} style={styles.shopItemIcon} />
                     <View style={styles.shopItemInfo}><Text style={styles.shopItemName}>{key.toUpperCase()}</Text><Text style={styles.shopItemPrice}>🪙 {price}</Text></View>
-                    <View style={styles.buyBtnFixedWrapper}>
-                      <Pressable style={({ pressed }) => [styles.buyBtn, pressed && styles.duoBtnPressed]} onPress={() => buyItem(key as any)}>
-                        <View style={styles.buyBtnInner}><Text style={styles.buyBtnText}>BUY</Text></View>
-                      </Pressable>
-                    </View>
+                    <View style={styles.buyBtnFixedWrapper}><Pressable style={({ pressed }) => [styles.buyBtn, pressed && styles.duoBtnPressed]} onPress={() => buyItem(key as any)}><View style={styles.buyBtnInner}><Text style={styles.buyBtnText}>BUY</Text></View></Pressable></View>
                   </View>
                 ))}
               </View>
@@ -216,104 +251,55 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
       </Modal>
 
       {toastMsg && <Animated.View style={[styles.toastContainer, { opacity: toastOpacity }]}><Text style={styles.toastText}>{toastMsg}</Text></Animated.View>}
-
-      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
-        <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text></View>
-        <View style={styles.centerContainer}><Text style={styles.stageText}>{stageId}</Text></View>
-        <View style={[styles.headerSide, styles.headerRight]}>
-          <View style={styles.coinBadgeFixedWrapper}>
-            <Pressable style={({ pressed }) => [styles.coinBadge, pressed && styles.badgePressed]} onPress={() => setShowShop(true)}>
-              <Text style={styles.coinIcon}>🪙</Text>
-              <Text style={styles.coinText}>{coins.toLocaleString()}</Text>
-            </Pressable>
-          </View>
-          <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}><Text style={styles.settingsIcon}>⚙️</Text></TouchableOpacity>
-        </View>
-      </View>
-
-      <SlotBar slots={slots} maxSlot={maxSlot} />
-      <View style={styles.boardContainer}>
-        <View style={{ width: SCREEN_WIDTH, height: gridHeight, position: 'relative' }}>
-          {[...tiles].sort((a,b)=>a.layer-b.layer).map(tile => (<Tile key={tile.id} tile={tile} size={tileSize} gap={gap} boardPad={actualBoardOffsetX} onPress={handleTilePress} />))}
-        </View>
-      </View>
-      
-      <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom, 10) }]}>
-        <View style={styles.adContainer}><BannerAd unitId={AD_UNIT_IDS.BANNER} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} requestOptions={{ requestNonPersonalizedAdsOnly: true }} /></View>
-        <ItemBar 
-          itemCounts={itemCounts} 
-          onUndo={() => {
-            if (undoHistoryRef.current.length === 0 || itemCounts.undo <= 0) return;
-            Vibration.vibrate(50);
-            const lastAction = undoHistoryRef.current.pop()!;
-            const { slotItems } = undoLastSlotItem(slots);
-            const newTiles = [...tiles, lastAction.tileData];
-            setTiles(newTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, newTiles) })));
-            setSlots(slotItems);
-            updateItems({ ...itemCounts, undo: itemCounts.undo - 1 });
-          }} 
-          onShuffle={() => {
-            if (tiles.length === 0 || itemCounts.shuffle <= 0) return;
-            Vibration.vibrate([0, 30, 30, 30, 30, 50]);
-            setTiles(shuffleBoard(tiles).map(t => ({ ...t, isSelectable: !isTileBlocked(t, tiles) })));
-            updateItems({ ...itemCounts, shuffle: itemCounts.shuffle - 1 });
-          }} 
-          onMagnet={handleMagnet} 
-        />
-      </View>
     </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
   background: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, alignItems: 'center', marginBottom: 5 },
+  fullContainer: { flex: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, alignItems: 'center', width: '100%', zIndex: 100 },
   headerSide: { width: 120 },
   headerRight: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   timerText: { fontSize: 18, fontFamily: 'Nunito-Black', color: '#333' },
   centerContainer: { flex: 1, alignItems: 'center' },
   stageText: { fontSize: 32, fontFamily: 'Fredoka-Bold', color: '#333' },
   
-  coinBadgeFixedWrapper: { height: 36, justifyContent: 'center' },
   coinBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E5A500', paddingBottom: 3, borderRadius: 15, marginRight: 10 },
   badgePressed: { paddingBottom: 0, marginTop: 3 },
   coinIcon: { fontSize: 16, marginLeft: 10, marginRight: 4, backgroundColor: '#FFD700', borderRadius: 12, padding: 2 },
   coinText: { fontSize: 14, fontFamily: 'Nunito-Bold', color: '#FFF', marginRight: 10 },
 
-  settingsButton: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
-  settingsIcon: { fontSize: 24 },
-  boardContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  bottomSection: { width: '100%' },
+  settingsButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center', zIndex: 200 },
+  settingsIcon: { fontSize: 28 },
+
+  slotBarArea: { width: '100%', height: 100, justifyContent: 'center', alignItems: 'center' },
+  boardContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', zIndex: 10 },
+  bottomSection: { width: '100%', zIndex: 100 },
+  adWrapper: { width: '100%', height: 60, justifyContent: 'center', alignItems: 'center' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   duoModalDepth: { width: '85%', backgroundColor: '#D7D7D7', borderRadius: 32, paddingBottom: 8 },
   duoModalInner: { backgroundColor: '#FFF', borderRadius: 32, padding: 30, alignItems: 'center', borderWidth: 2, borderColor: '#D7D7D7' },
-  
   modalTitle: { fontSize: 24, fontFamily: 'Fredoka-Bold', marginBottom: 20, color: '#333', textAlign: 'center' },
-  
   settingRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingHorizontal: 10 },
   settingLabel: { fontSize: 16, fontFamily: 'Nunito-Black', color: '#4B4B4B' },
   switchTrack: { width: 56, height: 32, borderRadius: 16, padding: 2, justifyContent: 'center' },
   switchThumb: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF' },
-  
   volumeController: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: 140 },
   volBtn: { width: 32, height: 32, backgroundColor: '#F7F7F7', borderRadius: 10, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#E5E5E5' },
   volBtnText: { fontSize: 20, fontFamily: 'Nunito-Black', color: '#4B4B4B' },
   volProgressBg: { flex: 1, height: 10, backgroundColor: '#E5E5E5', borderRadius: 5, marginHorizontal: 8, overflow: 'hidden' },
   volProgressFill: { height: '100%', backgroundColor: '#1CB0F6' },
-  
   buttonFixedWrapper: { width: '100%', height: 58, justifyContent: 'center' },
   duoBtnSecondary: { height: 50, backgroundColor: '#D7D7D7', borderRadius: 16, paddingBottom: 4 },
   duoBtnSecondaryInner: { flex: 1, backgroundColor: '#FFF', borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#E5E5E5' },
   duoBtnSecondaryText: { color: '#AFAFAF', fontFamily: 'Fredoka-Bold', fontSize: 16 },
   duoBtnPressed: { paddingBottom: 0, marginTop: 4 },
-
   closeLink: { marginTop: 10, alignSelf: 'center', padding: 10 },
   closeLinkText: { color: '#adb5bd', fontFamily: 'Nunito-Bold', fontSize: 14 },
-  
   toastContainer: { position: 'absolute', top: SCREEN_HEIGHT / 2, alignSelf: 'center', backgroundColor: '#333', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 20, zIndex: 9999 },
   toastText: { color: '#FFF', fontFamily: 'Nunito-Bold', fontSize: 15 },
-  
   shopCoinText: { fontSize: 18, fontFamily: 'Fredoka-Bold', color: '#1CB0F6', marginBottom: 25, textAlign: 'center' },
   shopItemList: { width: '100%', marginBottom: 10 },
   shopItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFF', padding: 12, borderRadius: 20, marginBottom: 12, borderWidth: 2, borderColor: '#E5E5E5' },
@@ -321,10 +307,15 @@ const styles = StyleSheet.create({
   shopItemInfo: { flex: 1, marginLeft: 12 },
   shopItemName: { fontSize: 16, fontFamily: 'Fredoka-Bold', color: '#333' },
   shopItemPrice: { fontSize: 13, fontFamily: 'Nunito-Bold', color: '#adb5bd' },
-  
   buyBtnFixedWrapper: { width: 70, height: 44, justifyContent: 'center' },
   buyBtn: { width: 70, height: 40, backgroundColor: '#1899D6', borderRadius: 12, paddingBottom: 3 },
   buyBtnInner: { flex: 1, backgroundColor: '#1CB0F6', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   buyBtnText: { color: '#FFF', fontFamily: 'Fredoka-Bold', fontSize: 14 },
-  adContainer: { width: '100%', alignItems: 'center', marginBottom: 10 },
 });
+
+interface GameBoardProps {
+  stageId: number;
+  onGameEnd?: (result: 'win' | 'lose', stats?: { time: number, limit: number }) => void;
+  onExit?: () => void;
+  onRestart?: () => void;
+}
