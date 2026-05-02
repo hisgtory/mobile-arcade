@@ -22,6 +22,13 @@ import { TILE_ASSETS } from '../assets';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BASE_TILE_GAP_RATIO = 0.05;
 
+// 아이템별 가격 설정
+const ITEM_PRICES = {
+  undo: 50,
+  shuffle: 100,
+  magnet: 150
+};
+
 interface GameBoardProps {
   stageId: number;
   onGameEnd?: (result: 'win' | 'lose', stats?: { time: number, limit: number }) => void;
@@ -40,6 +47,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const [slots, setSlots] = useState<SlotItem[]>([]);
   const [phase, setPhase] = useState<GamePhase>(GamePhase.PLAYING);
   const [showSettings, setShowSettings] = useState(false);
+  const [showShop, setShowShop] = useState(false); // 상점 상태
   const [itemCounts, setItemCounts] = useState(DEFAULT_ITEM_COUNTS);
   const [coins, setCoins] = useState(0);
   const [maxSlot, setMaxSlot] = useState(MAX_SLOT);
@@ -52,7 +60,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Layout
   const horizontalMargin = 25; 
   const boardAvailW = SCREEN_WIDTH - horizontalMargin * 2; 
   const boardAvailH = SCREEN_HEIGHT - 380; 
@@ -68,7 +75,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     setToastMsg(msg);
     Animated.sequence([
       Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.delay(1500),
+      Animated.delay(1200),
       Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
     ]).start(() => setToastMsg(null));
   }, [toastOpacity]);
@@ -104,6 +111,25 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const updateItems = async (newCounts: any) => {
     setItemCounts(newCounts);
     await ProgressService.updateItemCounts(newCounts);
+  };
+
+  // 상점에서 아이템 구매 처리
+  const buyItem = async (itemType: keyof typeof ITEM_PRICES) => {
+    const price = ITEM_PRICES[itemType];
+    if (coins < price) {
+      showToast("Not enough coins!");
+      Vibration.vibrate([0, 30, 50, 30]);
+      return;
+    }
+
+    const newCoins = await ProgressService.updateCoins(-price);
+    setCoins(newCoins);
+    
+    const newCounts = { ...itemCounts, [itemType]: itemCounts[itemType] + 1 };
+    await updateItems(newCounts);
+    
+    showToast(`Purchased 1 ${itemType.toUpperCase()}!`);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const handleMagnet = () => {
@@ -168,7 +194,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       const progress = await ProgressService.loadProgress();
       setItemCounts(progress.itemCounts);
       setCoins(progress.coins);
-
       const generated = generateBoard(config);
       setTiles(generated.map(t => ({ ...t, isSelectable: !isTileBlocked(t, generated) })));
       setSlots([]);
@@ -196,6 +221,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
 
   return (
     <ImageBackground source={TILE_ASSETS['background']} style={styles.container} resizeMode="cover">
+      {/* Settings Modal */}
       <Modal visible={showSettings} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -223,6 +249,58 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         </View>
       </Modal>
 
+      {/* Shop Modal */}
+      <Modal visible={showShop} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, styles.shopContent]}>
+            <Text style={styles.modalTitle}>FRUIT SHOP</Text>
+            <Text style={styles.shopCoinText}>Your Coins: 🪙 {coins.toLocaleString()}</Text>
+            
+            <View style={styles.shopItemList}>
+              {/* Buy Undo */}
+              <View style={styles.shopItem}>
+                <Image source={TILE_ASSETS['item_undo']} style={styles.shopItemIcon} />
+                <View style={styles.shopItemInfo}>
+                   <Text style={styles.shopItemName}>UNDO</Text>
+                   <Text style={styles.shopItemPrice}>🪙 {ITEM_PRICES.undo}</Text>
+                </View>
+                <TouchableOpacity style={styles.buyBtn} onPress={() => buyItem('undo')}>
+                   <Text style={styles.buyBtnText}>BUY</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Buy Shuffle */}
+              <View style={styles.shopItem}>
+                <Image source={TILE_ASSETS['item_shuffle']} style={styles.shopItemIcon} />
+                <View style={styles.shopItemInfo}>
+                   <Text style={styles.shopItemName}>SHUFFLE</Text>
+                   <Text style={styles.shopItemPrice}>🪙 {ITEM_PRICES.shuffle}</Text>
+                </View>
+                <TouchableOpacity style={styles.buyBtn} onPress={() => buyItem('shuffle')}>
+                   <Text style={styles.buyBtnText}>BUY</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Buy Magnet */}
+              <View style={styles.shopItem}>
+                <Image source={TILE_ASSETS['ui_magnet']} style={styles.shopItemIcon} />
+                <View style={styles.shopItemInfo}>
+                   <Text style={styles.shopItemName}>MAGNET</Text>
+                   <Text style={styles.shopItemPrice}>🪙 {ITEM_PRICES.magnet}</Text>
+                </View>
+                <TouchableOpacity style={styles.buyBtn} onPress={() => buyItem('magnet')}>
+                   <Text style={styles.buyBtnText}>BUY</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowShop(false)}>
+              <Text style={styles.closeButtonText}>BACK TO GAME</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       {toastMsg && (
         <Animated.View style={[styles.toastContainer, { opacity: toastOpacity }]}>
           <Text style={styles.toastText}>{toastMsg}</Text>
@@ -230,17 +308,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       )}
 
       <View style={styles.header}>
-        <View style={styles.headerSide}>
-           <Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text>
-        </View>
-        <View style={styles.centerContainer}>
-           <Text style={styles.stageText}>{stageId}</Text>
-        </View>
+        <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text></View>
+        <View style={styles.centerContainer}><Text style={styles.stageText}>{stageId}</Text></View>
         <View style={[styles.headerSide, styles.headerRight]}>
-          <View style={styles.coinBadge}>
+          <TouchableOpacity style={styles.coinBadge} onPress={() => { setShowShop(true); Vibration.vibrate(30); }}>
             <Text style={styles.coinIcon}>🪙</Text>
             <Text style={styles.coinText}>{coins.toLocaleString()}</Text>
-          </View>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}>
             <Text style={styles.settingsIcon}>⚙️</Text>
           </TouchableOpacity>
@@ -258,7 +332,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
       <ItemBar 
         itemCounts={itemCounts} 
         onUndo={() => {
-           if (undoHistoryRef.current.length === 0 || itemCounts.undo <= 0) return;
+           if (undoHistoryRef.current.length === 0 || itemCounts.undo <= 0) {
+             if (itemCounts.undo <= 0) showToast("No more UNDO items!");
+             return;
+           }
            Vibration.vibrate(50);
            const lastAction = undoHistoryRef.current.pop()!;
            const { slotItems } = undoLastSlotItem(slots);
@@ -268,10 +345,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
            updateItems({ ...itemCounts, undo: itemCounts.undo - 1 });
         }} 
         onShuffle={() => {
-          if (tiles.length === 0 || itemCounts.shuffle <= 0) return;
+          if (tiles.length === 0 || itemCounts.shuffle <= 0) {
+            if (itemCounts.shuffle <= 0) showToast("No more SHUFFLE items!");
+            return;
+          }
           Vibration.vibrate([0, 30, 30, 30, 30, 50]);
-          const shuffled = shuffleBoard(tiles);
-          setTiles(shuffled.map(t => ({ ...t, isSelectable: !isTileBlocked(t, shuffled) })));
+          setTiles(shuffleBoard(tiles).map(t => ({ ...t, isSelectable: !isTileBlocked(t, tiles) })));
           updateItems({ ...itemCounts, shuffle: itemCounts.shuffle - 1 });
         }} 
         onMagnet={handleMagnet} 
@@ -312,4 +391,15 @@ const styles = StyleSheet.create({
   closeButtonText: { color: '#adb5bd', fontSize: 16, fontWeight: '600' },
   toastContainer: { position: 'absolute', top: SCREEN_HEIGHT / 2 - 25, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 25, zIndex: 9999 },
   toastText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
+  // Shop Styles
+  shopContent: { width: '90%', paddingVertical: 40 },
+  shopCoinText: { fontSize: 20, fontWeight: '800', color: '#4DABF7', marginBottom: 30 },
+  shopItemList: { width: '100%', marginBottom: 20 },
+  shopItem: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8F9FA', padding: 15, borderRadius: 20, marginBottom: 15, borderWidth: 1, borderColor: '#F1F3F5' },
+  shopItemIcon: { width: 50, height: 50 },
+  shopItemInfo: { flex: 1, marginLeft: 15 },
+  shopItemName: { fontSize: 16, fontWeight: '900', color: '#333' },
+  shopItemPrice: { fontSize: 14, fontWeight: 'bold', color: '#adb5bd', marginTop: 2 },
+  buyBtn: { backgroundColor: '#4DABF7', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 15 },
+  buyBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 14 },
 });

@@ -16,7 +16,7 @@ export default function GameScreen({ route, navigation }: Props) {
     React.useCallback(() => {
       const onBackPress = () => true;
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => subscription.remove(); // .remove() 사용
+      return () => subscription.remove();
     }, [])
   );
 
@@ -28,12 +28,21 @@ export default function GameScreen({ route, navigation }: Props) {
       >
         <GameBoard 
           stageId={stageId} 
-          onGameEnd={(result, stats) => {
+          onGameEnd={async (result, stats) => {
+            let reward = 0;
             if (result === 'win' && stats) {
-              ProgressService.saveProgress(stageId, stats.time);
+              const res = await ProgressService.saveProgress(stageId, stats.time);
+              reward = res?.rewardCoins ?? 0;
             }
+            
             setTimeout(() => {
-              navigation.replace('Result', { result, stageId, score: 0, stats });
+              navigation.replace('Result', { 
+                result, 
+                stageId,
+                score: 0,
+                stats,
+                rewardCoins: reward
+              });
             }, 500);
           }} 
           onExit={() => navigation.navigate('Home')}

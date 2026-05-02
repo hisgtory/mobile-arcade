@@ -13,7 +13,7 @@ export const ProgressService = {
           highestStage: parsed.highestStage ?? 1,
           bestTimes: parsed.bestTimes ?? {},
           itemCounts: parsed.itemCounts ?? { ...DEFAULT_ITEM_COUNTS },
-          coins: parsed.coins ?? 100 // 기본 100코인 지급
+          coins: parsed.coins ?? 100 
         };
       }
       return { 
@@ -27,6 +27,9 @@ export const ProgressService = {
     }
   },
 
+  /**
+   * 새로운 진행도를 저장하고 보상 코인을 반환합니다.
+   */
   saveProgress: async (stageId: number, timeUsed: number) => {
     try {
       const current = await ProgressService.loadProgress();
@@ -34,18 +37,21 @@ export const ProgressService = {
       const prevBest = current.bestTimes[stageId];
       const nextBest = prevBest ? Math.min(prevBest, timeUsed) : timeUsed;
       
-      // 스테이지 클리어 시 50코인 보너스
+      // 랜덤 코인 보상 (5 ~ 100)
+      const rewardCoins = Math.floor(Math.random() * (100 - 5 + 1)) + 5;
+      
       const newProgress: GameProgress = {
         ...current,
         highestStage: nextStage,
         bestTimes: { ...current.bestTimes, [stageId]: nextBest },
-        coins: current.coins + 50
+        coins: current.coins + rewardCoins
       };
 
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newProgress));
-      return newProgress;
+      return { newProgress, rewardCoins }; // 보상 액수를 반환
     } catch (e) {
       console.error('Failed to save progress', e);
+      return null;
     }
   },
 

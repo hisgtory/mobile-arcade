@@ -19,6 +19,7 @@ export type RootStackParamList = {
     stageId: number;
     score: number;
     stats?: { time: number, limit: number };
+    rewardCoins?: number;
   };
 };
 
