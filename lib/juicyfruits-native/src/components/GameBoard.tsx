@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, alignItems: 'center' },
   stageText: { fontSize: 32, fontFamily: 'Fredoka-Bold', color: '#333' },
   coinBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E5A500', paddingBottom: 3, borderRadius: 15, marginRight: 8, paddingHorizontal: 10, height: 36 },
-  coinIcon: { fontSize: 16, marginRight: 4, backgroundColor: '#FFD700', borderRadius: 12, padding: 2 },
+  coinIcon: { fontSize: 16, marginRight: 4 },
   coinText: { fontSize: 14, fontFamily: 'Nunito-Bold', color: '#FFF' },
   settingsButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   settingsIcon: { fontSize: 28 },
