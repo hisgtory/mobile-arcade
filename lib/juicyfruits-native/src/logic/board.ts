@@ -74,7 +74,7 @@ export function generateBoard(config: StageConfig): TileData[] {
     for (let i = 0; i < count; i++) {
       const pos = positionsToUse[i % positionsToUse.length];
       const offset = layer * 0.5;
-      const jitter = (Math.floor(Math.random() * 3) - 1) * 0.25;
+      const jitter = Math.floor(Math.random() * 2) * 0.25;
       tiles.push({
         id: nextTileId(),
         type: types[typeIdx],

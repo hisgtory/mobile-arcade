@@ -4,6 +4,7 @@ import { InterstitialAd, RewardedAd, TestIds } from 'react-native-google-mobile-
 /**
  * 광고 단위 ID 관리
  * 로컬 개발 환경(__DEV__)에서는 안전을 위해 항상 TestIds를 사용합니다.
+ * 실제 폰트/레이아웃 테스트 시 "Test Ad" 배너가 보여야 정상입니다.
  */
 export const AD_UNIT_IDS = {
   BANNER: __DEV__ 
