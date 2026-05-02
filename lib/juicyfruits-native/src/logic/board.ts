@@ -47,13 +47,31 @@ function distributeTilesAcrossLayers(totalTiles: number, layerCount: number): nu
 }
 
 export function generateBoard(config: StageConfig): TileData[] {
-  const { typeCount, cols, rows, layers, shape = 'rect' } = config;
-  const tileCount = typeCount * 3;
+  const { typeCount, cols, rows, layers, shape = 'rect', tileCount: configTileCount } = config;
+  // setMultiplier 반영: stage.ts가 계산한 tileCount(=typeCount*3*setMultiplier)를 사용
+  const setMultiplier = Math.max(1, Math.round(configTileCount / (typeCount * 3)));
+  const tileCount = typeCount * 3 * setMultiplier;
+
   const types: number[] = [];
-  for (let t = 0; t < typeCount; t++) types.push(t, t, t);
+  for (let t = 0; t < typeCount; t++) {
+    for (let s = 0; s < setMultiplier; s++) types.push(t, t, t);
+  }
   shuffle(types);
 
   const layerCounts = distributeTilesAcrossLayers(tileCount, layers);
+
+  // Solvability 휴리스틱: layer 0의 첫 3개 배치는 같은 타입 → 초기 매칭 보장 (즉시 데드락 방지)
+  if (layerCounts[0] >= 3 && types.length >= 3) {
+    const targetType = types[0];
+    let placed = 1;
+    for (let i = 1; i < types.length && placed < 3; i++) {
+      if (types[i] === targetType) {
+        if (i !== placed) [types[placed], types[i]] = [types[i], types[placed]];
+        placed++;
+      }
+    }
+  }
+
   let typeIdx = 0;
   const tiles: TileData[] = [];
 
