@@ -52,23 +52,24 @@ export function generateBoard(config: StageConfig): TileData[] {
   const setMultiplier = Math.max(1, Math.round(configTileCount / (typeCount * 3)));
   const tileCount = typeCount * 3 * setMultiplier;
 
-  const types: number[] = [];
-  for (let t = 0; t < typeCount; t++) {
-    for (let s = 0; s < setMultiplier; s++) types.push(t, t, t);
-  }
-  shuffle(types);
-
   const layerCounts = distributeTilesAcrossLayers(tileCount, layers);
 
-  // Solvability 휴리스틱: layer 0의 첫 3개 배치는 같은 타입 → 초기 매칭 보장 (즉시 데드락 방지)
-  if (layerCounts[0] >= 3 && types.length >= 3) {
-    const targetType = types[0];
-    let placed = 1;
-    for (let i = 1; i < types.length && placed < 3; i++) {
-      if (types[i] === targetType) {
-        if (i !== placed) [types[placed], types[i]] = [types[i], types[placed]];
-        placed++;
-      }
+  // Solvability 휴리스틱: 매칭 그룹(같은 타입 3개)을 한 레이어 안에 통째로 배치.
+  // → 어떤 타입이든 같은 레이어 안에서 자체 매칭 가능 → 데드락 위험 최소화
+  // 전제: layerCounts[i]는 모두 3의 배수 (distributeTilesAcrossLayers 보장)
+  const matchGroups: number[] = [];
+  for (let t = 0; t < typeCount; t++) {
+    for (let s = 0; s < setMultiplier; s++) matchGroups.push(t);
+  }
+  shuffle(matchGroups);
+
+  const types: number[] = [];
+  let groupIdx = 0;
+  for (let layer = 0; layer < layers; layer++) {
+    const groupsInLayer = Math.floor(layerCounts[layer] / 3);
+    for (let g = 0; g < groupsInLayer; g++) {
+      const t = matchGroups[groupIdx++];
+      types.push(t, t, t);
     }
   }
 
