@@ -2,7 +2,7 @@ import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react'
 import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, BackHandler, Vibration, ActivityIndicator, Animated, Platform, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { useRewardedAd, BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { useRewardedAd } from 'react-native-google-mobile-ads';
 import { RootStackParamList } from '../App';
 import { 
   TILE_ASSETS, 
@@ -119,10 +119,6 @@ export default function ResultScreen({ route, navigation }: Props) {
             </View>
           </View>
         </View>
-
-        <View style={styles.adContainerOutside}>
-          <BannerAd unitId={AD_UNIT_IDS.BANNER} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} requestOptions={{ requestNonPersonalizedAdsOnly: true }} />
-        </View>
       </View>
     </ImageBackground>
   );
@@ -159,7 +155,6 @@ const styles = StyleSheet.create({
   rewardedBadgeText: { color: '#1CB0F6', fontFamily: 'Nunito-Black', fontSize: 13 },
   
   description: { fontSize: 20, fontFamily: 'Nunito-Bold', color: '#4B4B4B', textAlign: 'center', marginBottom: 35, lineHeight: 28 },
-  adContainerOutside: { width: '100%', alignItems: 'center', marginTop: 30 },
   
   buttonContainer: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', marginTop: 10 },
   sideBtn: { height: 60, borderRadius: 20, marginHorizontal: 6, paddingBottom: 6 },
