@@ -1,8 +1,3 @@
-/**
- * Slot matching logic for found3
- * Copied from lib/found3/src/logic/matcher.ts — Phaser-free
- */
-
 import { SlotItem, TileType, MAX_SLOT } from '../types';
 
 export interface MatchResult {

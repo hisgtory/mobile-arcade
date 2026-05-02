@@ -5,18 +5,18 @@ import { TILE_ASSETS } from '../assets';
 interface ItemBarProps {
   onUndo: () => void;
   onShuffle: () => void;
-  onExpand: () => void;
+  onMagnet: () => void;
   itemCounts: {
     undo: number;
     shuffle: number;
-    expand: number;
+    magnet: number;
   };
 }
 
 export const ItemBar: React.FC<ItemBarProps> = ({ 
   onUndo, 
   onShuffle, 
-  onExpand, 
+  onMagnet, 
   itemCounts 
 }) => {
   return (
@@ -55,21 +55,21 @@ export const ItemBar: React.FC<ItemBarProps> = ({
         <View style={styles.badge}><Text style={styles.badgeText}>{itemCounts.shuffle}</Text></View>
       </View>
 
-      {/* EXPAND ITEM */}
+      {/* MAGNET ITEM */}
       <View style={styles.itemWrapper}>
-        <Pressable onPress={onExpand} style={styles.itemButton}>
+        <Pressable onPress={onMagnet} style={styles.itemButton}>
           {({ pressed }) => (
             <View style={styles.iconCircle}>
               <Image 
-                source={pressed ? TILE_ASSETS['item_expand_pressed'] : TILE_ASSETS['item_expand']} 
+                source={pressed ? TILE_ASSETS['ui_magnet'] : TILE_ASSETS['ui_magnet']} 
                 style={styles.itemIcon} 
                 resizeMode="cover" 
               />
             </View>
           )}
         </Pressable>
-        <Text style={styles.itemLabel}>EXPAND</Text>
-        <View style={styles.badge}><Text style={styles.badgeText}>{itemCounts.expand}</Text></View>
+        <Text style={styles.itemLabel}>MAGNET</Text>
+        <View style={styles.badge}><Text style={styles.badgeText}>{itemCounts.magnet}</Text></View>
       </View>
     </View>
   );
@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
     height: 68,
     borderRadius: 34,
     backgroundColor: 'transparent',
-    overflow: 'hidden', // 가장자리 검은색을 둥글게 깎아냄
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
   },

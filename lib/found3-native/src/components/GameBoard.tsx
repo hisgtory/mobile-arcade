@@ -18,7 +18,7 @@ import { ItemBar } from './ItemBar';
 import { TILE_ASSETS } from '../assets';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const BASE_TILE_GAP_RATIO = 0.05; // 모양을 더 촘촘하게 보여주기 위해 간격 축소
+const BASE_TILE_GAP_RATIO = 0.05;
 
 interface GameBoardProps {
   stageId: number;
@@ -38,30 +38,36 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const [slots, setSlots] = useState<SlotItem[]>([]);
   const [phase, setPhase] = useState<GamePhase>(GamePhase.PLAYING);
   const [showSettings, setShowSettings] = useState(false);
-  const [itemCounts, setItemCounts] = useState({ undo: 3, shuffle: 3, expand: 3 });
+  const [itemCounts, setItemCounts] = useState({ undo: 3, shuffle: 3, magnet: 3 });
   const [maxSlot, setMaxSlot] = useState(MAX_SLOT);
   const [elapsedTime, setElapsedTime] = useState(0); 
   const [isMuted, setIsMuted] = useState(AudioService.isMuted);
   const [volume, setVolume] = useState(AudioService.volume);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
   const switchAnim = useRef(new Animated.Value(AudioService.isMuted ? 0 : 1)).current;
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Layout calculations optimized for shapes
   const horizontalMargin = 25; 
   const boardAvailW = SCREEN_WIDTH - horizontalMargin * 2; 
   const boardAvailH = SCREEN_HEIGHT - 380; 
-  
-  // 모양을 위해 정사각형 그리드 비율 유지
   const gridEffectiveCols = config.cols + (config.layers - 1) * 0.5;
   const gridEffectiveRows = config.rows + (config.layers - 1) * 0.5;
-
   const tileSize = Math.floor(Math.min(boardAvailW / gridEffectiveCols, boardAvailH / gridEffectiveRows));
   const gap = Math.floor(tileSize * BASE_TILE_GAP_RATIO);
-
   const gridWidth = gridEffectiveCols * (tileSize + gap) - gap;
   const gridHeight = gridEffectiveRows * (tileSize + gap) - gap;
   const actualBoardOffsetX = (SCREEN_WIDTH - gridWidth) / 2;
+
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    Animated.sequence([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.delay(1500),
+      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
+    ]).start(() => setToastMsg(null));
+  }, [toastOpacity]);
 
   const triggerMatchHaptic = useCallback(() => {
     if (Platform.OS === 'android') {
@@ -90,6 +96,68 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     if (updatedTiles.length === 0 && (result.slotItems || []).length === 0) handleGameEnd('win');
     else if ((result.slotItems || []).length >= maxSlot && !result.matched) handleGameEnd('lose');
   }, [tiles, slots, phase, handleGameEnd, maxSlot, triggerMatchHaptic]);
+
+  // --- 혁신된 MAGNET 로직 ---
+  const handleMagnet = () => {
+    if (itemCounts.magnet <= 0 || phase !== GamePhase.PLAYING || tiles.length === 0) {
+      if (itemCounts.magnet <= 0) showToast("No more MAGNET items!");
+      return;
+    }
+
+    // 1. 타겟 과일 찾기 (슬롯에 이미 있는 과일 우선, 없으면 보드에서 아무거나 3개 있는 거)
+    let targetType: number | null = null;
+    const typeCountsOnBoard: Record<number, TileData[]> = {};
+    tiles.forEach(t => {
+      if (!typeCountsOnBoard[t.type]) typeCountsOnBoard[t.type] = [];
+      typeCountsOnBoard[t.type].push(t);
+    });
+
+    // 슬롯에 있는 과일 중 보드에도 남은 게 있는지 확인
+    for (const slotItem of slots) {
+      if (typeCountsOnBoard[slotItem.type] && typeCountsOnBoard[slotItem.type].length >= (3 - slots.filter(s => s.type === slotItem.type).length)) {
+        targetType = slotItem.type;
+        break;
+      }
+    }
+
+    // 슬롯에 적절한 게 없으면 보드에서 3개 한 세트가 있는 과일 선택
+    if (targetType === null) {
+      for (const type in typeCountsOnBoard) {
+        if (typeCountsOnBoard[type].length >= 3) {
+          targetType = Number(type);
+          break;
+        }
+      }
+    }
+
+    if (targetType === null) {
+      showToast("No triplets available!");
+      return;
+    }
+
+    // 2. 해당 과일 3개를 채우기 위해 필요한 개수만큼 보드에서 추출 (스택 깊이 무관하게)
+    const currentInSlot = slots.filter(s => s.type === targetType).length;
+    const neededFromBoard = 3 - currentInSlot;
+    const targetTilesFromBoard = typeCountsOnBoard[targetType].slice(0, neededFromBoard);
+
+    // 3. 상태 일괄 업데이트 (버그 방지)
+    const removedIds = targetTilesFromBoard.map(t => t.id);
+    const nextTiles = tiles.filter(t => !removedIds.includes(t.id));
+    const updatedTiles = nextTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, nextTiles) }));
+    
+    // 슬롯에서 해당 타입 제거 (3개가 모였으므로 vanish)
+    const nextSlots = slots.filter(s => s.type !== targetType);
+
+    Vibration.vibrate(150);
+    triggerMatchHaptic();
+    
+    setTiles(updatedTiles);
+    setSlots(nextSlots);
+    setItemCounts(prev => ({ ...prev, magnet: prev.magnet - 1 }));
+
+    // 승리 판정
+    if (updatedTiles.length === 0 && nextSlots.length === 0) handleGameEnd('win');
+  };
 
   const toggleMusic = async () => {
     await AudioService.toggleMute();
@@ -154,6 +222,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({
         </View>
       </Modal>
 
+      {toastMsg && (
+        <Animated.View style={[styles.toastContainer, { opacity: toastOpacity }]}>
+          <Text style={styles.toastText}>{toastMsg}</Text>
+        </Animated.View>
+      )}
+
       <View style={styles.header}>
         <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {`${Math.floor(elapsedTime/60)}:${elapsedTime%60 < 10 ? '0' : ''}${elapsedTime%60}`}</Text></View>
         <View style={styles.centerContainer}><Text style={styles.stageText}>STAGE {stageId}</Text></View>
@@ -191,12 +265,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           setTiles(shuffled.map(t => ({ ...t, isSelectable: !isTileBlocked(t, shuffled) })));
           setItemCounts(prev => ({ ...prev, shuffle: prev.shuffle - 1 }));
         }} 
-        onExpand={() => {
-          if (itemCounts.expand <= 0) return;
-          Vibration.vibrate(100);
-          setMaxSlot(prev => prev + 1);
-          setItemCounts(prev => ({ ...prev, expand: prev.expand - 1 }));
-        }} 
+        onMagnet={handleMagnet} 
       />
     </ImageBackground>
   );
@@ -213,11 +282,11 @@ const styles = StyleSheet.create({
   settingsIcon: { fontSize: 24 },
   boardContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#FFF', width: '85%', padding: 30, borderRadius: 30, alignItems: 'center' },
+  modalContent: { backgroundColor: '#FFF', width: '80%', padding: 30, borderRadius: 30, alignItems: 'center' },
   modalTitle: { fontSize: 24, fontWeight: '900', marginBottom: 20, color: '#333' },
   settingRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25, paddingHorizontal: 15 },
   settingLabel: { fontSize: 16, fontWeight: 'bold', color: '#495057' },
-  switchTrack: { width: 56, height: 32, borderRadius: 16, padding: 2, justifyContent: 'center' },
+  switchTrack: { width: 56, height: 32, borderRadius: 16, padding: 2, justifyContent: 'center', alignSelf: 'center' },
   switchThumb: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2 },
   volumeController: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: 180 },
   volBtn: { width: 36, height: 36, backgroundColor: '#f1f3f5', borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
@@ -228,4 +297,6 @@ const styles = StyleSheet.create({
   modalBtnText: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   closeButton: { marginTop: 10, padding: 10 },
   closeButtonText: { color: '#adb5bd', fontSize: 16, fontWeight: '600' },
+  toastContainer: { position: 'absolute', top: SCREEN_HEIGHT / 2 - 25, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 25, zIndex: 9999 },
+  toastText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });

@@ -2,7 +2,7 @@ import { Audio } from 'expo-av';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TILE_ASSETS } from '../assets';
 
-const BGM_LIST = ['bgm_1', 'bgm_2', 'bgm_3', 'bgm_4', 'bgm_5'];
+const BGM_LIST = ['bgm_1', 'bgm_2', 'bgm_3', 'bgm_4', 'bgm_5', 'bgm_6'];
 const AUDIO_SETTINGS_KEY = '@found3_audio_settings';
 
 export const AudioService = {

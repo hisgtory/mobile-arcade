@@ -60,14 +60,14 @@ export enum GamePhase {
 export interface ItemCounts {
   shuffle: number;
   undo: number;
-  expand: number;
+  magnet: number;
 }
 
 /** Default item counts per game */
 export const DEFAULT_ITEM_COUNTS: ItemCounts = {
   shuffle: 3,
   undo: 3,
-  expand: 3,
+  magnet: 3,
 };
 
 /** Undo history entry */

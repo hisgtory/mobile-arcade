@@ -45,4 +45,5 @@ export const TILE_ASSETS: Record<string, any> = {
   bgm_3: require('../../../found3/rn/assets/audio/bgm_3.mp3'),
   bgm_4: require('../../../found3/rn/assets/audio/bgm_4.mp3'),
   bgm_5: require('../../../found3/rn/assets/audio/bgm_5.mp3'),
+  bgm_6: require('../../../found3/rn/assets/audio/bgm_6.mp3'),
 };
