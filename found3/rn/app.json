@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Found3",
-    "slug": "found3",
+    "name": "Juicy Fruits",
+    "slug": "juicyfruits",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon_v2.png",
@@ -14,10 +14,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.arcade.found3"
+      "bundleIdentifier": "com.hisgtory.juicyfruits"
     },
     "android": {
-      "package": "com.arcade.found3",
+      "package": "com.hisgtory.juicyfruits",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon_v2.png",
         "backgroundColor": "#ffffff"

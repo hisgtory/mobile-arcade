@@ -14,12 +14,14 @@ export default function HomeScreen({ navigation }: Props) {
   const [currentStage, setCurrentStage] = useState(1);
   const [showSettings, setShowSettings] = useState(false);
   const [isMuted, setIsMuted] = useState(AudioService.isMuted);
+  const [volume, setVolume] = useState(AudioService.volume);
   const switchAnim = useRef(new Animated.Value(AudioService.isMuted ? 0 : 1)).current;
 
   useFocusEffect(
     useCallback(() => {
       ProgressService.loadProgress().then(p => setCurrentStage(p.highestStage));
       setIsMuted(AudioService.isMuted);
+      setVolume(AudioService.volume);
       switchAnim.setValue(AudioService.isMuted ? 0 : 1);
     }, [switchAnim])
   );
@@ -32,15 +34,38 @@ export default function HomeScreen({ navigation }: Props) {
     Vibration.vibrate(30);
   };
 
+  const adjustVolume = async (delta: number) => {
+    const newVol = Math.max(0, Math.min(1, volume + delta));
+    setVolume(newVol);
+    await AudioService.setVolume(newVol);
+    Vibration.vibrate(20);
+  };
+
+  const VolumeControl = () => (
+    <View style={styles.settingRow}>
+      <Text style={styles.settingLabel}>VOLUME</Text>
+      <View style={styles.volumeController}>
+        <TouchableOpacity style={styles.volBtn} onPress={() => adjustVolume(-0.1)}>
+          <Text style={styles.volBtnText}>-</Text>
+        </TouchableOpacity>
+        <View style={styles.volProgressBg}>
+          <View style={[styles.volProgressFill, { width: `${volume * 100}%` }]} />
+        </View>
+        <TouchableOpacity style={styles.volBtn} onPress={() => adjustVolume(0.1)}>
+          <Text style={styles.volBtnText}>+</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
   return (
     <ImageBackground source={TILE_ASSETS['background']} style={styles.container} resizeMode="cover">
       <SafeAreaView style={styles.safeArea} edges={Platform.OS === 'ios' ? ['top', 'bottom', 'left', 'right'] : ['bottom', 'left', 'right']}>
-        
-        {/* Settings Modal */}
         <Modal visible={showSettings} transparent animationType="fade">
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>SETTINGS</Text>
+              
               <View style={styles.settingRow}>
                 <Text style={styles.settingLabel}>MUSIC</Text>
                 <TouchableOpacity activeOpacity={0.8} onPress={toggleMusic}>
@@ -49,6 +74,9 @@ export default function HomeScreen({ navigation }: Props) {
                   </View>
                 </TouchableOpacity>
               </View>
+
+              <VolumeControl />
+
               <TouchableOpacity style={styles.closeButton} onPress={() => setShowSettings(false)}>
                 <Text style={styles.closeButtonText}>CLOSE</Text>
               </TouchableOpacity>
@@ -56,7 +84,6 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
         </Modal>
 
-        {/* Top Header for Home */}
         <View style={styles.homeHeader}>
           <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}>
             <Text style={styles.settingsIcon}>⚙️</Text>
@@ -65,8 +92,8 @@ export default function HomeScreen({ navigation }: Props) {
 
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Text style={styles.title}>FOUND 3</Text>
-            <Text style={styles.subtitle}>Fruit Explorer</Text>
+            <Text style={styles.title}>Juicy Fruits</Text>
+            <Text style={styles.subtitle}>Sweet Fruit Triple Match</Text>
           </View>
 
           <View style={styles.stageCard}>
@@ -105,14 +132,19 @@ const styles = StyleSheet.create({
   previewIcon: { width: 44, height: 44, marginHorizontal: 8 },
   playButton: { backgroundColor: '#FF6B6B', width: '100%', height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', shadowColor: '#FF6B6B', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
   playButtonText: { color: '#FFF', fontSize: 24, fontWeight: '900' },
-  // Modal & Switch Styles
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#FFF', width: '80%', padding: 30, borderRadius: 30, alignItems: 'center' },
+  modalContent: { backgroundColor: '#FFF', width: '85%', padding: 30, borderRadius: 30, alignItems: 'center' },
   modalTitle: { fontSize: 24, fontWeight: '900', marginBottom: 25, color: '#333' },
-  settingRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingHorizontal: 15 },
-  settingLabel: { fontSize: 18, fontWeight: 'bold', color: '#495057' },
-  switchTrack: { width: 56, height: 32, borderRadius: 16, padding: 2, justifyContent: 'center' },
+  settingRow: { width: '100%', marginBottom: 25 },
+  settingLabel: { fontSize: 16, fontWeight: 'bold', color: '#adb5bd', marginBottom: 10, textAlign: 'center' },
+  switchTrack: { width: 56, height: 32, borderRadius: 16, padding: 2, justifyContent: 'center', alignSelf: 'center' },
   switchThumb: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2 },
+  // Volume Controller Styles
+  volumeController: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%' },
+  volBtn: { width: 40, height: 40, backgroundColor: '#f1f3f5', borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  volBtnText: { fontSize: 24, fontWeight: 'bold', color: '#495057' },
+  volProgressBg: { flex: 1, height: 10, backgroundColor: '#dee2e6', borderRadius: 5, marginHorizontal: 15, overflow: 'hidden' },
+  volProgressFill: { height: '100%', backgroundColor: '#4DABF7' },
   closeButton: { marginTop: 10, padding: 10 },
   closeButtonText: { color: '#adb5bd', fontSize: 16, fontWeight: '600' },
 });

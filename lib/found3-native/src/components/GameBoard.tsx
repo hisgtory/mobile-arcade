@@ -46,8 +46,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Audio Switch State
+  // Audio Switch & Volume State
   const [isMuted, setIsMuted] = useState(AudioService.isMuted);
+  const [volume, setVolume] = useState(AudioService.volume);
   const switchAnim = useRef(new Animated.Value(AudioService.isMuted ? 0 : 1)).current;
 
   // Layout calculations
@@ -65,15 +66,15 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     await AudioService.toggleMute();
     const newMuted = AudioService.isMuted;
     setIsMuted(newMuted);
-    
-    // Switch Animation
-    Animated.timing(switchAnim, {
-      toValue: newMuted ? 0 : 1,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-    
+    Animated.timing(switchAnim, { toValue: newMuted ? 0 : 1, duration: 200, useNativeDriver: false }).start();
     Vibration.vibrate(30);
+  };
+
+  const adjustVolume = async (delta: number) => {
+    const newVol = Math.max(0, Math.min(1, volume + delta));
+    setVolume(newVol);
+    await AudioService.setVolume(newVol);
+    Vibration.vibrate(20);
   };
 
   const triggerMatchHaptic = useCallback(() => {
@@ -111,17 +112,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     setMaxSlot(MAX_SLOT);
     setElapsedTime(0);
     setIsMuted(AudioService.isMuted);
+    setVolume(AudioService.volume);
     switchAnim.setValue(AudioService.isMuted ? 0 : 1);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setElapsedTime(v => v + 1), 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [stageId]);
+  }, [stageId, switchAnim]);
 
   const handleGameEnd = useCallback((res: 'win' | 'lose') => {
     if (timerRef.current) clearInterval(timerRef.current);
     setPhase(res === 'win' ? GamePhase.CLEAR : GamePhase.GAMEOVER);
     onGameEnd?.(res, { time: elapsedTime, limit: config.timeLimit });
   }, [elapsedTime, config.timeLimit, onGameEnd]);
+
+  const formatTime = (s: number) => `${Math.floor(s/60)}:${s%60 < 10 ? '0' : ''}${s%60}`;
 
   return (
     <ImageBackground source={TILE_ASSETS['background']} style={styles.container} resizeMode="cover">
@@ -130,26 +134,28 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>SETTINGS</Text>
             
-            {/* Improved Animated Music Switch */}
             <View style={styles.settingRow}>
               <Text style={styles.settingLabel}>MUSIC</Text>
               <TouchableOpacity activeOpacity={0.8} onPress={toggleMusic}>
                 <View style={[styles.switchTrack, { backgroundColor: isMuted ? '#dee2e6' : '#4DABF7' }]}>
-                  <Animated.View 
-                    style={[
-                      styles.switchThumb, 
-                      { 
-                        transform: [{ 
-                          translateX: switchAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [2, 26]
-                          }) 
-                        }] 
-                      }
-                    ]} 
-                  />
+                  <Animated.View style={[styles.switchThumb, { transform: [{ translateX: switchAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 26] }) }] }]} />
                 </View>
               </TouchableOpacity>
+            </View>
+
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>VOLUME</Text>
+              <View style={styles.volumeController}>
+                <TouchableOpacity style={styles.volBtn} onPress={() => adjustVolume(-0.1)}>
+                  <Text style={styles.volBtnText}>-</Text>
+                </TouchableOpacity>
+                <View style={styles.volProgressBg}>
+                  <View style={[styles.volProgressFill, { width: `${volume * 100}%` }]} />
+                </View>
+                <TouchableOpacity style={styles.volBtn} onPress={() => adjustVolume(0.1)}>
+                  <Text style={styles.volBtnText}>+</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <TouchableOpacity style={styles.modalBtn} onPress={() => { setShowSettings(false); onRestart?.(); }}>
@@ -183,7 +189,31 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           ))}
         </View>
       </View>
-      <ItemBar itemCounts={itemCounts} onUndo={() => {}} onShuffle={() => {}} onExpand={() => {}} />
+      <ItemBar 
+        itemCounts={itemCounts} 
+        onUndo={() => {
+           if (undoHistoryRef.current.length === 0 || itemCounts.undo <= 0) return;
+           Vibration.vibrate(50);
+           const lastAction = undoHistoryRef.current.pop()!;
+           const { slotItems } = undoLastSlotItem(slots);
+           const newTiles = [...tiles, lastAction.tileData];
+           setTiles(newTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, newTiles) })));
+           setSlots(slotItems);
+           setItemCounts(prev => ({ ...prev, undo: prev.undo - 1 }));
+        }} 
+        onShuffle={() => {
+          if (tiles.length === 0 || itemCounts.shuffle <= 0) return;
+          Vibration.vibrate([0, 30, 30, 30, 30, 50]);
+          setTiles(shuffleBoard(tiles).map(t => ({ ...t, isSelectable: !isTileBlocked(t, tiles) })));
+          setItemCounts(prev => ({ ...prev, shuffle: prev.shuffle - 1 }));
+        }} 
+        onExpand={() => {
+          if (itemCounts.expand <= 0) return;
+          Vibration.vibrate(100);
+          setMaxSlot(prev => prev + 1);
+          setItemCounts(prev => ({ ...prev, expand: prev.expand - 1 }));
+        }} 
+      />
     </ImageBackground>
   );
 };
@@ -199,12 +229,17 @@ const styles = StyleSheet.create({
   settingsIcon: { fontSize: 24 },
   boardContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#FFF', width: '80%', padding: 30, borderRadius: 30, alignItems: 'center' },
+  modalContent: { backgroundColor: '#FFF', width: '85%', padding: 30, borderRadius: 30, alignItems: 'center' },
   modalTitle: { fontSize: 24, fontWeight: '900', marginBottom: 25, color: '#333' },
-  settingRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30, paddingHorizontal: 15 },
-  settingLabel: { fontSize: 18, fontWeight: 'bold', color: '#495057' },
-  switchTrack: { width: 56, height: 32, borderRadius: 16, padding: 2, justifyContent: 'center' },
+  settingRow: { width: '100%', marginBottom: 25 },
+  settingLabel: { fontSize: 16, fontWeight: 'bold', color: '#adb5bd', marginBottom: 10, textAlign: 'center' },
+  switchTrack: { width: 56, height: 32, borderRadius: 16, padding: 2, justifyContent: 'center', alignSelf: 'center' },
   switchThumb: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2 },
+  volumeController: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', width: '100%' },
+  volBtn: { width: 40, height: 40, backgroundColor: '#f1f3f5', borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  volBtnText: { fontSize: 24, fontWeight: 'bold', color: '#495057' },
+  volProgressBg: { flex: 1, height: 10, backgroundColor: '#dee2e6', borderRadius: 5, marginHorizontal: 15, overflow: 'hidden' },
+  volProgressFill: { height: '100%', backgroundColor: '#4DABF7' },
   modalBtn: { width: '100%', height: 55, backgroundColor: '#f1f3f5', borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
   modalBtnText: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   closeButton: { marginTop: 10, padding: 10 },

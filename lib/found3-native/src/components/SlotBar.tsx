@@ -19,7 +19,7 @@ export const SlotBar: React.FC<SlotBarProps> = ({ slots, maxSlot }) => {
   // 가용 너비에서 패딩과 간격을 제외한 실제 슬롯 사이즈 계산
   const availableWidth = SCREEN_WIDTH - horizontalMargin - (CONTAINER_PADDING * 2) - (maxSlot * SLOT_GAP);
   const calculatedSlotSize = Math.min(46, Math.floor(availableWidth / maxSlot));
-  const TILE_SIZE = calculatedSlotSize; // 타일은 슬롯을 꽉 채움 (카드 느낌)
+  const TILE_SIZE = calculatedSlotSize; // 타일은 슬롯을 꽉 채움
 
   return (
     <View style={[styles.container, { padding: CONTAINER_PADDING }]}>
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   slotItem: {
-    borderRadius: 10,
+    borderRadius: 14, // Tile.tsx의 borderRadius 14와 완벽하게 일치시킴
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
