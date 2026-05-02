@@ -23,11 +23,11 @@ export const TILE_ASSETS: Record<string, any> = {
   item_undo: require('../../../found3/rn/assets/items/undo_normal.png'),
   item_undo_pressed: require('../../../found3/rn/assets/items/undo_pressed.png'),
   
-  // SHUFFLE 세트 (기본 아이콘 수정)
+  // SHUFFLE 세트
   item_shuffle: require('../../../found3/rn/assets/items/shuffle_normal.png'), 
   item_shuffle_pressed: require('../../../found3/rn/assets/items/expand_pressed.png'), 
   
-  // EXPAND 세트 (기본 아이콘 수정)
+  // EXPAND 세트
   item_expand: require('../../../found3/rn/assets/items/expand_normal.png'), 
   item_expand_pressed: require('../../../found3/rn/assets/items/extra.png'), 
   
@@ -38,4 +38,11 @@ export const TILE_ASSETS: Record<string, any> = {
   ui_exit: require('../../../found3/rn/assets/ui/btn_exit.png'),
   ui_status: require('../../../found3/rn/assets/ui/status_bar.png'),
   ui_magnet: require('../../../found3/rn/assets/items/shuffle_pressed.png'), 
+
+  // BGM 세트
+  bgm_1: require('../../../found3/rn/assets/audio/bgm_1.mp3'),
+  bgm_2: require('../../../found3/rn/assets/audio/bgm_2.mp3'),
+  bgm_3: require('../../../found3/rn/assets/audio/bgm_3.mp3'),
+  bgm_4: require('../../../found3/rn/assets/audio/bgm_4.mp3'),
+  bgm_5: require('../../../found3/rn/assets/audio/bgm_5.mp3'),
 };

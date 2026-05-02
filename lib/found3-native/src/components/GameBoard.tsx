@@ -11,6 +11,7 @@ import {
 import { generateBoard, isTileBlocked, shuffleBoard } from '../logic/board';
 import { addToSlotAndMatch, undoLastSlotItem } from '../logic/matcher';
 import { getStageConfig } from '../logic/stage';
+import { AudioService } from '../logic/audio';
 import { Tile } from './Tile';
 import { SlotBar } from './SlotBar';
 import { ItemBar } from './ItemBar';
@@ -45,6 +46,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Audio Switch State
+  const [isMuted, setIsMuted] = useState(AudioService.isMuted);
+  const switchAnim = useRef(new Animated.Value(AudioService.isMuted ? 0 : 1)).current;
+
   // Layout calculations
   const horizontalMargin = 20; 
   const boardAvailW = SCREEN_WIDTH - horizontalMargin * 2; 
@@ -56,14 +61,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({
   const gridHeight = (config.rows + (config.layers - 1) * 0.5) * (tileSize + gap) - gap;
   const actualBoardOffsetX = (SCREEN_WIDTH - gridWidth) / 2;
 
-  const showToast = useCallback((msg: string) => {
-    setToastMsg(msg);
-    Animated.sequence([
-      Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.delay(1500),
-      Animated.timing(toastOpacity, { toValue: 0, duration: 300, useNativeDriver: true }),
-    ]).start(() => setToastMsg(null));
-  }, [toastOpacity]);
+  const toggleMusic = async () => {
+    await AudioService.toggleMute();
+    const newMuted = AudioService.isMuted;
+    setIsMuted(newMuted);
+    
+    // Switch Animation
+    Animated.timing(switchAnim, {
+      toValue: newMuted ? 0 : 1,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+    
+    Vibration.vibrate(30);
+  };
 
   const triggerMatchHaptic = useCallback(() => {
     if (Platform.OS === 'android') {
@@ -82,54 +93,25 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     if (phase !== GamePhase.PLAYING || !tile) return;
     Vibration.vibrate(35);
     if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-
     undoHistoryRef.current.push({ slotItem: { id: tile.id, type: tile.type }, tileData: { ...tile } });
     const nextTiles = tiles.filter(t => t && t.id !== tile.id);
     const updatedTiles = nextTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, nextTiles) }));
     const result = addToSlotAndMatch(slots, tile, maxSlot);
     if (result.matched) triggerMatchHaptic();
-
     setTiles(updatedTiles);
     setSlots(result.slotItems || []);
     if (updatedTiles.length === 0 && (result.slotItems || []).length === 0) handleGameEnd('win');
     else if ((result.slotItems || []).length >= maxSlot && !result.matched) handleGameEnd('lose');
   }, [tiles, slots, phase, handleGameEnd, maxSlot, triggerMatchHaptic]);
 
-  const handleUndo = () => {
-    if (undoHistoryRef.current.length === 0 || itemCounts.undo <= 0) return;
-    Vibration.vibrate(50);
-    const lastAction = undoHistoryRef.current.pop()!;
-    const { slotItems } = undoLastSlotItem(slots);
-    const newTiles = [...tiles, lastAction.tileData];
-    setTiles(newTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, newTiles) })));
-    setSlots(slotItems);
-    setItemCounts(prev => ({ ...prev, undo: prev.undo - 1 }));
-  };
-
-  const handleShuffle = () => {
-    if (tiles.length === 0 || itemCounts.shuffle <= 0) return;
-    Vibration.vibrate([0, 30, 30, 30, 30, 50]);
-    const shuffled = shuffleBoard(tiles);
-    setTiles(shuffled.map(t => ({ ...t, isSelectable: !isTileBlocked(t, shuffled) })));
-    setItemCounts(prev => ({ ...prev, shuffle: prev.shuffle - 1 }));
-  };
-
-  const handleExpand = () => {
-    if (itemCounts.expand <= 0) return;
-    Vibration.vibrate(100);
-    setMaxSlot(prev => prev + 1);
-    setItemCounts(prev => ({ ...prev, expand: prev.expand - 1 }));
-  };
-
   useEffect(() => {
     const generated = generateBoard(config);
-    const initialTiles = generated.map(t => ({ ...t, isSelectable: !isTileBlocked(t, generated) }));
-    setTiles(initialTiles);
+    setTiles(generated.map(t => ({ ...t, isSelectable: !isTileBlocked(t, generated) })));
     setSlots([]);
     setMaxSlot(MAX_SLOT);
     setElapsedTime(0);
-    undoHistoryRef.current = [];
-    setPhase(GamePhase.PLAYING);
+    setIsMuted(AudioService.isMuted);
+    switchAnim.setValue(AudioService.isMuted ? 0 : 1);
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setElapsedTime(v => v + 1), 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
@@ -141,14 +123,35 @@ export const GameBoard: React.FC<GameBoardProps> = ({
     onGameEnd?.(res, { time: elapsedTime, limit: config.timeLimit });
   }, [elapsedTime, config.timeLimit, onGameEnd]);
 
-  const formatTime = (s: number) => `${Math.floor(s/60)}:${s%60 < 10 ? '0' : ''}${s%60}`;
-
   return (
     <ImageBackground source={TILE_ASSETS['background']} style={styles.container} resizeMode="cover">
       <Modal visible={showSettings} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>SETTINGS</Text>
+            
+            {/* Improved Animated Music Switch */}
+            <View style={styles.settingRow}>
+              <Text style={styles.settingLabel}>MUSIC</Text>
+              <TouchableOpacity activeOpacity={0.8} onPress={toggleMusic}>
+                <View style={[styles.switchTrack, { backgroundColor: isMuted ? '#dee2e6' : '#4DABF7' }]}>
+                  <Animated.View 
+                    style={[
+                      styles.switchThumb, 
+                      { 
+                        transform: [{ 
+                          translateX: switchAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [2, 26]
+                          }) 
+                        }] 
+                      }
+                    ]} 
+                  />
+                </View>
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity style={styles.modalBtn} onPress={() => { setShowSettings(false); onRestart?.(); }}>
                <Text style={styles.modalBtnText}>RESTART</Text>
             </TouchableOpacity>
@@ -161,13 +164,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           </View>
         </View>
       </Modal>
-      {toastMsg && (
-        <Animated.View style={[styles.toastContainer, { opacity: toastOpacity }]}>
-          <Text style={styles.toastText}>{toastMsg}</Text>
-        </Animated.View>
-      )}
+
       <View style={styles.header}>
-        <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text></View>
+        <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {`${Math.floor(elapsedTime/60)}:${elapsedTime%60 < 10 ? '0' : ''}${elapsedTime%60}`}</Text></View>
         <View style={styles.centerContainer}><Text style={styles.stageText}>STAGE {stageId}</Text></View>
         <View style={[styles.headerSide, { alignItems: 'flex-end' }]}>
           <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(true)}>
@@ -175,6 +174,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           </TouchableOpacity>
         </View>
       </View>
+
       <SlotBar slots={slots} maxSlot={maxSlot} />
       <View style={styles.boardContainer}>
         <View style={{ width: SCREEN_WIDTH, height: gridHeight, position: 'relative' }}>
@@ -183,7 +183,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({
           ))}
         </View>
       </View>
-      <ItemBar itemCounts={itemCounts} onUndo={handleUndo} onShuffle={handleShuffle} onExpand={handleExpand} />
+      <ItemBar itemCounts={itemCounts} onUndo={() => {}} onShuffle={() => {}} onExpand={() => {}} />
     </ImageBackground>
   );
 };
@@ -200,11 +200,13 @@ const styles = StyleSheet.create({
   boardContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
   modalContent: { backgroundColor: '#FFF', width: '80%', padding: 30, borderRadius: 30, alignItems: 'center' },
-  modalTitle: { fontSize: 24, fontWeight: '900', marginBottom: 30, color: '#333' },
+  modalTitle: { fontSize: 24, fontWeight: '900', marginBottom: 25, color: '#333' },
+  settingRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30, paddingHorizontal: 15 },
+  settingLabel: { fontSize: 18, fontWeight: 'bold', color: '#495057' },
+  switchTrack: { width: 56, height: 32, borderRadius: 16, padding: 2, justifyContent: 'center' },
+  switchThumb: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#FFF', elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 2 },
   modalBtn: { width: '100%', height: 55, backgroundColor: '#f1f3f5', borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
   modalBtnText: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   closeButton: { marginTop: 10, padding: 10 },
   closeButtonText: { color: '#adb5bd', fontSize: 16, fontWeight: '600' },
-  toastContainer: { position: 'absolute', top: SCREEN_HEIGHT / 2 - 25, alignSelf: 'center', backgroundColor: 'rgba(0,0,0,0.8)', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 25, zIndex: 9999 },
-  toastText: { color: '#FFF', fontSize: 16, fontWeight: 'bold' },
 });

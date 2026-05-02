@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { registerRootComponent } from 'expo';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
+import { AudioService } from '@arcade/lib-found3-native/src/logic/audio';
 import HomeScreen from './screens/HomeScreen';
 import GameScreen from './screens/GameScreen';
 import ResultScreen from './screens/ResultScreen';
@@ -25,12 +26,19 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function App() {
   useEffect(() => {
+    // 1. 안드로이드 시스템 네비게이션 바 처리
     if (Platform.OS === 'android') {
-      // 안드로이드 시스템 네비게이션 바를 완전히 숨기고 'sticky-immersive' 모드 적용
-      // 사용자가 화면 끝을 스와이프해야만 나타나고 잠시 후 다시 사라집니다.
       NavigationBar.setVisibilityAsync('hidden');
       NavigationBar.setBehaviorAsync('sticky-immersive');
     }
+
+    // 2. BGM 시작 (5곡 순환 재생)
+    AudioService.startBGM();
+
+    return () => {
+      // 앱 종료 시 BGM 정지 및 리소스 해제
+      AudioService.stopBGM();
+    };
   }, []);
 
   return (
@@ -42,7 +50,7 @@ function App() {
           screenOptions={{
             headerShown: false,
             animation: 'fade_from_bottom',
-            gestureEnabled: false // iOS 스와이프 뒤로가기 비활성화
+            gestureEnabled: false
           }}
         >
           <Stack.Screen name="Home" component={HomeScreen} />
