@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, Text, Modal, TouchableOpacity, Dimensions, ImageBackground, Animated, Vibration, Platform, Image, ActivityIndicator, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { 
   TileData, 
@@ -34,6 +35,7 @@ interface GameBoardProps {
 }
 
 export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit, onRestart }) => {
+  const insets = useSafeAreaInsets();
   const config = getStageConfig(stageId);
   const [tiles, setTiles] = useState<TileData[]>([]);
   const [slots, setSlots] = useState<SlotItem[]>([]);
@@ -54,7 +56,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
 
   const horizontalMargin = 25; 
   const boardAvailW = SCREEN_WIDTH - horizontalMargin * 2; 
-  const boardAvailH = SCREEN_HEIGHT - 450; 
+  const boardAvailH = SCREEN_HEIGHT - 450 - insets.top - insets.bottom; 
   const gridEffectiveCols = config.cols + (config.layers - 1) * 0.5;
   const gridEffectiveRows = config.rows + (config.layers - 1) * 0.5;
   const tileSize = Math.floor(Math.min(boardAvailW / gridEffectiveCols, boardAvailH / gridEffectiveRows));
@@ -215,7 +217,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
 
       {toastMsg && <Animated.View style={[styles.toastContainer, { opacity: toastOpacity }]}><Text style={styles.toastText}>{toastMsg}</Text></Animated.View>}
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 10 }]}>
         <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text></View>
         <View style={styles.centerContainer}><Text style={styles.stageText}>{stageId}</Text></View>
         <View style={[styles.headerSide, styles.headerRight]}>
@@ -236,9 +238,28 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
         </View>
       </View>
       
-      <View style={styles.bottomSection}>
+      <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom, 10) }]}>
         <View style={styles.adContainer}><BannerAd unitId={AD_UNIT_IDS.BANNER} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER} requestOptions={{ requestNonPersonalizedAdsOnly: true }} /></View>
-        <ItemBar itemCounts={itemCounts} onUndo={() => {}} onShuffle={() => {}} onMagnet={handleMagnet} />
+        <ItemBar 
+          itemCounts={itemCounts} 
+          onUndo={() => {
+            if (undoHistoryRef.current.length === 0 || itemCounts.undo <= 0) return;
+            Vibration.vibrate(50);
+            const lastAction = undoHistoryRef.current.pop()!;
+            const { slotItems } = undoLastSlotItem(slots);
+            const newTiles = [...tiles, lastAction.tileData];
+            setTiles(newTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, newTiles) })));
+            setSlots(slotItems);
+            updateItems({ ...itemCounts, undo: itemCounts.undo - 1 });
+          }} 
+          onShuffle={() => {
+            if (tiles.length === 0 || itemCounts.shuffle <= 0) return;
+            Vibration.vibrate([0, 30, 30, 30, 30, 50]);
+            setTiles(shuffleBoard(tiles).map(t => ({ ...t, isSelectable: !isTileBlocked(t, tiles) })));
+            updateItems({ ...itemCounts, shuffle: itemCounts.shuffle - 1 });
+          }} 
+          onMagnet={handleMagnet} 
+        />
       </View>
     </ImageBackground>
   );
@@ -246,7 +267,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
 
 const styles = StyleSheet.create({
   background: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, alignItems: 'center', height: 60, width: '100%', marginBottom: 5 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, alignItems: 'center', marginBottom: 5 },
   headerSide: { width: 120 },
   headerRight: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   timerText: { fontSize: 18, fontFamily: 'Nunito-Black', color: '#333' },
@@ -262,13 +283,14 @@ const styles = StyleSheet.create({
   settingsButton: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center' },
   settingsIcon: { fontSize: 24 },
   boardContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  bottomSection: { width: '100%', paddingBottom: Platform.OS === 'ios' ? 30 : 10 },
+  bottomSection: { width: '100%' },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   duoModalDepth: { width: '85%', backgroundColor: '#D7D7D7', borderRadius: 32, paddingBottom: 8 },
-  duoModalInner: { backgroundColor: '#FFF', borderRadius: 32, padding: 25, alignItems: 'center', borderWidth: 2, borderColor: '#D7D7D7' },
+  duoModalInner: { backgroundColor: '#FFF', borderRadius: 32, padding: 30, alignItems: 'center', borderWidth: 2, borderColor: '#D7D7D7' },
   
   modalTitle: { fontSize: 24, fontFamily: 'Fredoka-Bold', marginBottom: 20, color: '#333', textAlign: 'center' },
+  
   settingRow: { flexDirection: 'row', width: '100%', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, paddingHorizontal: 10 },
   settingLabel: { fontSize: 16, fontFamily: 'Nunito-Black', color: '#4B4B4B' },
   switchTrack: { width: 56, height: 32, borderRadius: 16, padding: 2, justifyContent: 'center' },
