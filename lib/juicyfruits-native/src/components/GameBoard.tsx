@@ -26,6 +26,13 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BASE_TILE_GAP_RATIO = 0.05;
 const ITEM_PRICES = { undo: 50, shuffle: 100, magnet: 150 };
 
+interface GameBoardProps {
+  stageId: number;
+  onGameEnd?: (result: 'win' | 'lose', stats?: { time: number, limit: number }) => void;
+  onExit?: () => void;
+  onRestart?: () => void;
+}
+
 export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit, onRestart }) => {
   const insets = useSafeAreaInsets();
   const config = getStageConfig(stageId);
@@ -46,21 +53,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // --- Strict Layout with Max Space for Tiles ---
-  const SAFE_TOP = insets.top || 10;
-  const HEADER_H = 50; // More compact header
-  const SLOT_BAR_H = 85; // More compact slot bar
-  const BOTTOM_AREA_H = 160 + (insets.bottom || 10);
+  // --- Strict Layout ---
+  const SAFE_TOP = Math.max(insets.top, 10);
+  const HEADER_H = 65; 
+  const SLOT_BAR_H = 100;
+  const BOTTOM_AREA_H = 180 + Math.max(insets.bottom, 10);
   
-  // Maximize board height
-  const boardAvailH = SCREEN_HEIGHT - SAFE_TOP - HEADER_H - SLOT_BAR_H - BOTTOM_AREA_H - 10;
-  const boardAvailW = SCREEN_WIDTH - 20; // Thinner horizontal margins
+  const boardAvailH = SCREEN_HEIGHT - SAFE_TOP - HEADER_H - SLOT_BAR_H - BOTTOM_AREA_H - 20;
+  const boardAvailW = SCREEN_WIDTH - 40; 
 
   const gridEffectiveCols = config.cols + (config.layers - 1) * 0.5;
   const gridEffectiveRows = config.rows + (config.layers - 1) * 0.5;
   
-  // Calculate the largest possible tile size that fits perfectly
-  const tileSize = Math.floor(Math.min(boardAvailW / gridEffectiveCols, boardAvailH / gridEffectiveRows));
+  const baseTileSize = Math.floor(Math.min(boardAvailW / gridEffectiveCols, boardAvailH / gridEffectiveRows));
+  const tileSize = Math.floor(baseTileSize * 1.32);
   
   const gap = Math.floor(tileSize * BASE_TILE_GAP_RATIO);
   const gridWidth = gridEffectiveCols * (tileSize + gap) - gap;
@@ -180,14 +186,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
 
   return (
     <ImageBackground source={TILE_ASSETS['background']} style={styles.background} resizeMode="cover">
-      {/* --- Main Content Layer --- */}
       <View style={styles.fullContainer}>
         {/* Header */}
-        <View style={[styles.header, { marginTop: SAFE_TOP }]}>
+        <View style={[styles.header, { paddingTop: SAFE_TOP + 5 }]}>
             <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text></View>
             <View style={styles.centerContainer}><Text style={styles.stageText}>{stageId}</Text></View>
             <View style={[styles.headerSide, styles.headerRight]}>
-              <TouchableOpacity activeOpacity={0.7} onPress={() => setShowShop(true)}>
+              <TouchableOpacity activeOpacity={0.7} style={styles.coinBadgeContainer} onPress={() => setShowShop(true)}>
                 <View style={styles.coinBadge}>
                   <Text style={styles.coinIcon}>🪙</Text>
                   <Text style={styles.coinText}>{coins.toLocaleString()}</Text>
@@ -203,12 +208,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
             </View>
         </View>
 
-        {/* SlotBar */}
         <View style={styles.slotBarArea}>
           <SlotBar slots={slots} maxSlot={maxSlot} />
         </View>
         
-        {/* Main Board */}
         <View style={styles.boardContainer}>
           <View style={{ width: gridWidth, height: gridHeight, position: 'relative' }}>
             {[...tiles].sort((a,b)=>a.layer-b.layer).map(tile => (
@@ -217,13 +220,14 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
           </View>
         </View>
         
-        {/* Bottom Section */}
         <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom, 15) }]}>
           <View style={styles.adWrapper}>
             <BannerAd
                 unitId={AD_UNIT_IDS.BANNER}
                 size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
                 requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+                onAdLoaded={() => console.log('[Game Ad] Loaded')}
+                onAdFailedToLoad={(err) => console.log('[Game Ad] Error:', err)}
             />
           </View>
           <ItemBar 
@@ -250,7 +254,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
         </View>
       </View>
 
-      {/* --- Overlay UI (Custom Popups instead of Modal for stability) --- */}
+      {/* Overlays */}
       {showSettings && (
         <View style={styles.absoluteOverlay}>
           <View style={styles.duoModalDepth}>
@@ -297,23 +301,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
 const styles = StyleSheet.create({
   background: { flex: 1 },
   fullContainer: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 15, alignItems: 'center', height: 60 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 15, alignItems: 'center', width: '100%', height: 100 },
   headerSide: { width: 100 },
   headerRight: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
   timerText: { fontSize: 18, fontFamily: 'Nunito-Black', color: '#333' },
   centerContainer: { flex: 1, alignItems: 'center' },
   stageText: { fontSize: 32, fontFamily: 'Fredoka-Bold', color: '#333' },
+  coinBadgeContainer: { height: 44, justifyContent: 'center' },
   coinBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E5A500', paddingBottom: 3, borderRadius: 15, marginRight: 8, paddingHorizontal: 10, height: 36 },
   coinIcon: { fontSize: 16, marginRight: 4 },
   coinText: { fontSize: 14, fontFamily: 'Nunito-Bold', color: '#FFF' },
   settingsButton: { width: 44, height: 44, justifyContent: 'center', alignItems: 'center' },
   settingsIcon: { fontSize: 28 },
-  slotBarArea: { width: '100%', height: 85, justifyContent: 'center', alignItems: 'center' },
+  slotBarArea: { width: '100%', height: 100, justifyContent: 'center', alignItems: 'center' },
   boardContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   bottomSection: { width: '100%' },
-  adWrapper: { width: '100%', height: 60, justifyContent: 'center', alignItems: 'center' },
-
-  absoluteOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', zIndex: 9999 },
+  adWrapper: { width: '100%', minHeight: 60, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.05)' },
+  absoluteOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', zIndex: 9999 },
   duoModalDepth: { width: '85%', backgroundColor: '#D7D7D7', borderRadius: 32, paddingBottom: 8 },
   duoModalInner: { backgroundColor: '#FFF', borderRadius: 32, padding: 25, alignItems: 'center', borderWidth: 2, borderColor: '#D7D7D7' },
   modalTitle: { fontSize: 24, fontFamily: 'Fredoka-Bold', marginBottom: 20, color: '#333', textAlign: 'center' },
@@ -347,10 +351,3 @@ const styles = StyleSheet.create({
   buyBtnInner: { flex: 1, backgroundColor: '#1CB0F6', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   buyBtnText: { color: '#FFF', fontFamily: 'Fredoka-Bold', fontSize: 14 },
 });
-
-interface GameBoardProps {
-  stageId: number;
-  onGameEnd?: (result: 'win' | 'lose', stats?: { time: number, limit: number }) => void;
-  onExit?: () => void;
-  onRestart?: () => void;
-}
