@@ -70,6 +70,14 @@ export const DEFAULT_ITEM_COUNTS: ItemCounts = {
   magnet: 3,
 };
 
+/** Game progress data structure */
+export interface GameProgress {
+  highestStage: number;
+  bestTimes: Record<number, number>; // stageId: seconds
+  itemCounts: ItemCounts;
+  coins: number;
+}
+
 /** Undo history entry */
 export interface UndoEntry {
   slotItem: SlotItem;
