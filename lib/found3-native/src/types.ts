@@ -17,8 +17,9 @@ export interface TileData {
   col: number;
   /** Grid row */
   row: number;
-  /** Layer (0 = bottom). MVP uses layer 0 only */
+  /** Layer (0 = bottom) */
   layer: number;
+  isSelectable?: boolean;
 }
 
 /** Stage configuration */
@@ -29,7 +30,7 @@ export interface StageConfig {
   typeCount: number;
   /** Total tile count (typeCount * 3) */
   tileCount: number;
-  /** Number of layers (MVP: 1) */
+  /** Number of layers */
   layers: number;
   /** Time limit in seconds */
   timeLimit: number;
@@ -37,6 +38,8 @@ export interface StageConfig {
   cols: number;
   /** Grid rows */
   rows: number;
+  /** Optional layout shape */
+  shape?: 'rect' | 'heart' | 'diamond' | 'circle' | 'cross';
 }
 
 /** Slot item: a tile sitting in the slot bar */
@@ -51,19 +54,6 @@ export enum GamePhase {
   PLAYING = 'PLAYING',
   CLEAR = 'CLEAR',
   GAME_OVER = 'GAME_OVER',
-}
-
-/** Runtime game state */
-export interface GameState {
-  phase: GamePhase;
-  stage: number;
-  score: number;
-  combo: number;
-  remainingTiles: number;
-  totalTiles: number;
-  timeLeft: number;
-  elapsedMs: number;
-  slotItems: SlotItem[];
 }
 
 /** Item counts for power-ups */
@@ -88,22 +78,6 @@ export interface UndoEntry {
 
 /** Base slot capacity */
 export const MAX_SLOT = 7;
-
-/** @deprecated Use TILE_IMAGES instead */
-export const TILE_EMOJIS: string[] = [
-  '\u{1F33B}', // sunflower
-  '\u{1F338}', // cherry blossom
-  '\u{1F33A}', // hibiscus
-  '\u{1F34E}', // red apple
-  '\u{1F352}', // cherries
-  '\u{1F353}', // strawberry
-  '\u{1F347}', // grapes
-  '\u{1F34A}', // tangerine
-  '\u{1F34B}', // lemon
-  '\u{1F349}', // watermelon
-  '\u{1F351}', // peach
-  '\u{1F350}', // pear
-];
 
 /** Tile image asset keys */
 export const TILE_IMAGES: string[] = [
@@ -140,6 +114,3 @@ export const TILE_COLORS: string[] = [
   '#e1bee7', // mangosteen
   '#ffcdd2', // pomegranate
 ];
-
-/** Haptic callback type */
-export type HapticFn = (event: string) => void;

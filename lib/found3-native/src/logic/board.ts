@@ -1,9 +1,9 @@
 /**
  * Board generation logic for found3
- * Copied from lib/found3/src/logic/board.ts — Phaser-free
  */
 
 import { TileData, StageConfig } from '../types';
+import { isInsideShape } from './shapes';
 
 let _nextId = 0;
 function nextTileId(): string {
@@ -39,7 +39,7 @@ function distributeTilesAcrossLayers(totalTiles: number, layerCount: number): nu
 }
 
 export function generateBoard(config: StageConfig): TileData[] {
-  const { typeCount, cols, rows, layers } = config;
+  const { typeCount, cols, rows, layers, shape = 'rect' } = config;
   const tileCount = typeCount * 3;
   const types: number[] = [];
   for (let t = 0; t < typeCount; t++) types.push(t, t, t);
@@ -53,15 +53,26 @@ export function generateBoard(config: StageConfig): TileData[] {
     const count = layerCounts[layer];
     const layerCols = Math.max(2, cols - layer);
     const layerRows = Math.max(2, rows - layer);
-    const maxCells = layerCols * layerRows;
-    const positions: { col: number; row: number }[] = [];
+    
+    // 모양 안에 포함되는 유효한 포지션만 먼저 필터링
+    const validPositions: { col: number; row: number }[] = [];
     for (let r = 0; r < layerRows; r++) {
-      for (let c = 0; c < layerCols; c++) positions.push({ col: c, row: r });
+      for (let c = 0; c < layerCols; c++) {
+        if (isInsideShape(shape, c, r, layerCols, layerRows)) {
+          validPositions.push({ col: c, row: r });
+        }
+      }
     }
-    shuffle(positions);
+    
+    // 만약 모양 필터링으로 인해 자리가 부족하면 강제로 사각형 영역 사용 (안전장치)
+    const positionsToUse = validPositions.length >= count 
+      ? validPositions 
+      : Array.from({ length: layerCols * layerRows }, (_, i) => ({ col: i % layerCols, row: Math.floor(i / layerCols) }));
+    
+    shuffle(positionsToUse);
 
     for (let i = 0; i < count; i++) {
-      const pos = positions[i % maxCells];
+      const pos = positionsToUse[i % positionsToUse.length];
       const offset = layer * 0.5;
       const jitter = (Math.floor(Math.random() * 3) - 1) * 0.25;
       tiles.push({
@@ -77,31 +88,18 @@ export function generateBoard(config: StageConfig): TileData[] {
   return tiles;
 }
 
-/**
- * 타일의 '점수'를 계산하여 누가 위에 있는지 판단합니다.
- * 레이어가 높을수록, 같은 레이어라면 ID 숫자가 클수록 위에 있습니다.
- */
 function getTileStackOrder(tile: TileData): number {
   const idNum = parseInt(tile.id.replace('tile_', ''), 10) || 0;
   return tile.layer * 10000 + idNum;
 }
 
-/**
- * Check if a tile is blocked by any tile on top of it.
- */
 export function isTileBlocked(tile: TileData, allTiles: TileData[]): boolean {
   const myOrder = getTileStackOrder(tile);
-  
   for (const other of allTiles) {
     if (other.id === tile.id) continue;
-    
-    // 나보다 아래에 있는 타일은 나를 막을 수 없음
     if (getTileStackOrder(other) <= myOrder) continue;
-
-    // 물리적 겹침 체크 (좌표 차이가 1.0 미만이면 겹침)
     const dx = Math.abs(other.col - tile.col);
     const dy = Math.abs(other.row - tile.row);
-    
     if (dx < 1.0 && dy < 1.0) return true;
   }
   return false;
