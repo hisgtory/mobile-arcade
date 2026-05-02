@@ -41,7 +41,8 @@ function App() {
           initialRouteName="Home"
           screenOptions={{
             headerShown: false,
-            animation: 'fade_from_bottom'
+            animation: 'fade_from_bottom',
+            gestureEnabled: false // iOS 스와이프 뒤로가기 비활성화
           }}
         >
           <Stack.Screen name="Home" component={HomeScreen} />

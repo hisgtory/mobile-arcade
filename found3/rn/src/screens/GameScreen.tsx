@@ -1,7 +1,8 @@
 import React from 'react';
-import { StyleSheet, View, Platform } from 'react-native';
+import { StyleSheet, View, Platform, BackHandler } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { GameBoard } from '@arcade/lib-found3-native';
 import { ProgressService } from '@arcade/lib-found3-native/src/logic/progress';
 import { RootStackParamList } from '../App';
@@ -10,6 +11,19 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
 export default function GameScreen({ route, navigation }: Props) {
   const { stageId } = route.params;
+
+  // 안드로이드 뒤로가기 버튼 차단
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        // true를 반환하면 뒤로가기 동작을 무시합니다.
+        return true;
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [])
+  );
 
   return (
     <View style={styles.container}>

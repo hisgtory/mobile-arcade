@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image } from 'react-native';
+import React, { useMemo, useCallback } from 'react';
+import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, BackHandler } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../App';
 import { TILE_ASSETS } from '@arcade/lib-found3-native/src/assets';
 
@@ -10,15 +11,22 @@ export default function ResultScreen({ route, navigation }: Props) {
   const { result, stageId, stats } = route.params;
   const isWin = result === 'win';
 
+  // 뒤로가기 차단
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => true;
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [])
+  );
+
   const topPercent = useMemo(() => {
     if (!isWin) return 100;
     if (!stats) return Math.max(1, Math.floor(100 - (stageId * 5) - Math.random() * 10));
-    
     const ratio = stats.time / stats.limit;
     const basePercent = ratio * 40; 
     const stageBonus = Math.max(0, 30 - stageId * 2); 
     const randomFactor = Math.random() * 5;
-    
     return Math.max(1, Math.floor(basePercent + stageBonus + randomFactor));
   }, [isWin, stageId, stats]);
 
@@ -27,36 +35,25 @@ export default function ResultScreen({ route, navigation }: Props) {
       <View style={styles.overlay}>
         <View style={[styles.card, isWin ? styles.winCard : styles.loseCard]}>
           <Text style={styles.title}>{isWin ? 'STAGE CLEAR!' : 'GAME OVER'}</Text>
-          
           {isWin && (
             <View style={styles.statsContainer}>
               <Text style={styles.percentText}>Top {topPercent}% Player</Text>
               <Text style={styles.description}>You completed it in {stats?.time} seconds!</Text>
             </View>
           )}
-
-          {!isWin && (
-            <Text style={styles.description}>Don't give up! Try again to beat the stage.</Text>
-          )}
-
+          {!isWin && <Text style={styles.description}>Don't give up! Try again to beat the stage.</Text>}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={[styles.button, styles.secondaryButton]}
-              onPress={() => navigation.navigate('Home')}
-            >
+            <TouchableOpacity style={[styles.button, styles.secondaryButton]} onPress={() => navigation.navigate('Home')}>
               <Text style={styles.secondaryButtonText}>HOME</Text>
             </TouchableOpacity>
-
             <TouchableOpacity 
-              style={[styles.button, isWin ? styles.primaryButtonWin : styles.primaryButtonLose]}
+              style={[styles.button, isWin ? styles.primaryButtonWin : styles.primaryButtonLose]} 
               onPress={() => {
                 const nextStage = isWin ? stageId + 1 : stageId;
                 navigation.replace('Game', { stageId: nextStage });
               }}
             >
-              <Text style={styles.primaryButtonText}>
-                {isWin ? 'NEXT STAGE' : 'RETRY'}
-              </Text>
+              <Text style={styles.primaryButtonText}>{isWin ? 'NEXT STAGE' : 'RETRY'}</Text>
             </TouchableOpacity>
           </View>
         </View>
