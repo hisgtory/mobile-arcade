@@ -61,7 +61,7 @@ export const ItemBar: React.FC<ItemBarProps> = ({
           {({ pressed }) => (
             <View style={styles.iconCircle}>
               <Image 
-                source={pressed ? TILE_ASSETS['ui_magnet'] : TILE_ASSETS['ui_magnet']} 
+                source={TILE_ASSETS['ui_magnet']} 
                 style={styles.itemIcon} 
                 resizeMode="cover" 
               />
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   itemLabel: {
     marginTop: 4,
     fontSize: 12,
-    fontWeight: '900',
+    fontFamily: 'Nunito-Black',
     color: '#FFF',
     textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 1, height: 1 },
@@ -133,6 +133,6 @@ const styles = StyleSheet.create({
   badgeText: {
     color: '#FFF',
     fontSize: 11,
-    fontWeight: 'bold',
+    fontFamily: 'Nunito-Bold',
   },
 });

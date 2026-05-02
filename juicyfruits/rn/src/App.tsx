@@ -1,16 +1,21 @@
-import React, { useEffect } from 'react';
-import { Platform } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { Platform, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { registerRootComponent } from 'expo';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
+import * as SplashScreen from 'expo-splash-screen';
 import mobileAds from 'react-native-google-mobile-ads';
+import { useFonts, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
+import { Nunito_400Regular, Nunito_700Bold, Nunito_900Black } from '@expo-google-fonts/nunito';
 import { AudioService } from '@arcade/lib-juicyfruits-native';
 import HomeScreen from './screens/HomeScreen';
 import GameScreen from './screens/GameScreen';
 import ResultScreen from './screens/ResultScreen';
+
+SplashScreen.preventAutoHideAsync();
 
 export type RootStackParamList = {
   Home: undefined;
@@ -27,31 +32,33 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function App() {
-  useEffect(() => {
-    // 0. 애드몹 SDK 초기화
-    mobileAds()
-      .initialize()
-      .then(adapterStatuses => {
-        console.log('[AdMob] SDK Initialized', adapterStatuses);
-      });
+  const [fontsLoaded] = useFonts({
+    'Fredoka-Bold': Fredoka_700Bold,
+    'Nunito-Regular': Nunito_400Regular,
+    'Nunito-Bold': Nunito_700Bold,
+    'Nunito-Black': Nunito_900Black,
+  });
 
-    // 1. 안드로이드 시스템 네비게이션 바 처리
+  useEffect(() => {
+    mobileAds().initialize();
     if (Platform.OS === 'android') {
       NavigationBar.setVisibilityAsync('hidden');
       NavigationBar.setBehaviorAsync('sticky-immersive');
     }
-
-    // 2. BGM 시작 (6곡 순환 재생)
     AudioService.startBGM();
-
-    return () => {
-      // 앱 종료 시 BGM 정지 및 리소스 해제
-      AudioService.stopBGM();
-    };
+    return () => { AudioService.stopBGM(); };
   }, []);
 
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider onLayout={onLayoutRootView}>
       <StatusBar hidden={true} />
       <NavigationContainer>
         <Stack.Navigator 
