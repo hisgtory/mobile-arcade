@@ -1,6 +1,8 @@
 use axum::{extract::Path, http::StatusCode, routing::get, Json, Router};
 use serde::Serialize;
 
+use crate::state::AppState;
+
 #[derive(Serialize, Clone, Copy)]
 struct Game {
     slug: &'static str,
@@ -31,7 +33,7 @@ async fn get_game(Path(slug): Path<String>) -> Result<Json<Game>, StatusCode> {
         .ok_or(StatusCode::NOT_FOUND)
 }
 
-pub fn router() -> Router {
+pub fn router() -> Router<AppState> {
     Router::new()
         .route("/games", get(list_games))
         .route("/games/{slug}", get(get_game))

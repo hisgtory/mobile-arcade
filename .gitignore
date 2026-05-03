@@ -38,3 +38,4 @@ rn/android/app/build/
 .metro-health-check*
 rn/.expo/
 package-lock.json
+dynamodb-local-metadata.json
