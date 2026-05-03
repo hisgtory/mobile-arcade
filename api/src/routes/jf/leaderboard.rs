@@ -10,6 +10,7 @@ const MAX_LIMIT: u32 = 50;
 const MAX_USER_ID_LEN: usize = 64;
 
 #[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Params {
     pub limit: Option<u32>,
     pub user_id: Option<String>,

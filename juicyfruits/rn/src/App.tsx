@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import mobileAds from 'react-native-google-mobile-ads';
 import { useFonts, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
 import { Nunito_400Regular, Nunito_700Bold, Nunito_900Black } from '@expo-google-fonts/nunito';
-import { AudioService } from '@arcade/lib-juicyfruits-native';
+import { AudioService, InitializationService } from '@arcade/lib-juicyfruits-native';
 import HomeScreen from './screens/HomeScreen';
 import GameScreen from './screens/GameScreen';
 import ResultScreen from './screens/ResultScreen';
@@ -24,7 +24,12 @@ export type RootStackParamList = {
     result: 'win' | 'lose';
     stageId: number;
     score: number;
-    stats?: { time: number; limit: number };
+    stats?: { 
+      time: number; 
+      limit: number;
+      tiles: any[];
+      tilesSource: 'server' | 'local';
+    };
     rewardCoins?: number;
     ranking?: {
       topPercent: number;
@@ -46,12 +51,16 @@ function App() {
   });
 
   useEffect(() => {
-    mobileAds().initialize();
-    if (Platform.OS === 'android') {
-      NavigationBar.setVisibilityAsync('hidden');
-      NavigationBar.setBehaviorAsync('sticky-immersive');
-    }
-    AudioService.startBGM();
+    // 앱 초기화 서비스 실행 (익명 ID 생성 및 설정 로드)
+    InitializationService.initialize().then(() => {
+      mobileAds().initialize();
+      if (Platform.OS === 'android') {
+        NavigationBar.setVisibilityAsync('hidden');
+        NavigationBar.setBehaviorAsync('sticky-immersive');
+      }
+      AudioService.startBGM();
+    });
+    
     return () => { AudioService.stopBGM(); };
   }, []);
 
@@ -85,3 +94,4 @@ function App() {
 }
 
 registerRootComponent(App);
+export default App;
