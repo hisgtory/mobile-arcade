@@ -279,17 +279,14 @@ impl VariantRepo {
             .await;
 
         let attrs = match upd {
-            Ok(out) => {
-                tracing::info!(stage, user_id, attrs_len = out.attributes.as_ref().map(|m| m.len()).unwrap_or(0), "update_item ok");
-                out.attributes.unwrap_or_default()
-            }
+            Ok(out) => out.attributes.unwrap_or_default(),
             Err(e) => {
-                // ConditionalCheckFailed = 이미 더 큰 stage 있음 → 정상, 갱신 없음
                 let s = e.to_string();
-                tracing::warn!(stage, user_id, error = %s, "record_user_progress update_item failed");
+                // ConditionalCheckFailed = 이미 더 큰 stage 있음 → 정상, 갱신 없음
                 if s.contains("ConditionalCheckFailed") {
                     return Ok(None);
                 }
+                tracing::warn!(stage, user_id, error = %s, "record_user_progress update_item failed");
                 return Err(RepoError::Upstream(s));
             }
         };
@@ -401,19 +398,17 @@ impl VariantRepo {
         user_id: &str,
     ) -> Result<Option<UserProgress>, RepoError> {
         let user_pk = format!("user-{}", user_id);
-        tracing::info!(user_id, %user_pk, "get_user_progress fetching");
         let out = self
             .client
             .get_item()
             .table_name(&self.table)
-            .key("pk", AttributeValue::S(user_pk.clone()))
+            .key("pk", AttributeValue::S(user_pk))
             .key("sk", AttributeValue::S("progress".into()))
             .send()
             .await
             .map_err(|e| RepoError::Upstream(e.to_string()))?;
 
         let Some(item) = out.item else {
-            tracing::warn!(user_id, %user_pk, "user progress not found");
             return Ok(None);
         };
         let highest_stage = item

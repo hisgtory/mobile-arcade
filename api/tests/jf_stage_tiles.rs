@@ -308,8 +308,8 @@ async fn setup_or_skip() -> Option<Setup> {
         .env("AWS_ACCESS_KEY_ID", "fake")
         .env("AWS_SECRET_ACCESS_KEY", "fake")
         .env("RUST_LOG", "arcade_api=debug,warn")
-        .stdout(std::process::Stdio::inherit())
-        .stderr(std::process::Stdio::inherit())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
         .kill_on_drop(true)
         .spawn()
         .ok()?;
