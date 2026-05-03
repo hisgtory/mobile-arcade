@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Juicy Fruits",
-    "slug": "juicyfruits",
+    "slug": "juicy-fruits",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon_v2.png",
@@ -44,7 +44,16 @@
           "iosAppId": "ca-app-pub-6129946475801358~9228667108"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "expo-navigation-bar": {
+        "visible": "immersive"
+      },
+      "eas": {
+        "projectId": "d0434e5e-2f8d-4bbb-9389-61ef036b3a52"
+      }
+    },
+    "owner": "hisgtory"
   },
   "react-native-google-mobile-ads": {
     "android_app_id": "ca-app-pub-6129946475801358~3237973821",
