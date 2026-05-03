@@ -60,11 +60,11 @@ fi
 echo
 echo "==> Step 1: Origin Access Control(OAC) 확보"
 
-OAC_ID=$(aws cloudfront list-origin-access-controls \
-  --query "OriginAccessControlList.Items[?Name=='arcade-api-oac'].Id | [0]" \
-  --output text)
+OAC_ID=$(aws cloudfront list-origin-access-controls --output json \
+  | jq -r '.OriginAccessControlList.Items[]? | select(.Name == "arcade-api-oac") | .Id' \
+  | head -n1)
 
-if [[ -n "$OAC_ID" && "$OAC_ID" != "None" ]]; then
+if [[ -n "$OAC_ID" ]]; then
   echo "    기존 OAC 재사용: $OAC_ID"
 else
   OAC_ID=$(aws cloudfront create-origin-access-control \
@@ -84,14 +84,18 @@ fi
 echo
 echo "==> Step 2: CloudFront distribution 확보"
 
-EXISTING=$(aws cloudfront list-distributions \
-  --query "DistributionList.Items[?Aliases.Items && contains(Aliases.Items, '$DOMAIN')].{Id:Id,ARN:ARN,Domain:DomainName} | [0]" \
-  --output json 2>/dev/null || echo 'null')
+DIST_INFO=$(aws cloudfront list-distributions --output json \
+  | jq --arg domain "$DOMAIN" -r '
+      .DistributionList.Items[]?
+      | select(.Aliases.Items // [] | index($domain))
+      | "\(.Id)|\(.ARN)|\(.DomainName)"' \
+  | head -n1)
 
-if [[ "$EXISTING" != "null" && "$EXISTING" != "" ]]; then
-  DIST_ID=$(echo "$EXISTING"     | jq -r '.Id')
-  DIST_ARN=$(echo "$EXISTING"    | jq -r '.ARN')
-  DIST_DOMAIN=$(echo "$EXISTING" | jq -r '.Domain')
+if [[ -n "$DIST_INFO" ]]; then
+  DIST_ID="${DIST_INFO%%|*}"
+  rest="${DIST_INFO#*|}"
+  DIST_ARN="${rest%%|*}"
+  DIST_DOMAIN="${rest#*|}"
   echo "    기존 distribution 재사용: $DIST_ID"
   echo "    Domain: $DIST_DOMAIN"
 else
