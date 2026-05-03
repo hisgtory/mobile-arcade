@@ -63,6 +63,7 @@ jobs:
     env:
       AWS_REGION: ap-northeast-2
       LAMBDA_NAME: arcade-api
+      DOMAIN: arcade-api.hisgtory.com
 
     steps:
       - uses: actions/checkout@v4
@@ -105,75 +106,37 @@ jobs:
             --env-var DDB_TABLE=juicy-fruits \
             --env-var RUST_LOG=arcade_api=info,tower_http=info
 
-      - name: Force Function URL AuthType=NONE + public invoke policy
-        # cargo-lambda 버전에 따라 첫 생성 시 AWS_IAM으로 떨어질 수 있어 매 배포마다 NONE으로 보정.
-        # 또한 unauthenticated 호출을 허용하는 resource policy도 idempotent하게 보장.
-        run: |
-          set -euo pipefail
-          aws lambda update-function-url-config \
-            --function-name ${{ env.LAMBDA_NAME }} \
-            --region ${{ env.AWS_REGION }} \
-            --auth-type NONE
-
-          # 기존 resource policy에 public-invoke statement 있는지 검사
-          POLICY=$(aws lambda get-policy \
-            --function-name ${{ env.LAMBDA_NAME }} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'Policy' --output text 2>/dev/null || echo '{}')
-
-          # Function URL AuthType=NONE은 두 액션 public 허용이 필요:
-          #   - lambda:InvokeFunctionUrl  (Function URL routing layer 검증용)
-          #   - lambda:InvokeFunction     (실제 함수 실행 권한)
-          # --function-url-auth-type 조건은 InvokeFunctionUrl에만 사용 가능.
-          add_perm_url() {
-            local sid=$1
-            if echo "$POLICY" | grep -q "\"$sid\""; then
-              echo "$sid already attached"
-            else
-              echo "attaching $sid (InvokeFunctionUrl)"
-              aws lambda add-permission \
-                --function-name ${{ env.LAMBDA_NAME }} \
-                --region ${{ env.AWS_REGION }} \
-                --statement-id "$sid" \
-                --action lambda:InvokeFunctionUrl \
-                --principal '*' \
-                --function-url-auth-type NONE
-            fi
-          }
-          add_perm_invoke() {
-            local sid=$1
-            if echo "$POLICY" | grep -q "\"$sid\""; then
-              echo "$sid already attached"
-            else
-              echo "attaching $sid (InvokeFunction)"
-              aws lambda add-permission \
-                --function-name ${{ env.LAMBDA_NAME }} \
-                --region ${{ env.AWS_REGION }} \
-                --statement-id "$sid" \
-                --action lambda:InvokeFunction \
-                --principal '*'
-            fi
-          }
-          add_perm_url    PublicInvokeFunctionUrl
-          add_perm_invoke PublicInvokeFunction
-
-          echo "--- final resource policy ---"
-          aws lambda get-policy \
-            --function-name ${{ env.LAMBDA_NAME }} \
-            --region ${{ env.AWS_REGION }} \
-            --query 'Policy' --output text | python3 -m json.tool
-
-      - name: Print Function URL config
+      - name: Print Function URL config (for reference)
         run: |
           aws lambda get-function-url-config \
             --function-name ${{ env.LAMBDA_NAME }} \
             --region ${{ env.AWS_REGION }}
 
-      - name: Curl Function URL from runner
+      - name: Invalidate CloudFront cache
+        # Lambda 코드가 바뀌었을 때 edge 노드의 잔존 캐시를 비움.
+        # 우리 CachePolicy는 CachingDisabled라 보통 캐시 안 되지만, 안전벨트.
+        # AWS Free Tier: 월 1000 paths/account 무료.
         run: |
-          URL=$(aws lambda get-function-url-config \
-            --function-name ${{ env.LAMBDA_NAME }} \
-            --region ${{ env.AWS_REGION }} \
-            --query FunctionUrl --output text)
-          echo "Calling: ${URL}health"
-          curl -is --max-time 30 "${URL}health" || true
+          set -euo pipefail
+          DIST_ID=$(aws cloudfront list-distributions --output json \
+            | jq -r --arg d "${{ env.DOMAIN }}" '
+                .DistributionList.Items[]?
+                | select(.Aliases.Items // [] | index($d))
+                | .Id' \
+            | head -n1)
+
+          if [[ -z "$DIST_ID" ]]; then
+            echo "No CloudFront distribution for ${{ env.DOMAIN }} — skipping (run cloudfront-bootstrap.sh first)"
+            exit 0
+          fi
+
+          echo "Invalidating distribution $DIST_ID"
+          INV_ID=$(aws cloudfront create-invalidation \
+            --distribution-id "$DIST_ID" \
+            --paths '/*' \
+            --query 'Invalidation.Id' --output text)
+          echo "Invalidation ID: $INV_ID"
+
+      - name: Smoke test via custom domain
+        run: |
+          curl -is --max-time 30 "https://${{ env.DOMAIN }}/health" || true
