@@ -4,15 +4,23 @@ name: EAS Build — Juicy Fruits
 #
 # === 사용 방법 ===
 #
-# 1) 릴리스 빌드 (tag push):
+# 1) GitHub Release 발행 (정식 흐름):
 #    - app.json의 expo.version을 1.0.0 등으로 미리 업데이트하고 main에 머지
-#    - 그 후 tag push:
-#        git tag juicy-fruits-android/1.0.0 && git push origin juicy-fruits-android/1.0.0
-#        git tag juicy-fruits-ios/1.0.0     && git push origin juicy-fruits-ios/1.0.0
-#        git tag juicy-fruits-all/1.0.0     && git push origin juicy-fruits-all/1.0.0
+#    - GitHub UI → Releases → Draft a new release
+#      Tag:   juicy-fruits-android/1.0.0  (or -ios/-all)
+#      Title: 자유
+#      Notes: 변경 사항
+#      Pre-release 체크 → preview 빌드, 미체크 → production 빌드
+#    - "Publish release" 클릭 → 워크플로우 자동 실행
+#
+#    또는 gh CLI:
+#      gh release create juicy-fruits-android/1.0.0 \
+#        --title "Android 1.0.0" --notes "release notes"
+#      gh release create juicy-fruits-android/1.0.0-rc.1 --prerelease \
+#        --title "Preview" --notes "..."
 #
 # 2) 수동 트리거 (Actions 탭 → Run workflow):
-#    - platform / profile 선택 가능 (preview용 등)
+#    - platform / profile 직접 선택 (Release 안 만들고 ad-hoc 빌드)
 #
 # === 한 번 셋업해야 할 것 ===
 #
@@ -25,11 +33,8 @@ name: EAS Build — Juicy Fruits
 #   https://expo.dev/accounts/hisgtory/projects/juicy-fruits/builds
 
 on:
-  push:
-    tags:
-      - 'juicy-fruits-android/*'
-      - 'juicy-fruits-ios/*'
-      - 'juicy-fruits-all/*'
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       platform:
@@ -44,14 +49,62 @@ on:
         default: preview
 
 concurrency:
-  # 같은 tag에 대해 여러 번 push되면 이전 실행 취소.
-  # tag별로 격리해서 android/ios 동시 빌드는 막지 않음.
+  # 같은 release/수동 트리거에 대해 여러 번 발생하면 이전 실행 취소.
   group: eas-build-juicy-fruits-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  filter:
+    # release 이벤트 중 juicy-fruits-* tag 만 통과시킴.
+    # (다른 게임/패키지 release tag로는 이 워크플로우가 발동하지 않게)
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+      platform:   ${{ steps.check.outputs.platform }}
+      profile:    ${{ steps.check.outputs.profile }}
+      version:    ${{ steps.check.outputs.version }}
+    steps:
+      - id: check
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "platform=${{ inputs.platform }}" >> "$GITHUB_OUTPUT"
+            echo "profile=${{ inputs.profile }}"   >> "$GITHUB_OUTPUT"
+            echo "version=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TAG="${{ github.event.release.tag_name }}"
+          PRERELEASE="${{ github.event.release.prerelease }}"
+
+          if [[ ! "$TAG" =~ ^juicy-fruits-(android|ios|all)/.+$ ]]; then
+            echo "Tag '$TAG' does not match juicy-fruits pattern — skipping"
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          PLATFORM=$(echo "$TAG" | sed -E 's|^juicy-fruits-([^/]+)/.*|\1|')
+          VERSION=$(echo "$TAG"  | sed -E 's|^juicy-fruits-[^/]+/(.*)|\1|')
+
+          # prerelease=true → preview profile (내부 테스트용)
+          # prerelease=false → production profile (스토어 제출용)
+          if [[ "$PRERELEASE" == "true" ]]; then
+            PROFILE="preview"
+          else
+            PROFILE="production"
+          fi
+
+          echo "should_run=true" >> "$GITHUB_OUTPUT"
+          echo "platform=$PLATFORM" >> "$GITHUB_OUTPUT"
+          echo "profile=$PROFILE"   >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION"   >> "$GITHUB_OUTPUT"
+          echo "→ tag=$TAG, platform=$PLATFORM, profile=$PROFILE, version=$VERSION, prerelease=$PRERELEASE"
+
   build:
-    name: EAS build (${{ github.event_name == 'push' && github.ref_name || format('{0}/{1}', inputs.platform, inputs.profile) }})
+    needs: filter
+    if: needs.filter.outputs.should_run == 'true'
+    name: EAS build (${{ needs.filter.outputs.platform }}/${{ needs.filter.outputs.profile }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
     defaults:
@@ -61,37 +114,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Resolve platform / profile / version from tag
-        id: meta
-        working-directory: ${{ github.workspace }}
-        run: |
-          set -euo pipefail
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            PLATFORM="${{ inputs.platform }}"
-            PROFILE="${{ inputs.profile }}"
-            VERSION=""
-          else
-            TAG="${GITHUB_REF#refs/tags/}"
-            # juicy-fruits-android/1.0.0  →  platform=android, version=1.0.0
-            PLATFORM=$(echo "$TAG" | sed -E 's|^juicy-fruits-([^/]+)/.*|\1|')
-            VERSION=$(echo "$TAG" | sed -E 's|^juicy-fruits-[^/]+/(.*)|\1|')
-            PROFILE="production"
-          fi
-          echo "platform=$PLATFORM" >> "$GITHUB_OUTPUT"
-          echo "profile=$PROFILE"   >> "$GITHUB_OUTPUT"
-          echo "version=$VERSION"   >> "$GITHUB_OUTPUT"
-          echo "→ platform=$PLATFORM, profile=$PROFILE, version=$VERSION"
-
-      - name: Verify app.json version matches tag
-        if: github.event_name == 'push'
+      - name: Verify app.json version matches release tag
+        if: github.event_name == 'release'
         run: |
           APP_VER=$(jq -r '.expo.version' app.json)
-          TAG_VER='${{ steps.meta.outputs.version }}'
-          if [[ "$APP_VER" != "$TAG_VER" ]]; then
-            echo "::error::app.json version ($APP_VER) != tag version ($TAG_VER). app.json을 먼저 업데이트하세요."
+          REL_VER='${{ needs.filter.outputs.version }}'
+          # rc/beta suffix 허용 (e.g. 1.0.0-rc.1 → 1.0.0과 매치)
+          REL_BASE="${REL_VER%%-*}"
+          if [[ "$APP_VER" != "$REL_BASE" ]]; then
+            echo "::error::app.json version ($APP_VER) != release tag base ($REL_BASE). app.json을 먼저 업데이트하세요."
             exit 1
           fi
-          echo "✓ version match: $APP_VER"
+          echo "✓ version match: app=$APP_VER, release=$REL_VER"
 
       - uses: pnpm/action-setup@v4
 
@@ -113,16 +147,13 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: EAS build
-        env:
-          # tag-triggered면 GitHub Release notes에 포함될 수 있도록 메타 출력
-          GH_REF: ${{ github.ref }}
-          GH_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          echo "Building: profile=${{ steps.meta.outputs.profile }}, platform=${{ steps.meta.outputs.platform }}"
+          MSG="${{ github.event_name == 'release' && github.event.release.tag_name || format('manual/{0}/{1}', needs.filter.outputs.platform, needs.filter.outputs.profile) }} · ${{ github.sha }}"
+          echo "Building: profile=${{ needs.filter.outputs.profile }}, platform=${{ needs.filter.outputs.platform }}"
           eas build \
-            --profile ${{ steps.meta.outputs.profile }} \
-            --platform ${{ steps.meta.outputs.platform }} \
-            --message "${{ github.ref_name }} · ${{ github.sha }}" \
+            --profile ${{ needs.filter.outputs.profile }} \
+            --platform ${{ needs.filter.outputs.platform }} \
+            --message "$MSG" \
             --non-interactive \
             --wait
