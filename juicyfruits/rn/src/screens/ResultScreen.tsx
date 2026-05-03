@@ -126,7 +126,11 @@ export default function ResultScreen({ route, navigation }: Props) {
               <View style={styles.buttonFixedWrapperHalf}>
                 <Pressable 
                   style={({ pressed }) => [styles.sideBtn, isWin ? styles.nextBtn : styles.retryBtn, pressed && styles.duoBtnPressed]} 
-                  onPress={() => navigation.replace('Game', { stageId: isWin ? stageId + 1 : stageId })}
+                  onPress={() => {
+                    if (!isWin) AnalyticsService.logEvent('game_restart', { stageId });
+                    navigation.replace('Game', { stageId: isWin ? stageId + 1 : stageId });
+                  }
+                }
                 >
                   <View style={isWin ? styles.nextBtnInner : styles.retryBtnInner}>
                     <Text style={styles.primaryBtnText}>{isWin ? 'NEXT' : 'RETRY'}</Text>

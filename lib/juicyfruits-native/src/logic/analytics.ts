@@ -6,7 +6,10 @@ export type GameEventType =
   | 'stage_fail'     // 스테이지 실패
   | 'item_use'       // 아이템 사용
   | 'ad_reward'      // 광고 시청 보상 획득
-  | 'shop_buy';      // 상점 아이템 구매
+  | 'shop_buy'       // 상점 아이템 구매
+  | 'game_restart'   // 게임 재시작
+  | 'audio_toggle'   // 오디오 온/오프
+  | 'volume_change'; // 음량 조절
 
 export interface GameEvent {
   type: GameEventType;
@@ -38,7 +41,6 @@ export const AnalyticsService = {
       /**
        * TODO: API 연동 필요
        * - 서버에 이벤트를 전송하는 로직을 여기에 구현해야 합니다.
-       * - 예: await fetch('https://api.arcade.com/log', { method: 'POST', body: JSON.stringify(event) });
        */
       
     } catch (e) {

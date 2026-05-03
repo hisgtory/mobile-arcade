@@ -79,6 +79,9 @@ export default function HomeScreen({ navigation }: Props) {
     setIsMuted(newMuted);
     Animated.timing(switchAnim, { toValue: newMuted ? 0 : 1, duration: 200, useNativeDriver: false }).start();
     Vibration.vibrate(30);
+
+    // Log audio toggle
+    AnalyticsService.logEvent('audio_toggle', { isMuted: newMuted });
   };
 
   const adjustVolume = async (delta: number) => {
@@ -86,6 +89,9 @@ export default function HomeScreen({ navigation }: Props) {
     setVolume(newVol);
     await AudioService.setVolume(newVol);
     Vibration.vibrate(20);
+
+    // Log volume change
+    AnalyticsService.logEvent('volume_change', { volume: newVol });
   };
 
   const handleSetStage = async () => {

@@ -170,6 +170,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     setIsMuted(AudioService.isMuted);
     Animated.timing(switchAnim, { toValue: AudioService.isMuted ? 0 : 1, duration: 200, useNativeDriver: false }).start();
     Vibration.vibrate(30);
+
+    // Log audio toggle
+    AnalyticsService.logEvent('audio_toggle', { isMuted: AudioService.isMuted, stageId });
   };
 
   const adjustVolume = async (delta: number) => {
@@ -177,6 +180,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     setVolume(newVol);
     await AudioService.setVolume(newVol);
     Vibration.vibrate(20);
+
+    // Log volume change
+    AnalyticsService.logEvent('volume_change', { volume: newVol, stageId });
   };
 
   useEffect(() => {
@@ -325,7 +331,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
               <Text style={styles.modalTitle}>SETTINGS</Text>
               <View style={styles.settingRow}><Text style={styles.settingLabel}>MUSIC</Text><TouchableOpacity activeOpacity={0.8} onPress={toggleMusic}><View style={[styles.switchTrack, { backgroundColor: isMuted ? '#dee2e6' : '#58CC02' }]}><Animated.View style={[styles.switchThumb, { transform: [{ translateX: switchAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 26] }) }] }]} /></View></TouchableOpacity></View>
               <View style={styles.settingRow}><Text style={styles.settingLabel}>VOLUME</Text><View style={styles.volumeController}><TouchableOpacity style={styles.volBtn} onPress={() => adjustVolume(-0.1)}><Text style={styles.volBtnText}>-</Text></TouchableOpacity><View style={styles.volProgressBg}><View style={[styles.volProgressFill, { width: `${volume * 100}%` }]} /></View><TouchableOpacity style={styles.volBtn} onPress={() => adjustVolume(0.1)}><Text style={styles.volBtnText}>+</Text></TouchableOpacity></View></View>
-              <View style={styles.buttonFixedWrapper}><Pressable style={({ pressed }) => [styles.duoBtnSecondary, pressed && styles.duoBtnPressed]} onPress={() => { setShowSettings(false); onRestart?.(); }}><View style={styles.duoBtnSecondaryInner}><Text style={styles.duoBtnSecondaryText}>RESTART</Text></View></Pressable></View>
+              <View style={styles.buttonFixedWrapper}><Pressable style={({ pressed }) => [styles.duoBtnSecondary, pressed && styles.duoBtnPressed]} onPress={() => { 
+                // Log restart
+                AnalyticsService.logEvent('game_restart', { stageId });
+                setShowSettings(false); 
+                onRestart?.(); 
+              }}><View style={styles.duoBtnSecondaryInner}><Text style={styles.duoBtnSecondaryText}>RESTART</Text></View></Pressable></View>
               <View style={styles.buttonFixedWrapper}><Pressable style={({ pressed }) => [styles.duoBtnSecondary, pressed && styles.duoBtnPressed]} onPress={() => { setShowSettings(false); onExit?.(); }}><View style={styles.duoBtnSecondaryInner}><Text style={styles.duoBtnSecondaryText}>EXIT GAME</Text></View></Pressable></View>
               <TouchableOpacity style={styles.closeLink} onPress={() => setShowSettings(false)}><Text style={styles.closeLinkText}>CLOSE</Text></TouchableOpacity>
             </View>
