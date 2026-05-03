@@ -5,22 +5,31 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from '@react-navigation/native';
 import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { RootStackParamList } from '../App';
-import { 
-  TILE_ASSETS, 
-  ProgressService, 
-  AudioService, 
+import {
+  TILE_ASSETS,
+  ProgressService,
+  AudioService,
   AD_UNIT_IDS,
   getStageConfig,
-  AnalyticsService 
+  AnalyticsService,
+  getLeaderboard,
+  getUserId,
+  UserPosition,
 } from '@arcade/lib-juicyfruits-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 const FRUIT_TYPES = [
-  'apple', 'banana', 'cherry', 'grape', 'kiwi', 'lemon', 'orange', 
+  'apple', 'banana', 'cherry', 'grape', 'kiwi', 'lemon', 'orange',
   'peach', 'pear', 'pineapple', 'strawberry', 'watermelon', 'mangosteen', 'pomegranate'
 ];
+
+function formatTopPercent(p: number): string {
+  if (p >= 10) return Math.round(p).toString();
+  if (p >= 1) return p.toFixed(1).replace(/\.0$/, '');
+  return p.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
 
 export default function HomeScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
@@ -30,6 +39,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [debugStage, setDebugStage] = useState('');
   const [isMuted, setIsMuted] = useState(AudioService.isMuted);
   const [volume, setVolume] = useState(AudioService.volume);
+  const [userRank, setUserRank] = useState<UserPosition | null>(null);
   const switchAnim = useRef(new Animated.Value(AudioService.isMuted ? 0 : 1)).current;
 
   const stageConfig = getStageConfig(currentStage);
@@ -45,6 +55,21 @@ export default function HomeScreen({ navigation }: Props) {
       setIsMuted(AudioService.isMuted);
       setVolume(AudioService.volume);
       switchAnim.setValue(AudioService.isMuted ? 0 : 1);
+
+      // 리더보드: 서버 호출. 실패해도 무시 (홈 화면은 항상 동작해야 함).
+      let cancelled = false;
+      (async () => {
+        try {
+          const userId = await getUserId();
+          const lb = await getLeaderboard({ userId, limit: 1 });
+          if (!cancelled) setUserRank(lb.user);
+        } catch {
+          if (!cancelled) setUserRank(null);
+        }
+      })();
+      return () => {
+        cancelled = true;
+      };
     }, [switchAnim])
   );
 
@@ -109,6 +134,23 @@ export default function HomeScreen({ navigation }: Props) {
               </View>
             </View>
           </View>
+
+          {userRank && (
+            <View style={styles.rankPill}>
+              {userRank.rank <= 100 ? (
+                <Text style={styles.rankPillText}>
+                  <Text style={styles.rankPillEmoji}>🏅 </Text>
+                  WORLD RANK <Text style={styles.rankPillNumber}>#{userRank.rank}</Text>
+                  <Text style={styles.rankPillSep}>  ·  </Text>
+                  TOP <Text style={styles.rankPillNumber}>{formatTopPercent(userRank.topPercent)}%</Text>
+                </Text>
+              ) : (
+                <Text style={styles.rankPillText}>
+                  TOP <Text style={styles.rankPillNumber}>{formatTopPercent(userRank.topPercent)}%</Text>{' '}PLAYER
+                </Text>
+              )}
+            </View>
+          )}
 
           <View style={[styles.buttonFixedWrapper, { height: 70, paddingHorizontal: 40 }]}>
             <Pressable 
@@ -207,7 +249,12 @@ const styles = StyleSheet.create({
   logoContainer: { marginBottom: 20, alignItems: 'center', marginTop: 10 },
   title: { fontSize: 52, fontFamily: 'Fredoka-Bold', color: '#333', letterSpacing: -1 },
   subtitle: { fontSize: 18, fontFamily: 'Nunito-Bold', color: '#adb5bd', marginTop: -5 },
-  duoCard: { width: SCREEN_WIDTH - 60, backgroundColor: '#E5E5E5', borderRadius: 24, paddingBottom: 6, marginBottom: 30 },
+  duoCard: { width: SCREEN_WIDTH - 60, backgroundColor: '#E5E5E5', borderRadius: 24, paddingBottom: 6, marginBottom: 16 },
+  rankPill: { backgroundColor: 'rgba(255,255,255,0.92)', borderRadius: 999, paddingHorizontal: 18, paddingVertical: 8, marginBottom: 22, borderWidth: 1.5, borderColor: '#E5E5E5' },
+  rankPillEmoji: { fontSize: 14 },
+  rankPillText: { fontFamily: 'Nunito-Black', fontSize: 13, color: '#4B4B4B', letterSpacing: 0.4 },
+  rankPillNumber: { fontFamily: 'Fredoka-Bold', color: '#1CB0F6' },
+  rankPillSep: { color: '#CED4DA' },
   duoCardInner: { backgroundColor: '#FFF', borderRadius: 24, padding: 20, alignItems: 'center', borderWidth: 2, borderColor: '#E5E5E5' },
   stageLabel: { fontSize: 14, fontFamily: 'Nunito-Black', color: '#adb5bd', marginBottom: 0 },
   stageValue: { fontSize: 72, fontFamily: 'Fredoka-Bold', color: '#1CB0F6', marginBottom: 10 },
