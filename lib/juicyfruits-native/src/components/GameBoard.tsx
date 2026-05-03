@@ -29,7 +29,15 @@ const ITEM_PRICES = { undo: 50, shuffle: 100, magnet: 150 };
 
 interface GameBoardProps {
   stageId: number;
-  onGameEnd?: (result: 'win' | 'lose', stats?: { time: number, limit: number }) => void;
+  onGameEnd?: (
+    result: 'win' | 'lose',
+    stats?: {
+      time: number;
+      limit: number;
+      tiles?: TileData[];
+      tilesSource?: 'server' | 'local';
+    },
+  ) => void;
   onExit?: () => void;
   onRestart?: () => void;
 }
@@ -54,6 +62,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const switchAnim = useRef(new Animated.Value(AudioService.isMuted ? 0 : 1)).current;
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  // 초기 보드 스냅샷 (서버 ingest용). undo로 복원된 타일을 포함하지 않게 init 시점 캡처.
+  const initialTilesRef = useRef<TileData[]>([]);
 
   // --- Strict Layout ---
   const SAFE_TOP = Math.max(insets.top, 10);
@@ -177,6 +187,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
         generated = generateBoard(config);
       }
       setTilesSource(source);
+      initialTilesRef.current = generated;
 
       setTiles(generated.map(t => ({ ...t, isSelectable: !isTileBlocked(t, generated) })));
       setSlots([]); setMaxSlot(MAX_SLOT); setElapsedTime(0);
@@ -193,8 +204,13 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const handleGameEnd = useCallback((res: 'win' | 'lose') => {
     if (timerRef.current) clearInterval(timerRef.current);
     setPhase(res === 'win' ? GamePhase.CLEAR : GamePhase.GAMEOVER);
-    onGameEnd?.(res, { time: elapsedTime, limit: config.timeLimit });
-  }, [elapsedTime, config.timeLimit, onGameEnd]);
+    onGameEnd?.(res, {
+      time: elapsedTime,
+      limit: config.timeLimit,
+      tiles: initialTilesRef.current,
+      tilesSource,
+    });
+  }, [elapsedTime, config.timeLimit, onGameEnd, tilesSource]);
 
   const formatTime = (s: number) => `${Math.floor(s/60)}:${s%60 < 10 ? '0' : ''}${s%60}`;
 

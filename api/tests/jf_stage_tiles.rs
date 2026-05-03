@@ -97,6 +97,106 @@ async fn integration() {
         .max()
         .unwrap();
     assert!(max_obj < 6, "max objectId {} must be < 6", max_obj);
+
+    // -------- /v1/jf/stage/clear --------
+
+    // 8. first clear → ordinal=1, top_percent=100
+    let res = post_clear(
+        &setup.api_url,
+        &json!({ "stage": 7, "durationSec": 30, "userId": "user-a" }),
+    )
+    .await;
+    assert_eq!(res.status(), 200, "first clear should be 200");
+    let body: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(body["clearOrdinal"], 1);
+    assert_eq!(body["totalClears"], 1);
+    let tp = body["topPercent"].as_f64().unwrap();
+    assert!((tp - 100.0).abs() < 1e-3, "first clear top_percent should be 100, got {tp}");
+    assert_eq!(body["variantAccepted"], false);
+
+    // 9. faster clear → ordinal=2, top_percent ≈ 50%
+    let res = post_clear(
+        &setup.api_url,
+        &json!({ "stage": 7, "durationSec": 10, "userId": "user-b" }),
+    )
+    .await;
+    assert_eq!(res.status(), 200);
+    let body: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(body["clearOrdinal"], 2);
+    assert_eq!(body["totalClears"], 2);
+    let tp = body["topPercent"].as_f64().unwrap();
+    // user-b cleared in 10s (bucket 2) — user-a was 30s (bucket 6) → 1 faster slot? no, b is faster than a.
+    // Actually: faster = sum of buckets < user_b's bucket. user-b is bucket 2.
+    // user-a bucket 6 was filled but user-b's bucket 2 has nothing below → faster=0 → top=(0+1)*100/2=50%.
+    assert!((tp - 50.0).abs() < 1.0, "second clear top_percent should be ~50, got {tp}");
+
+    // 10. third (slowest) clear → top_percent ≈ 100%
+    let res = post_clear(
+        &setup.api_url,
+        &json!({ "stage": 7, "durationSec": 200, "userId": "user-c" }),
+    )
+    .await;
+    let body: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(body["clearOrdinal"], 3);
+    let tp = body["topPercent"].as_f64().unwrap();
+    // user-c bucket 40, faster=2 (a@6 + b@2) → (2+1)*100/3 = 100%
+    assert!((tp - 100.0).abs() < 1.0, "slowest clear top_percent should be ~100, got {tp}");
+
+    // 11. validation: stage=0
+    let res = post_clear(
+        &setup.api_url,
+        &json!({ "stage": 0, "durationSec": 10, "userId": "user-x" }),
+    )
+    .await;
+    assert_eq!(res.status(), 400);
+    assert_eq!(
+        res.json::<serde_json::Value>().await.unwrap()["code"],
+        "stage_out_of_range"
+    );
+
+    // 12. validation: empty userId
+    let res = post_clear(
+        &setup.api_url,
+        &json!({ "stage": 1, "durationSec": 10, "userId": "" }),
+    )
+    .await;
+    assert_eq!(res.status(), 400);
+
+    // 13. tile ingestion: client submits tiles for an unseen stage. Use stage 100 to
+    //     guarantee no prior variants in this test-run cache.
+    //     We'll fetch /tiles after to confirm the variant landed.
+    // Build a minimal solvable board: 3 same-type tiles in layer 0
+    let submitted_tiles = json!([
+        { "id": "tile_0", "objectId": 0, "col": 0.0, "row": 0.0, "layer": 0 },
+        { "id": "tile_1", "objectId": 0, "col": 1.0, "row": 0.0, "layer": 0 },
+        { "id": "tile_2", "objectId": 0, "col": 2.0, "row": 0.0, "layer": 0 }
+    ]);
+    let res = post_clear(
+        &setup.api_url,
+        &json!({
+            "stage": 100,
+            "durationSec": 5,
+            "userId": "user-d",
+            "tiles": submitted_tiles,
+            "objects": 1
+        }),
+    )
+    .await;
+    assert_eq!(res.status(), 200);
+    let body: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(
+        body["variantAccepted"], true,
+        "client tiles should be ingested when pool is empty + solvable"
+    );
+}
+
+async fn post_clear(base: &str, body: &serde_json::Value) -> reqwest::Response {
+    reqwest::Client::new()
+        .post(format!("{}/v1/jf/stage/clear", base))
+        .json(body)
+        .send()
+        .await
+        .expect("request send")
 }
 
 async fn post(base: &str, body: &serde_json::Value) -> reqwest::Response {

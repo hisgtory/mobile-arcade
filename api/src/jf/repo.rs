@@ -17,6 +17,14 @@ use super::types::TileData;
 pub const SCHEMA_VERSION: u32 = 1;
 const QUERY_LIMIT: i32 = 25;
 
+/// Bucket size in seconds for clear-time histogram. 5s × 200 buckets = 0..1000s.
+pub const CLEAR_BUCKET_SECONDS: u32 = 5;
+pub const CLEAR_MAX_BUCKETS: u32 = 200;
+
+pub fn clear_bucket(duration_sec: u32) -> u32 {
+    (duration_sec / CLEAR_BUCKET_SECONDS).min(CLEAR_MAX_BUCKETS - 1)
+}
+
 #[derive(Debug, Error)]
 pub enum RepoError {
     #[error("dynamodb upstream unavailable: {0}")]
@@ -49,6 +57,10 @@ impl VariantRepo {
 
     pub fn pk(stage: u32, objects: u32) -> String {
         format!("stage-{}-objects-{}", stage, objects)
+    }
+
+    pub fn clear_pk(stage: u32) -> String {
+        format!("stage-clear-{}", stage)
     }
 
     pub async fn list_recent(&self, stage: u32, objects: u32) -> Result<Vec<Variant>, RepoError> {
@@ -105,6 +117,111 @@ impl VariantRepo {
             sk,
             tiles: tiles.to_vec(),
         })
+    }
+
+    /// 클리어 어그리게이트 atomic 갱신.
+    /// 한 번의 UpdateItem으로 total_clears + bucket_{B} 둘 다 +1, 갱신된 모든 속성 반환.
+    /// 반환된 ClearAggregate로 percentile 계산 가능.
+    pub async fn record_clear(
+        &self,
+        stage: u32,
+        duration_sec: u32,
+    ) -> Result<ClearAggregate, RepoError> {
+        let bucket = clear_bucket(duration_sec);
+        let bucket_attr = format!("b_{}", bucket);
+        let pk = Self::clear_pk(stage);
+
+        let out = self
+            .client
+            .update_item()
+            .table_name(&self.table)
+            .key("pk", AttributeValue::S(pk))
+            .key("sk", AttributeValue::S("aggregate".into()))
+            .update_expression("ADD total_clears :one, #b :one SET schema_v = if_not_exists(schema_v, :sv), created_at = if_not_exists(created_at, :now)")
+            .expression_attribute_names("#b", bucket_attr.clone())
+            .expression_attribute_values(":one", AttributeValue::N("1".into()))
+            .expression_attribute_values(":sv", AttributeValue::N(SCHEMA_VERSION.to_string()))
+            .expression_attribute_values(":now", AttributeValue::N(epoch_ms().to_string()))
+            .return_values(aws_sdk_dynamodb::types::ReturnValue::AllNew)
+            .send()
+            .await
+            .map_err(|e| RepoError::Upstream(e.to_string()))?;
+
+        let attrs = out.attributes.unwrap_or_default();
+        let total_clears = attrs
+            .get("total_clears")
+            .and_then(|v| v.as_n().ok())
+            .and_then(|s| s.parse::<u64>().ok())
+            .ok_or_else(|| RepoError::Malformed("missing total_clears".into()))?;
+
+        let mut buckets = vec![0u64; CLEAR_MAX_BUCKETS as usize];
+        for (k, v) in &attrs {
+            if let Some(idx_str) = k.strip_prefix("b_") {
+                if let (Ok(idx), Ok(n)) = (
+                    idx_str.parse::<usize>(),
+                    v.as_n().ok().and_then(|s| s.parse::<u64>().ok()).ok_or(()),
+                ) {
+                    if idx < buckets.len() {
+                        buckets[idx] = n;
+                    }
+                }
+            }
+        }
+
+        Ok(ClearAggregate {
+            total_clears,
+            user_bucket: bucket,
+            buckets,
+        })
+    }
+
+    /// 감사용 클리어 로그 (best-effort, 실패해도 응답엔 영향 없음).
+    pub async fn put_clear_log(
+        &self,
+        stage: u32,
+        user_id: &str,
+        duration_sec: u32,
+    ) -> Result<(), RepoError> {
+        let pk = Self::clear_pk(stage);
+        let sk = format!("clear-{}", new_ulid());
+
+        self.client
+            .put_item()
+            .table_name(&self.table)
+            .item("pk", AttributeValue::S(pk))
+            .item("sk", AttributeValue::S(sk))
+            .item("user_id", AttributeValue::S(user_id.to_string()))
+            .item("duration_sec", AttributeValue::N(duration_sec.to_string()))
+            .item("created_at", AttributeValue::N(epoch_ms().to_string()))
+            .send()
+            .await
+            .map_err(|e| RepoError::Upstream(e.to_string()))?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ClearAggregate {
+    pub total_clears: u64,
+    pub user_bucket: u32,
+    pub buckets: Vec<u64>,
+}
+
+impl ClearAggregate {
+    /// 자기보다 빠르게 클리어한 사람의 비율 (0..=100).
+    /// total_clears는 자기 자신 포함값이라 분모에 그대로 사용.
+    /// "+1"은 본인을 분자에 포함해 자연스러운 ranking number 만듦
+    /// (ex: 100명 중 자기보다 빠른 사람 9명이면 top 10%).
+    pub fn top_percent(&self) -> f32 {
+        if self.total_clears == 0 {
+            return 100.0;
+        }
+        let faster: u64 = self
+            .buckets
+            .iter()
+            .take(self.user_bucket as usize)
+            .sum();
+        ((faster + 1) as f64 * 100.0 / self.total_clears as f64) as f32
     }
 }
 

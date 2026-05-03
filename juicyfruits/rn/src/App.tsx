@@ -20,12 +20,18 @@ SplashScreen.preventAutoHideAsync();
 export type RootStackParamList = {
   Home: undefined;
   Game: { stageId: number };
-  Result: { 
-    result: 'win' | 'lose'; 
+  Result: {
+    result: 'win' | 'lose';
     stageId: number;
     score: number;
-    stats?: { time: number, limit: number };
+    stats?: { time: number; limit: number };
     rewardCoins?: number;
+    ranking?: {
+      topPercent: number;
+      clearOrdinal: number;
+      totalClears: number;
+      bonusCoins: number;
+    };
   };
 };
 

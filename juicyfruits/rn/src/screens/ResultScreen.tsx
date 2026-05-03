@@ -13,11 +13,13 @@ import {
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
 
 export default function ResultScreen({ route, navigation }: Props) {
-  const { result, stageId, stats, rewardCoins = 0 } = route.params;
+  const { result, stageId, stats, rewardCoins = 0, ranking } = route.params;
   const isWin = result === 'win';
+  const isGlobalFirst = ranking?.clearOrdinal === 1;
+  const totalRewardCoins = rewardCoins + (ranking?.bonusCoins ?? 0);
   const [isRewarded, setIsRewarded] = useState(false);
-  const [displayReward, setDisplayReward] = useState(0); 
-  
+  const [displayReward, setDisplayReward] = useState(0);
+
   const { isLoaded, isEarnedReward, show, load } = useRewardedAd(AD_UNIT_IDS.REWARDED, { requestNonPersonalizedAdsOnly: true });
 
   const runCountAnimation = useCallback((start: number, end: number, speed: number) => {
@@ -32,20 +34,20 @@ export default function ResultScreen({ route, navigation }: Props) {
     requestAnimationFrame(step);
   }, []);
 
-  useEffect(() => { if (isWin && rewardCoins > 0) runCountAnimation(0, rewardCoins, 100); }, [isWin, rewardCoins, runCountAnimation]);
+  useEffect(() => { if (isWin && totalRewardCoins > 0) runCountAnimation(0, totalRewardCoins, 100); }, [isWin, totalRewardCoins, runCountAnimation]);
   useEffect(() => { if (isWin && !isRewarded) load(); }, [isWin, isRewarded, load]);
 
   useEffect(() => {
     if (isEarnedReward && !isRewarded) {
       const handleDouble = async () => {
         setIsRewarded(true);
-        await ProgressService.updateCoins(rewardCoins); 
-        runCountAnimation(rewardCoins, rewardCoins * 2, 80);
+        await ProgressService.updateCoins(totalRewardCoins);
+        runCountAnimation(totalRewardCoins, totalRewardCoins * 2, 80);
         Vibration.vibrate(100);
       };
       handleDouble();
     }
-  }, [isEarnedReward, rewardCoins, isRewarded, runCountAnimation]);
+  }, [isEarnedReward, totalRewardCoins, isRewarded, runCountAnimation]);
 
   useFocusEffect(useCallback(() => {
     const onBackPress = () => true;
@@ -54,11 +56,13 @@ export default function ResultScreen({ route, navigation }: Props) {
   }, []));
 
   const topPercent = useMemo(() => {
+    // 서버에서 받은 실제 랭킹이 있으면 우선 사용, 없으면(오프라인/신규) 추정값.
+    if (ranking) return Math.max(1, Math.round(ranking.topPercent));
     if (!isWin) return 100;
     if (!stats) return 50;
     const ratio = stats.time / stats.limit;
     return Math.max(1, Math.floor(ratio * 40 + (30 - stageId * 0.5) + Math.random() * 5));
-  }, [isWin, stageId, stats]);
+  }, [isWin, stageId, stats, ranking]);
 
   const themeColor = isWin ? '#58CC02' : '#FF4B4B';
   const depthColor = isWin ? '#46A302' : '#D33131';
@@ -72,8 +76,16 @@ export default function ResultScreen({ route, navigation }: Props) {
             
             {isWin && (
               <View style={styles.statsContainer}>
+                {isGlobalFirst && (
+                  <View style={styles.firstClearBadge}>
+                    <Text style={styles.firstClearText}>🏆 WORLD FIRST CLEAR!</Text>
+                  </View>
+                )}
                 <Text style={styles.percentText}>Top {topPercent}% Player</Text>
-                <Text style={styles.timeDescription}>Clear Time: {stats?.time}s</Text>
+                <Text style={styles.timeDescription}>
+                  Clear Time: {stats?.time}s
+                  {ranking ? `  ·  #${ranking.clearOrdinal} of ${ranking.totalClears}` : ''}
+                </Text>
                 <View style={styles.rewardBox}>
                   <Text style={styles.rewardLabel}>REWARD</Text>
                   <View style={styles.coinReward}>
@@ -137,6 +149,8 @@ const styles = StyleSheet.create({
   timeDescription: { fontSize: 15, color: '#868e96', marginBottom: 20, fontFamily: 'Nunito-Bold' },
   
   rewardBox: { backgroundColor: '#F7F7F7', width: '100%', padding: 20, borderRadius: 24, alignItems: 'center', borderWidth: 2, borderColor: '#E5E5E5', marginBottom: 15 },
+  firstClearBadge: { backgroundColor: '#FFE066', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12, marginBottom: 10, borderWidth: 2, borderColor: '#FFB400' },
+  firstClearText: { fontFamily: 'Fredoka-Bold', fontSize: 14, color: '#7A4D00', letterSpacing: 0.5 },
   rewardLabel: { fontSize: 12, fontFamily: 'Nunito-Black', color: '#adb5bd', marginBottom: 5 },
   coinReward: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
   coinIcon: { fontSize: 26, marginRight: 10 },
