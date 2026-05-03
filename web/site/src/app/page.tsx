@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { AppIcon, ComingSoonIcon } from '@/components/AppIcon';
 import { APPS, COMING_SOON_SLOTS } from '@/data/apps';
 
@@ -44,6 +45,21 @@ export default function HomePage() {
           >
             support@hisgtory.com
           </a>
+        </p>
+        <p className="mt-2 space-x-2">
+          <Link
+            href="/juicy-fruits/privacy"
+            className="underline-offset-2 hover:underline"
+          >
+            개인정보 처리방침
+          </Link>
+          <span aria-hidden>·</span>
+          <Link
+            href="/juicy-fruits/terms"
+            className="underline-offset-2 hover:underline"
+          >
+            이용약관
+          </Link>
         </p>
       </footer>
     </main>
