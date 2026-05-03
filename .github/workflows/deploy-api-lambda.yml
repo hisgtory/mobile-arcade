@@ -38,7 +38,8 @@ name: Deploy API to Lambda
 
 on:
   push:
-    branches: [main]
+    # TODO: stable 단계 진입하면 'feature/found3-standalone' 제거하고 main만 남기기
+    branches: [main, feature/found3-standalone]
     paths:
       - 'api/Cargo.toml'
       - 'api/Cargo.lock'
