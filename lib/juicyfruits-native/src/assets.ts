@@ -25,15 +25,15 @@ export const TILE_ASSETS: Record<string, any> = {
   background: require('../../../juicyfruits/rn/assets/background.png'),
   item_undo: require('../../../juicyfruits/rn/assets/items/undo_normal.png'),
   item_undo_pressed: require('../../../juicyfruits/rn/assets/items/undo_pressed.png'),
-  item_shuffle: require('../../../juicyfruits/rn/assets/items/shuffle_normal.png'), 
-  item_shuffle_pressed: require('../../../juicyfruits/rn/assets/items/expand_pressed.png'), 
+  item_shuffle: require('../../../juicyfruits/rn/assets/items/shuffle_normal.png'),
+  item_shuffle_pressed: require('../../../juicyfruits/rn/assets/items/shuffle_pressed.png'),
   ui_settings: require('../../../juicyfruits/rn/assets/ui/icon_settings.png'),
   ui_play: require('../../../juicyfruits/rn/assets/ui/btn_play.png'),
   ui_home: require('../../../juicyfruits/rn/assets/ui/btn_home.png'),
   ui_restart: require('../../../juicyfruits/rn/assets/ui/btn_restart.png'),
   ui_exit: require('../../../juicyfruits/rn/assets/ui/btn_exit.png'),
   ui_status: require('../../../juicyfruits/rn/assets/ui/status_bar.png'),
-  ui_magnet: require('../../../juicyfruits/rn/assets/items/shuffle_pressed.png'), 
+  ui_magnet: require('../../../juicyfruits/rn/assets/items/magnet.png'),
 
   // Audio
   bgm_1: require('../../../juicyfruits/rn/assets/audio/bgm_1.mp3'),
