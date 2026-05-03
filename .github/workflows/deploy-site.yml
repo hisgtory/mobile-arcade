@@ -2,7 +2,7 @@ name: Deploy Site
 
 on:
   push:
-    branches: [main, feature/found3-standalone]
+    branches: [main]
     paths:
       - 'web/site/**'
       - '.github/workflows/deploy-site.yml'
