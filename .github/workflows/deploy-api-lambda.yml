@@ -134,6 +134,12 @@ jobs:
               --function-url-auth-type NONE
           fi
 
+          echo "--- final resource policy ---"
+          aws lambda get-policy \
+            --function-name ${{ env.LAMBDA_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'Policy' --output text | python3 -m json.tool
+
       - name: Print Function URL
         run: |
           aws lambda get-function-url-config \
