@@ -425,3 +425,151 @@ rn/src/data/games.ts                         # webPath: '/games/{game-id}/v1'
 - 이슈 #237의 "루트 기준 정책" 요구 충족
 - React 대규모 업그레이드는 별도 이슈로 분리 (이 ADR의 비범위)
 
+---
+
+## ADR-020: arcade-api 인증 layer — Lambda@Edge 제거 옵션
+
+**Status**: Proposed — 결정 보류 (옵션 비교용 문서)
+**Date**: 2026-05-03
+**Related**: 현재 production 구조는 옵션 A (Edge SigV4)로 동작 중
+
+### Context
+
+`arcade-api` (Rust + Lambda)는 `arcade-api.hisgtory.com` 도메인으로 노출된다.
+보안 요구는 단순함: **Lambda Function URL이 인터넷에 직접 노출되면 안 된다.**
+Lambda hostname을 알아낸 누군가가 우리 CloudFront/Cloudflare를 우회해
+바로 호출하면 비용 폭탄·DoS·DDB 폭주가 가능하므로, 정상 경로(CF→Lambda)
+이외의 호출은 Lambda 단에서 차단되어야 한다.
+
+현재 production 구조 (옵션 A):
+
+```
+브라우저 ─https─▶ CloudFront ─origin-request 훅─▶ Lambda@Edge(JS, us-east-1)
+                                                     │ SigV4 서명 추가 (~2ms)
+                                                     ▼
+                                                Lambda Function URL (AuthType=AWS_IAM)
+                                                     │ IAM 검증 통과
+                                                     ▼
+                                                Rust Lambda (ap-northeast-2)
+```
+
+### Why Edge가 도입됐나 (배경)
+
+1. Lambda Function URL `AuthType=AWS_IAM` → SigV4 서명 요청만 받음
+2. CloudFront OAC가 자동 서명을 해 주는 기능이 있지만 **POST body 서명에 알려진 버그**가 있어 503/403 발생
+3. 그래서 origin-request 시점에 JS Lambda@Edge가 끼어들어 SigV4를 직접 서명
+4. 본 Edge 함수는 **비즈니스 로직 0줄**, 순수 SigV4 헤더 4개 추가만 함
+
+문제점: Edge는 본질적 보안이 아니다. 보안의 본질은 "CF에서만 받기"이지
+"SigV4 검증" 자체가 아니다. SigV4는 그 잠금을 풀기 위한 우회로일 뿐.
+
+### Options
+
+#### A. 현재 유지 — Lambda@Edge SigV4 서명 (status quo)
+
+```
+CF ─Lambda@Edge SigV4─▶ Function URL (AWS_IAM) ─▶ Lambda
+```
+
+| 항목 | 값 |
+|---|---|
+| 추가 비용 | ~$0.60 / 1M req (Lambda@Edge 호출) |
+| 추가 latency | +2~5ms (검증 결과 cold 62ms / warm 2.23ms) |
+| 운영 복잡도 | 高 — Edge 코드 + IAM role + 권한 + 별도 region 배포 |
+| 보안 | CF→Lambda IAM 검증으로 직접 호출 불가 |
+| 글로벌 latency | CloudFront anycast 활용 |
+
+#### B. Function URL public + CloudFront Custom Origin Header secret
+
+```
+CF ──[Origin Custom Header: X-Origin-Secret: <s>]──▶ Function URL (NONE) ─▶ Lambda
+                                                                              │
+                                                                              ▼
+                                          Rust 미들웨어가 X-Origin-Secret 검증, 불일치 시 401
+```
+
+| 항목 | 값 |
+|---|---|
+| 추가 비용 | $0 |
+| 추가 latency | 0ms |
+| 운영 복잡도 | 低 — Rust에 미들웨어 1개, secret rotate 가능 |
+| 보안 | CF가 origin에 헤더 주입 → CF 우회 시 secret 모르므로 401. secret이 유출되면 우회 가능하나 rotate로 회복 가능 |
+| 글로벌 latency | CloudFront anycast 활용 |
+
+> Lambda Function URL의 `AuthType=NONE`이지만 hostname이 obscure(랜덤 prefix)하고
+> CF 외에는 secret 헤더를 못 만드므로 직접 호출은 401에서 막힌다.
+
+#### C. API Gateway HTTP API → Lambda
+
+```
+브라우저 ─https─▶ arcade-api.hisgtory.com ─▶ API Gateway HTTP API ─▶ Lambda
+                                                  │ (CloudFront 제거 가능)
+                                                  ▼
+                              내장: throttle / WAF / IAM / custom domain
+```
+
+| 항목 | 값 |
+|---|---|
+| 추가 비용 | $1.00 / 1M req (HTTP API) |
+| 추가 latency | +5~10ms (region 고정) |
+| 운영 복잡도 | 中 — 콘솔/IaC로 관리, Edge 함수 없음 |
+| 보안 | API GW가 IAM/throttle/WAF 직접 처리. Lambda Function URL 자체를 끔 |
+| 글로벌 latency | CloudFront 없이 region 고정 (ap-northeast-2). 한국 유저 비중 높으면 무영향. 글로벌이면 latency 증가 |
+
+#### D. Function URL public + Cloudflare WAF / IP allowlist
+
+```
+Cloudflare DNS(orange) ─WAF─▶ Function URL (NONE) ─▶ Lambda
+```
+
+| 항목 | 값 |
+|---|---|
+| 추가 비용 | $0 |
+| 추가 latency | 0ms |
+| 운영 복잡도 | 低 |
+| 보안 | **약함** — Lambda hostname 알려지면 WAF/Cloudflare 우회 가능. Free 플랜은 WAF 룰 제한적 |
+| 글로벌 latency | Cloudflare anycast 활용 |
+
+### Trade-off Summary
+
+| 옵션 | 비용/1M | latency | 복잡도 | 보안 회복력 | Edge 제거 |
+|---|---|---|---|---|---|
+| A. 현재 (Edge SigV4) | $0.60 | +2~5ms | 高 | IAM 검증 — 견고 | — |
+| **B. Custom Origin Header** | **$0** | **0ms** | **低** | secret rotate 가능 — 충분 | **O** |
+| C. API Gateway HTTP API | $1.00 | +5~10ms | 中 | API GW IAM — 견고 | O |
+| D. Cloudflare WAF | $0 | 0ms | 低 | hostname 노출 시 약함 | O |
+
+### Recommendation
+
+**옵션 B로 마이그레이션 권장.** 근거:
+
+1. **3개월 데드라인** — Edge 코드/role/권한 운영 부담 제거
+2. **비용 0** — 트래픽 증가 시 Edge 비용도 선형 증가하지만 B는 그대로 0
+3. **회복력** — secret이 유출돼도 CloudFront `OriginCustomHeaders` 한 번 갱신으로 즉시 차단
+4. **본질 일치** — 보안 의도 = "CF에서만 받기" → CF가 헤더 주입하는 방식이 의도와 가장 직접적
+5. **CloudFront 유지** — 글로벌 anycast / SSL / 캐시 가능성 보존
+
+### Migration Plan (옵션 B 채택 시)
+
+1. Rust에 origin-secret 미들웨어 추가 (헤더 누락/불일치 → 401)
+2. 환경변수 `ORIGIN_SECRET` 주입 (Lambda env var, GitHub Actions secret)
+3. CloudFront distribution origin 설정 — `OriginCustomHeaders.X-Origin-Secret` 추가
+4. Lambda Function URL `AuthType=AWS_IAM → NONE`
+5. Lambda resource policy에 public invoke statement 추가 (`lambda:InvokeFunctionUrl`, principal=`*`, condition=`FunctionUrlAuthType=NONE`)
+6. Lambda@Edge 제거:
+   - CloudFront `LambdaFunctionAssociations` 삭제
+   - Lambda@Edge 함수 삭제 (us-east-1)
+   - IAM role `arcade-api-edge-role` 삭제
+   - `api/edge/`, `api/scripts/edge-signer-bootstrap.sh` 디렉토리 삭제
+7. 검증: GET / POST 정상 200, secret 없이 직접 Lambda hostname 호출 시 401
+
+### Other cleanup (옵션 무관, 별건)
+
+- `api/cloudflare/` — Cloudflare Containers 시도 잔재. 전부 dead code, 삭제
+- `.github/workflows/deploy-api.yml` — 위 dead code 배포용, 삭제
+- `.github/workflows/deploy-site.yml` — 유지 (web/site Cloudflare Pages 배포)
+
+### Decision
+
+보류. 사용자 결정 후 ADR을 Accepted로 갱신하고 Migration Plan 실행.
+

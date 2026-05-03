@@ -1,0 +1,7 @@
+{
+  "name": "@arcade/api-edge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Lambda@Edge SigV4 signer for CloudFront → Lambda Function URL"
+}
