@@ -218,7 +218,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     };
     init();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [stageId, config, switchAnim]);
+  }, [stageId]); // Removed config and switchAnim to prevent infinite loop
 
   const handleGameEnd = useCallback((res: 'win' | 'lose') => {
     if (timerRef.current) clearInterval(timerRef.current);
