@@ -80,6 +80,9 @@ jobs:
         with:
           tool: cargo-lambda
 
+      - name: Install Zig (cross-compile to ARM64 Linux)
+        run: pip3 install ziglang
+
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
