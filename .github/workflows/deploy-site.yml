@@ -41,10 +41,12 @@ jobs:
       - name: Build site (static export)
         run: pnpm --filter @arcade/site build
 
+      - name: Install wrangler globally
+        run: npm install -g wrangler@3
+
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          # Cloudflare Pages 프로젝트 이름. 첫 배포 시 자동 생성됨.
-          command: pages deploy web/site/out --project-name=arcade-site --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        # Cloudflare Pages 프로젝트 이름. 첫 배포 시 자동 생성됨.
+        run: wrangler pages deploy web/site/out --project-name=arcade-site --branch=main
