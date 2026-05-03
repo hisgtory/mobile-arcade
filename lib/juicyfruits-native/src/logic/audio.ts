@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TILE_ASSETS } from '../assets';
 
 const BGM_LIST = ['bgm_1', 'bgm_2', 'bgm_3', 'bgm_4', 'bgm_5', 'bgm_6'];
-const AUDIO_SETTINGS_KEY = '@juicyfruits_audio_settings'; // 키값 변경
+const AUDIO_SETTINGS_KEY = '@juicyfruits_audio_settings';
 
 export const AudioService = {
   soundInstance: null as Audio.Sound | null,
@@ -18,9 +18,15 @@ export const AudioService = {
         const settings = JSON.parse(data);
         AudioService.volume = settings.volume ?? 0.5;
         AudioService.isMuted = settings.isMuted ?? false;
+        // 저장된 트랙 인덱스가 있으면 불러오고, 없으면 랜덤 시작
+        AudioService.currentTrackIdx = settings.currentTrackIdx ?? Math.floor(Math.random() * BGM_LIST.length);
+      } else {
+        // 첫 실행 시 랜덤 인덱스 설정
+        AudioService.currentTrackIdx = Math.floor(Math.random() * BGM_LIST.length);
       }
     } catch (e) {
       console.error('Failed to load audio settings', e);
+      AudioService.currentTrackIdx = Math.floor(Math.random() * BGM_LIST.length);
     }
   },
 
@@ -28,7 +34,8 @@ export const AudioService = {
     try {
       await AsyncStorage.setItem(AUDIO_SETTINGS_KEY, JSON.stringify({
         volume: AudioService.volume,
-        isMuted: AudioService.isMuted
+        isMuted: AudioService.isMuted,
+        currentTrackIdx: AudioService.currentTrackIdx
       }));
     } catch (e) {
       console.error('Failed to save audio settings', e);
@@ -69,8 +76,12 @@ export const AudioService = {
 
       AudioService.soundInstance = sound;
 
+      // 설정 저장 (현재 트랙 인덱스 포함)
+      await AudioService.saveSettings();
+
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
+          // 다음 트랙으로 이동
           AudioService.currentTrackIdx = (AudioService.currentTrackIdx + 1) % BGM_LIST.length;
           AudioService.playNextTrack();
         }
