@@ -10,7 +10,8 @@ import {
   ProgressService, 
   AudioService, 
   AD_UNIT_IDS,
-  getStageConfig 
+  getStageConfig,
+  AnalyticsService 
 } from '@arcade/lib-juicyfruits-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -33,6 +34,10 @@ export default function HomeScreen({ navigation }: Props) {
 
   const stageConfig = getStageConfig(currentStage);
   const currentStageFruits = FRUIT_TYPES.slice(0, stageConfig?.typeCount || 3);
+
+  useEffect(() => {
+    AnalyticsService.logEvent('app_launch');
+  }, []);
 
   useFocusEffect(
     useCallback(() => {

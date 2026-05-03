@@ -17,6 +17,7 @@ import { getStageConfig } from '../logic/stage';
 import { AudioService } from '../logic/audio';
 import { ProgressService } from '../logic/progress';
 import { AD_UNIT_IDS } from '../logic/ads';
+import { AnalyticsService } from '../logic/analytics';
 import { getStageTiles } from '../api/getStageTiles';
 import { Tile } from './Tile';
 import { SlotBar } from './SlotBar';
@@ -119,6 +120,9 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     const newCounts = { ...itemCounts, [itemType]: itemCounts[itemType] + 1 };
     await updateItems(newCounts);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    
+    // Log shop purchase
+    AnalyticsService.logEvent('shop_buy', { itemId: itemType, price });
   };
 
   const handleMagnet = () => {
@@ -145,6 +149,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     Vibration.vibrate(150);
     setTiles(updatedTiles); setSlots(nextSlots);
     updateItems({ ...itemCounts, magnet: itemCounts.magnet - 1 });
+    
+    // Log item usage
+    AnalyticsService.logEvent('item_use', { itemId: 'magnet', stageId });
+    
     if (updatedTiles.length === 0 && nextSlots.length === 0) handleGameEnd('win');
   };
 
@@ -204,13 +212,22 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const handleGameEnd = useCallback((res: 'win' | 'lose') => {
     if (timerRef.current) clearInterval(timerRef.current);
     setPhase(res === 'win' ? GamePhase.CLEAR : GamePhase.GAMEOVER);
+    
+    // Log game result
+    AnalyticsService.logEvent(res === 'win' ? 'stage_clear' : 'stage_fail', { 
+      stageId, 
+      time: elapsedTime,
+      tilesLeft: tiles.length,
+      tilesSource
+    });
+
     onGameEnd?.(res, {
       time: elapsedTime,
       limit: config.timeLimit,
       tiles: initialTilesRef.current,
       tilesSource,
     });
-  }, [elapsedTime, config.timeLimit, onGameEnd, tilesSource]);
+  }, [elapsedTime, config.timeLimit, onGameEnd, tilesSource, stageId, tiles.length]);
 
   const formatTime = (s: number) => `${Math.floor(s/60)}:${s%60 < 10 ? '0' : ''}${s%60}`;
 
@@ -282,12 +299,18 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
               });
               setSlots(slotItems);
               updateItems({ ...itemCounts, undo: itemCounts.undo - 1 });
+              
+              // Log item usage
+              AnalyticsService.logEvent('item_use', { itemId: 'undo', stageId });
             }} 
             onShuffle={() => {
               if (tiles.length === 0 || itemCounts.shuffle <= 0) return;
               const shuffled = shuffleBoard(tiles);
               setTiles(shuffled.map(t => ({ ...t, isSelectable: !isTileBlocked(t, shuffled) })));
               updateItems({ ...itemCounts, shuffle: itemCounts.shuffle - 1 });
+              
+              // Log item usage
+              AnalyticsService.logEvent('item_use', { itemId: 'shuffle', stageId });
             }} 
             onMagnet={handleMagnet} 
           />

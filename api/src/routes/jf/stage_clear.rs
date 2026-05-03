@@ -83,12 +83,16 @@ pub async fn handle(
         false
     };
 
-    // 2) 어그리게이트 atomic update + audit log (병렬)
-    let (agg_res, _log_res) = tokio::join!(
+    // 2) 어그리게이트 atomic update + audit log + 유저 진행도 (병렬, best-effort)
+    let (agg_res, _log_res, _prog_res) = tokio::join!(
         state.variants.record_clear(req.stage, req.duration_sec),
         state.variants.put_clear_log(req.stage, &req.user_id, req.duration_sec),
+        state.variants.record_user_progress(req.stage, &req.user_id),
     );
     let agg = agg_res?;
+    if let Err(e) = &_prog_res {
+        tracing::warn!(stage = req.stage, error = %e, "record_user_progress failed (non-fatal)");
+    }
 
     Ok(Json(Response {
         top_percent: agg.top_percent(),

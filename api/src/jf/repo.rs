@@ -175,7 +175,8 @@ impl VariantRepo {
         })
     }
 
-    /// 감사용 클리어 로그 (best-effort, 실패해도 응답엔 영향 없음).
+    /// 감사용 + 리더보드용 클리어 로그.
+    /// SK 포맷 `clear-{duration:06}-{ulid}` → PK 내 lex 정렬 = 빠른 시간 순.
     pub async fn put_clear_log(
         &self,
         stage: u32,
@@ -183,7 +184,7 @@ impl VariantRepo {
         duration_sec: u32,
     ) -> Result<(), RepoError> {
         let pk = Self::clear_pk(stage);
-        let sk = format!("clear-{}", new_ulid());
+        let sk = format!("clear-{:06}-{}", duration_sec, new_ulid());
 
         self.client
             .put_item()
@@ -198,6 +199,257 @@ impl VariantRepo {
             .map_err(|e| RepoError::Upstream(e.to_string()))?;
         Ok(())
     }
+
+    /// 스테이지 리더보드: 빠른 클리어 순 N개.
+    pub async fn list_stage_top(
+        &self,
+        stage: u32,
+        limit: i32,
+    ) -> Result<Vec<StageClearEntry>, RepoError> {
+        let pk = Self::clear_pk(stage);
+        let out = self
+            .client
+            .query()
+            .table_name(&self.table)
+            .key_condition_expression("pk = :pk AND begins_with(sk, :prefix)")
+            .expression_attribute_values(":pk", AttributeValue::S(pk))
+            .expression_attribute_values(":prefix", AttributeValue::S("clear-".into()))
+            .scan_index_forward(true)
+            .limit(limit)
+            .send()
+            .await
+            .map_err(|e| RepoError::Upstream(e.to_string()))?;
+
+        let items = out.items.unwrap_or_default();
+        let mut entries = Vec::with_capacity(items.len());
+        for item in items {
+            let user_id = item
+                .get("user_id")
+                .and_then(|v| v.as_s().ok())
+                .cloned()
+                .ok_or_else(|| RepoError::Malformed("missing user_id".into()))?;
+            let duration_sec = item
+                .get("duration_sec")
+                .and_then(|v| v.as_n().ok())
+                .and_then(|s| s.parse::<u32>().ok())
+                .ok_or_else(|| RepoError::Malformed("missing duration_sec".into()))?;
+            let cleared_at = item
+                .get("created_at")
+                .and_then(|v| v.as_n().ok())
+                .and_then(|s| s.parse::<u64>().ok())
+                .unwrap_or(0);
+            entries.push(StageClearEntry {
+                user_id,
+                duration_sec,
+                cleared_at,
+            });
+        }
+        Ok(entries)
+    }
+
+    /// 유저 진행도 atomic 갱신. 새 stage가 기존 highest_stage 보다 클 때만 업데이트.
+    /// 갱신되면 user-rank 인덱스 항목도 옮겨놓음(old delete + new put).
+    /// 반환: Some(prev_highest_stage) — 처음이면 Some(0), 갱신 안 됐으면 None.
+    pub async fn record_user_progress(
+        &self,
+        stage: u32,
+        user_id: &str,
+    ) -> Result<Option<u32>, RepoError> {
+        let user_pk = format!("user-{}", user_id);
+        let now_ms = epoch_ms();
+
+        let upd = self
+            .client
+            .update_item()
+            .table_name(&self.table)
+            .key("pk", AttributeValue::S(user_pk.clone()))
+            .key("sk", AttributeValue::S("progress".into()))
+            .condition_expression(
+                "attribute_not_exists(highest_stage) OR highest_stage < :new",
+            )
+            .update_expression(
+                "SET highest_stage = :new, updated_at = :now \
+                 ADD total_clears :one",
+            )
+            .expression_attribute_values(":new", AttributeValue::N(stage.to_string()))
+            .expression_attribute_values(":one", AttributeValue::N("1".into()))
+            .expression_attribute_values(":now", AttributeValue::N(now_ms.to_string()))
+            .return_values(aws_sdk_dynamodb::types::ReturnValue::AllOld)
+            .send()
+            .await;
+
+        let attrs = match upd {
+            Ok(out) => out.attributes.unwrap_or_default(),
+            Err(e) => {
+                // ConditionalCheckFailed = 이미 더 큰 stage 있음 → 정상, 갱신 없음
+                let s = e.to_string();
+                if s.contains("ConditionalCheckFailed") {
+                    return Ok(None);
+                }
+                return Err(RepoError::Upstream(s));
+            }
+        };
+
+        let prev_stage = attrs
+            .get("highest_stage")
+            .and_then(|v| v.as_n().ok())
+            .and_then(|s| s.parse::<u32>().ok());
+
+        // user-rank 인덱스 항목 이동
+        if let Some(prev) = prev_stage {
+            let old_sk = rank_sk(prev, user_id);
+            let _ = self
+                .client
+                .delete_item()
+                .table_name(&self.table)
+                .key("pk", AttributeValue::S(USER_RANK_PK.into()))
+                .key("sk", AttributeValue::S(old_sk))
+                .send()
+                .await;
+        }
+        let new_sk = rank_sk(stage, user_id);
+        self.client
+            .put_item()
+            .table_name(&self.table)
+            .item("pk", AttributeValue::S(USER_RANK_PK.into()))
+            .item("sk", AttributeValue::S(new_sk))
+            .item("user_id", AttributeValue::S(user_id.to_string()))
+            .item("highest_stage", AttributeValue::N(stage.to_string()))
+            .item("updated_at", AttributeValue::N(now_ms.to_string()))
+            .send()
+            .await
+            .map_err(|e| RepoError::Upstream(e.to_string()))?;
+
+        Ok(Some(prev_stage.unwrap_or(0)))
+    }
+
+    /// 전체 리더보드: highest stage 내림차순 top N.
+    pub async fn list_overall_top(
+        &self,
+        limit: i32,
+    ) -> Result<Vec<RankEntry>, RepoError> {
+        let out = self
+            .client
+            .query()
+            .table_name(&self.table)
+            .key_condition_expression("pk = :pk")
+            .expression_attribute_values(":pk", AttributeValue::S(USER_RANK_PK.into()))
+            .scan_index_forward(false)
+            .limit(limit)
+            .send()
+            .await
+            .map_err(|e| RepoError::Upstream(e.to_string()))?;
+
+        let items = out.items.unwrap_or_default();
+        let mut entries = Vec::with_capacity(items.len());
+        for item in items {
+            let user_id = item
+                .get("user_id")
+                .and_then(|v| v.as_s().ok())
+                .cloned()
+                .unwrap_or_default();
+            let highest_stage = item
+                .get("highest_stage")
+                .and_then(|v| v.as_n().ok())
+                .and_then(|s| s.parse::<u32>().ok())
+                .unwrap_or(0);
+            entries.push(RankEntry {
+                user_id,
+                highest_stage,
+            });
+        }
+        Ok(entries)
+    }
+
+    pub async fn count_total_users(&self) -> Result<u64, RepoError> {
+        let out = self
+            .client
+            .query()
+            .table_name(&self.table)
+            .key_condition_expression("pk = :pk")
+            .expression_attribute_values(":pk", AttributeValue::S(USER_RANK_PK.into()))
+            .select(aws_sdk_dynamodb::types::Select::Count)
+            .send()
+            .await
+            .map_err(|e| RepoError::Upstream(e.to_string()))?;
+        Ok(out.count() as u64)
+    }
+
+    /// 입력 stage보다 큰 highest_stage를 가진 유저 수.
+    pub async fn count_users_above_stage(&self, stage: u32) -> Result<u64, RepoError> {
+        let lower = format!("{:04}-", stage + 1);
+        let out = self
+            .client
+            .query()
+            .table_name(&self.table)
+            .key_condition_expression("pk = :pk AND sk >= :lo")
+            .expression_attribute_values(":pk", AttributeValue::S(USER_RANK_PK.into()))
+            .expression_attribute_values(":lo", AttributeValue::S(lower))
+            .select(aws_sdk_dynamodb::types::Select::Count)
+            .send()
+            .await
+            .map_err(|e| RepoError::Upstream(e.to_string()))?;
+        Ok(out.count() as u64)
+    }
+
+    pub async fn get_user_progress(
+        &self,
+        user_id: &str,
+    ) -> Result<Option<UserProgress>, RepoError> {
+        let user_pk = format!("user-{}", user_id);
+        let out = self
+            .client
+            .get_item()
+            .table_name(&self.table)
+            .key("pk", AttributeValue::S(user_pk))
+            .key("sk", AttributeValue::S("progress".into()))
+            .send()
+            .await
+            .map_err(|e| RepoError::Upstream(e.to_string()))?;
+
+        let Some(item) = out.item else {
+            return Ok(None);
+        };
+        let highest_stage = item
+            .get("highest_stage")
+            .and_then(|v| v.as_n().ok())
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(0);
+        let total_clears = item
+            .get("total_clears")
+            .and_then(|v| v.as_n().ok())
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(0);
+        Ok(Some(UserProgress {
+            highest_stage,
+            total_clears,
+        }))
+    }
+}
+
+const USER_RANK_PK: &str = "user-rank";
+
+fn rank_sk(stage: u32, user_id: &str) -> String {
+    format!("{:04}-{}", stage, user_id)
+}
+
+#[derive(Debug, Clone)]
+pub struct StageClearEntry {
+    pub user_id: String,
+    pub duration_sec: u32,
+    pub cleared_at: u64,
+}
+
+#[derive(Debug, Clone)]
+pub struct RankEntry {
+    pub user_id: String,
+    pub highest_stage: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct UserProgress {
+    pub highest_stage: u32,
+    pub total_clears: u64,
 }
 
 #[derive(Debug, Clone)]

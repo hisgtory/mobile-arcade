@@ -188,6 +188,89 @@ async fn integration() {
         body["variantAccepted"], true,
         "client tiles should be ingested when pool is empty + solvable"
     );
+
+    // -------- /v1/jf/stage/{stage}/leaderboard --------
+
+    // 14. 스테이지 7은 위에서 user-a(30s), user-b(10s), user-c(200s) 클리어 기록 보유.
+    //     duration 오름차순 = b(10) → a(30) → c(200)
+    let res = reqwest::get(format!(
+        "{}/v1/jf/stage/7/leaderboard?limit=10",
+        setup.api_url
+    ))
+    .await
+    .unwrap();
+    assert_eq!(res.status(), 200);
+    let body: serde_json::Value = res.json().await.unwrap();
+    let top = body["top"].as_array().unwrap();
+    assert_eq!(top.len(), 3, "stage 7 should have 3 clear logs");
+    assert_eq!(top[0]["userId"], "user-b");
+    assert_eq!(top[0]["durationSec"], 10);
+    assert_eq!(top[0]["rank"], 1);
+    assert_eq!(top[1]["userId"], "user-a");
+    assert_eq!(top[1]["durationSec"], 30);
+    assert_eq!(top[2]["userId"], "user-c");
+
+    // 15. limit 반영
+    let res = reqwest::get(format!(
+        "{}/v1/jf/stage/7/leaderboard?limit=2",
+        setup.api_url
+    ))
+    .await
+    .unwrap();
+    let body: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(body["top"].as_array().unwrap().len(), 2);
+
+    // 16. 스테이지 out of range
+    let res = reqwest::get(format!(
+        "{}/v1/jf/stage/0/leaderboard",
+        setup.api_url
+    ))
+    .await
+    .unwrap();
+    assert_eq!(res.status(), 400);
+
+    // -------- /v1/jf/leaderboard --------
+
+    // 17. user-a/b/c 셋 다 stage 7까지만 클리어.
+    //     user-d는 stage 100을 클리어해서 highest = 100. → 1위.
+    let res = reqwest::get(format!("{}/v1/jf/leaderboard?limit=10", setup.api_url))
+        .await
+        .unwrap();
+    assert_eq!(res.status(), 200);
+    let body: serde_json::Value = res.json().await.unwrap();
+    let total = body["totalUsers"].as_u64().unwrap();
+    assert!(total >= 4, "expected at least 4 users tracked, got {total}");
+    let top = body["top"].as_array().unwrap();
+    assert!(!top.is_empty());
+    assert_eq!(top[0]["userId"], "user-d");
+    assert_eq!(top[0]["highestStage"], 100);
+    assert_eq!(top[0]["rank"], 1);
+    assert!(body["user"].is_null(), "user not requested → null");
+
+    // 18. user 위치 조회 — user-a는 stage 7. user-d만 위에 있으므로 rank=2.
+    let res = reqwest::get(format!(
+        "{}/v1/jf/leaderboard?userId=user-a&limit=5",
+        setup.api_url
+    ))
+    .await
+    .unwrap();
+    let body: serde_json::Value = res.json().await.unwrap();
+    let user = &body["user"];
+    assert!(!user.is_null(), "user-a should have progress recorded");
+    assert_eq!(user["highestStage"], 7);
+    assert_eq!(user["rank"], 2, "user-a is rank 2 (user-d at #1)");
+    let top_pct = user["topPercent"].as_f64().unwrap();
+    assert!(top_pct > 0.0 && top_pct <= 100.0);
+
+    // 19. unknown user
+    let res = reqwest::get(format!(
+        "{}/v1/jf/leaderboard?userId=does-not-exist",
+        setup.api_url
+    ))
+    .await
+    .unwrap();
+    let body: serde_json::Value = res.json().await.unwrap();
+    assert!(body["user"].is_null());
 }
 
 async fn post_clear(base: &str, body: &serde_json::Value) -> reqwest::Response {
@@ -224,9 +307,9 @@ async fn setup_or_skip() -> Option<Setup> {
         .env("AWS_REGION", "us-east-1")
         .env("AWS_ACCESS_KEY_ID", "fake")
         .env("AWS_SECRET_ACCESS_KEY", "fake")
-        .env("RUST_LOG", "warn")
+        .env("RUST_LOG", "arcade_api=debug,warn")
         .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
+        .stderr(std::process::Stdio::inherit())
         .kill_on_drop(true)
         .spawn()
         .ok()?;

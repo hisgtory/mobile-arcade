@@ -5,6 +5,7 @@ export { ItemBar } from './components/ItemBar';
 export { AudioService } from './logic/audio';
 export { ProgressService } from './logic/progress';
 export { AD_UNIT_IDS, interstitial, rewarded } from './logic/ads';
+export { AnalyticsService } from './logic/analytics';
 export { getStageConfig, getMaxStage } from './logic/stage';
 export { getUserId } from './logic/userId';
 export { getStageTiles, StageTilesError } from './api/getStageTiles';

@@ -7,7 +7,8 @@ import { RootStackParamList } from '../App';
 import { 
   TILE_ASSETS, 
   AD_UNIT_IDS, 
-  ProgressService 
+  ProgressService,
+  AnalyticsService 
 } from '@arcade/lib-juicyfruits-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
@@ -42,12 +43,16 @@ export default function ResultScreen({ route, navigation }: Props) {
       const handleDouble = async () => {
         setIsRewarded(true);
         await ProgressService.updateCoins(totalRewardCoins);
+        
+        // Log ad reward
+        AnalyticsService.logEvent('ad_reward', { stageId, rewardCoins: totalRewardCoins });
+
         runCountAnimation(totalRewardCoins, totalRewardCoins * 2, 80);
         Vibration.vibrate(100);
       };
       handleDouble();
     }
-  }, [isEarnedReward, totalRewardCoins, isRewarded, runCountAnimation]);
+  }, [isEarnedReward, totalRewardCoins, isRewarded, runCountAnimation, stageId]);
 
   useFocusEffect(useCallback(() => {
     const onBackPress = () => true;
