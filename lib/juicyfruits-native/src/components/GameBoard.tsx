@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Dimensions, ImageBackground, Animated, Vibration, Platform, Image, ActivityIndicator, Pressable } from 'react-native';
+import { StyleSheet, View, Text, Modal, TouchableOpacity, Dimensions, ImageBackground, Animated, Vibration, Platform, Image, ActivityIndicator, Pressable, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize, useInterstitialAd } from 'react-native-google-mobile-ads';
 import { 
   TileData, 
   SlotItem, 
@@ -17,12 +17,12 @@ import { getStageConfig } from '../logic/stage';
 import { AudioService } from '../logic/audio';
 import { ProgressService } from '../logic/progress';
 import { AD_UNIT_IDS } from '../logic/ads';
-import { AnalyticsService } from '../logic/analytics';
 import { getStageTiles } from '../api/getStageTiles';
 import { Tile } from './Tile';
 import { SlotBar } from './SlotBar';
 import { ItemBar } from './ItemBar';
 import { TILE_ASSETS } from '../assets';
+import { AnalyticsService } from '../logic/analytics';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const BASE_TILE_GAP_RATIO = 0.05;
@@ -30,15 +30,12 @@ const ITEM_PRICES = { undo: 50, shuffle: 100, magnet: 150 };
 
 interface GameBoardProps {
   stageId: number;
-  onGameEnd?: (
-    result: 'win' | 'lose',
-    stats?: {
-      time: number;
-      limit: number;
-      tiles?: TileData[];
-      tilesSource?: 'server' | 'local';
-    },
-  ) => void;
+  onGameEnd?: (result: 'win' | 'lose', stats?: { 
+    time: number, 
+    limit: number,
+    tiles: TileData[],
+    tilesSource: 'server' | 'local'
+  }) => void;
   onExit?: () => void;
   onRestart?: () => void;
 }
@@ -57,14 +54,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const [elapsedTime, setElapsedTime] = useState(0); 
   const [isMuted, setIsMuted] = useState(AudioService.isMuted);
   const [volume, setVolume] = useState(AudioService.volume);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [tilesSource, setTilesSource] = useState<'server' | 'local'>('local');
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const switchAnim = useRef(new Animated.Value(AudioService.isMuted ? 0 : 1)).current;
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  // 초기 보드 스냅샷 (서버 ingest용). undo로 복원된 타일을 포함하지 않게 init 시점 캡처.
   const initialTilesRef = useRef<TileData[]>([]);
+  const [isRestarting, setIsRestarting] = useState(false);
+
+  // Interstitial Ad for Restart transition
+  const { isLoaded: isAdLoaded, isClosed: isAdClosed, show: showAd, load: loadAd } = useInterstitialAd(AD_UNIT_IDS.INTERSTITIAL, {
+    requestNonPersonalizedAdsOnly: true,
+  });
 
   // --- Strict Layout ---
   const SAFE_TOP = Math.max(insets.top, 10);
@@ -84,6 +86,20 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const gap = Math.floor(tileSize * BASE_TILE_GAP_RATIO);
   const gridWidth = gridEffectiveCols * (tileSize + gap) - gap;
   const gridHeight = gridEffectiveRows * (tileSize + gap) - gap;
+
+  // Load ad on mount
+  useEffect(() => {
+    loadAd();
+  }, [loadAd]);
+
+  // Handle ad close for restart
+  useEffect(() => {
+    if (isAdClosed && isRestarting) {
+      onRestart?.();
+      setIsRestarting(false);
+      loadAd(); // Preload next
+    }
+  }, [isAdClosed, isRestarting, onRestart, loadAd]);
 
   const handleTilePress = useCallback((tile: TileData) => {
     if (phase !== GamePhase.PLAYING) return;
@@ -120,8 +136,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     const newCounts = { ...itemCounts, [itemType]: itemCounts[itemType] + 1 };
     await updateItems(newCounts);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    
-    // Log shop purchase
     AnalyticsService.logEvent('shop_buy', { itemId: itemType, price });
   };
 
@@ -149,10 +163,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     Vibration.vibrate(150);
     setTiles(updatedTiles); setSlots(nextSlots);
     updateItems({ ...itemCounts, magnet: itemCounts.magnet - 1 });
-    
-    // Log item usage
     AnalyticsService.logEvent('item_use', { itemId: 'magnet', stageId });
-    
     if (updatedTiles.length === 0 && nextSlots.length === 0) handleGameEnd('win');
   };
 
@@ -170,8 +181,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     setIsMuted(AudioService.isMuted);
     Animated.timing(switchAnim, { toValue: AudioService.isMuted ? 0 : 1, duration: 200, useNativeDriver: false }).start();
     Vibration.vibrate(30);
-
-    // Log audio toggle
     AnalyticsService.logEvent('audio_toggle', { isMuted: AudioService.isMuted, stageId });
   };
 
@@ -180,8 +189,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     setVolume(newVol);
     await AudioService.setVolume(newVol);
     Vibration.vibrate(20);
-
-    // Log volume change
     AnalyticsService.logEvent('volume_change', { volume: newVol, stageId });
   };
 
@@ -190,14 +197,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
       const progress = await ProgressService.loadProgress();
       setItemCounts(progress.itemCounts); setCoins(progress.coins);
 
-      // 1) 서버 보드 우선 시도 → 실패 시 로컬 generateBoard 폴백
       let generated: TileData[];
       let source: 'server' | 'local' = 'local';
       try {
         generated = await getStageTiles(stageId, config.typeCount);
         source = 'server';
       } catch (err) {
-        if (__DEV__) console.warn('[stage-tiles] fallback to local:', (err as Error).message);
         generated = generateBoard(config);
       }
       setTilesSource(source);
@@ -219,7 +224,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     if (timerRef.current) clearInterval(timerRef.current);
     setPhase(res === 'win' ? GamePhase.CLEAR : GamePhase.GAMEOVER);
     
-    // Log game result
     AnalyticsService.logEvent(res === 'win' ? 'stage_clear' : 'stage_fail', { 
       stageId, 
       time: elapsedTime,
@@ -244,14 +248,8 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
         <View style={[styles.header, { paddingTop: SAFE_TOP + 5 }]}>
             <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text></View>
             <View style={styles.centerContainer}>
-              <Text
-                style={[
-                  styles.stageText,
-                  tilesSource === 'server' && styles.stageTextServed,
-                ]}
-              >
-                {stageId}
-                {tilesSource === 'server' ? '·' : ''}
+              <Text style={[styles.stageText, tilesSource === 'server' && styles.stageTextServed]}>
+                {stageId}{tilesSource === 'server' ? '·' : ''}
               </Text>
             </View>
             <View style={[styles.headerSide, styles.headerRight]}>
@@ -289,8 +287,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
                 unitId={AD_UNIT_IDS.BANNER}
                 size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
                 requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-                onAdLoaded={() => console.log('[Game Ad] Loaded')}
-                onAdFailedToLoad={(err) => console.log('[Game Ad] Error:', err)}
             />
           </View>
           <ItemBar 
@@ -305,8 +301,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
               });
               setSlots(slotItems);
               updateItems({ ...itemCounts, undo: itemCounts.undo - 1 });
-              
-              // Log item usage
               AnalyticsService.logEvent('item_use', { itemId: 'undo', stageId });
             }} 
             onShuffle={() => {
@@ -314,8 +308,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
               const shuffled = shuffleBoard(tiles);
               setTiles(shuffled.map(t => ({ ...t, isSelectable: !isTileBlocked(t, shuffled) })));
               updateItems({ ...itemCounts, shuffle: itemCounts.shuffle - 1 });
-              
-              // Log item usage
               AnalyticsService.logEvent('item_use', { itemId: 'shuffle', stageId });
             }} 
             onMagnet={handleMagnet} 
@@ -331,12 +323,23 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
               <Text style={styles.modalTitle}>SETTINGS</Text>
               <View style={styles.settingRow}><Text style={styles.settingLabel}>MUSIC</Text><TouchableOpacity activeOpacity={0.8} onPress={toggleMusic}><View style={[styles.switchTrack, { backgroundColor: isMuted ? '#dee2e6' : '#58CC02' }]}><Animated.View style={[styles.switchThumb, { transform: [{ translateX: switchAnim.interpolate({ inputRange: [0, 1], outputRange: [2, 26] }) }] }]} /></View></TouchableOpacity></View>
               <View style={styles.settingRow}><Text style={styles.settingLabel}>VOLUME</Text><View style={styles.volumeController}><TouchableOpacity style={styles.volBtn} onPress={() => adjustVolume(-0.1)}><Text style={styles.volBtnText}>-</Text></TouchableOpacity><View style={styles.volProgressBg}><View style={[styles.volProgressFill, { width: `${volume * 100}%` }]} /></View><TouchableOpacity style={styles.volBtn} onPress={() => adjustVolume(0.1)}><Text style={styles.volBtnText}>+</Text></TouchableOpacity></View></View>
-              <View style={styles.buttonFixedWrapper}><Pressable style={({ pressed }) => [styles.duoBtnSecondary, pressed && styles.duoBtnPressed]} onPress={() => { 
-                // Log restart
-                AnalyticsService.logEvent('game_restart', { stageId });
-                setShowSettings(false); 
-                onRestart?.(); 
-              }}><View style={styles.duoBtnSecondaryInner}><Text style={styles.duoBtnSecondaryText}>RESTART</Text></View></Pressable></View>
+              <View style={styles.buttonFixedWrapper}>
+                <Pressable 
+                  style={({ pressed }) => [styles.duoBtnSecondary, pressed && styles.duoBtnPressed]} 
+                  onPress={() => { 
+                    AnalyticsService.logEvent('game_restart', { stageId });
+                    setShowSettings(false); 
+                    if (isAdLoaded) {
+                      setIsRestarting(true);
+                      showAd();
+                    } else {
+                      onRestart?.();
+                    }
+                  }}
+                >
+                  <View style={styles.duoBtnSecondaryInner}><Text style={styles.duoBtnSecondaryText}>RESTART</Text></View>
+                </Pressable>
+              </View>
               <View style={styles.buttonFixedWrapper}><Pressable style={({ pressed }) => [styles.duoBtnSecondary, pressed && styles.duoBtnPressed]} onPress={() => { setShowSettings(false); onExit?.(); }}><View style={styles.duoBtnSecondaryInner}><Text style={styles.duoBtnSecondaryText}>EXIT GAME</Text></View></Pressable></View>
               <TouchableOpacity style={styles.closeLink} onPress={() => setShowSettings(false)}><Text style={styles.closeLinkText}>CLOSE</Text></TouchableOpacity>
             </View>
