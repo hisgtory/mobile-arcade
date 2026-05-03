@@ -121,25 +121,41 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'Policy' --output text 2>/dev/null || echo '{}')
 
-          # Function URL with AuthType=NONE은 InvokeFunctionUrl + InvokeFunction
-          # 두 액션 모두 public 허용이 필요. 각각 별도 statement로 idempotent 추가.
-          add_perm_if_missing() {
-            local sid=$1 action=$2
+          # Function URL AuthType=NONE은 두 액션 public 허용이 필요:
+          #   - lambda:InvokeFunctionUrl  (Function URL routing layer 검증용)
+          #   - lambda:InvokeFunction     (실제 함수 실행 권한)
+          # --function-url-auth-type 조건은 InvokeFunctionUrl에만 사용 가능.
+          add_perm_url() {
+            local sid=$1
             if echo "$POLICY" | grep -q "\"$sid\""; then
               echo "$sid already attached"
             else
-              echo "attaching $sid ($action)"
+              echo "attaching $sid (InvokeFunctionUrl)"
               aws lambda add-permission \
                 --function-name ${{ env.LAMBDA_NAME }} \
                 --region ${{ env.AWS_REGION }} \
                 --statement-id "$sid" \
-                --action "$action" \
+                --action lambda:InvokeFunctionUrl \
                 --principal '*' \
                 --function-url-auth-type NONE
             fi
           }
-          add_perm_if_missing PublicInvokeFunctionUrl lambda:InvokeFunctionUrl
-          add_perm_if_missing PublicInvokeFunction    lambda:InvokeFunction
+          add_perm_invoke() {
+            local sid=$1
+            if echo "$POLICY" | grep -q "\"$sid\""; then
+              echo "$sid already attached"
+            else
+              echo "attaching $sid (InvokeFunction)"
+              aws lambda add-permission \
+                --function-name ${{ env.LAMBDA_NAME }} \
+                --region ${{ env.AWS_REGION }} \
+                --statement-id "$sid" \
+                --action lambda:InvokeFunction \
+                --principal '*'
+            fi
+          }
+          add_perm_url    PublicInvokeFunctionUrl
+          add_perm_invoke PublicInvokeFunction
 
           echo "--- final resource policy ---"
           aws lambda get-policy \
