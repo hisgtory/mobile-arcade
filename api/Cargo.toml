@@ -20,6 +20,9 @@ aws-sdk-dynamodb = "1"
 flate2 = "1"
 base64 = "0.22"
 
+[dev-dependencies]
+reqwest = { version = "0.12", features = ["json"] }
+
 [profile.release]
 lto = "thin"
 codegen-units = 1
