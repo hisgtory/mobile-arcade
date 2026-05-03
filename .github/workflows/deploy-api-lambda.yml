@@ -105,23 +105,34 @@ jobs:
             --env-var DDB_TABLE=juicy-fruits \
             --env-var RUST_LOG=arcade_api=info,tower_http=info
 
-      - name: Force Function URL AuthType=NONE
+      - name: Force Function URL AuthType=NONE + public invoke policy
         # cargo-lambda 버전에 따라 첫 생성 시 AWS_IAM으로 떨어질 수 있어 매 배포마다 NONE으로 보정.
-        # 또한 unauthenticated 호출을 허용하는 resource policy도 추가.
+        # 또한 unauthenticated 호출을 허용하는 resource policy도 idempotent하게 보장.
         run: |
+          set -euo pipefail
           aws lambda update-function-url-config \
             --function-name ${{ env.LAMBDA_NAME }} \
             --region ${{ env.AWS_REGION }} \
             --auth-type NONE
 
-          aws lambda add-permission \
+          # 기존 resource policy에 public-invoke statement 있는지 검사
+          POLICY=$(aws lambda get-policy \
             --function-name ${{ env.LAMBDA_NAME }} \
             --region ${{ env.AWS_REGION }} \
-            --statement-id FunctionURLAllowPublicAccess \
-            --action lambda:InvokeFunctionUrl \
-            --principal "*" \
-            --function-url-auth-type NONE \
-            2>/dev/null || true   # 이미 존재하면 ResourceConflict — 무시
+            --query 'Policy' --output text 2>/dev/null || echo '{}')
+
+          if echo "$POLICY" | grep -q FunctionURLAllowPublicAccess; then
+            echo "public-invoke statement already attached"
+          else
+            echo "attaching public-invoke statement"
+            aws lambda add-permission \
+              --function-name ${{ env.LAMBDA_NAME }} \
+              --region ${{ env.AWS_REGION }} \
+              --statement-id FunctionURLAllowPublicAccess \
+              --action lambda:InvokeFunctionUrl \
+              --principal '*' \
+              --function-url-auth-type NONE
+          fi
 
       - name: Print Function URL
         run: |
