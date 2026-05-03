@@ -20,10 +20,14 @@
 
 set -euo pipefail
 
+# 모든 aws 명령이 같은 계정/프로파일을 쓰도록 강제.
+# AWS_PROFILE 이 환경변수로 미리 지정돼 있으면 그것을 우선 사용.
+export AWS_PROFILE="${AWS_PROFILE:-hisgtory}"
+
 # ============================================================
 # 설정 — 본인 환경 값으로 채우기
 # ============================================================
-CERT_ARN="arn:aws:acm:ap-northeast-2:529040228357:certificate/443ad93a-d3df-4ed5-9000-38e0d177fd3a"
+CERT_ARN=""
 LAMBDA_NAME="arcade-api"
 LAMBDA_REGION="ap-northeast-2"
 LAMBDA_HOST="w7z2kkou4qq7m7kzgxah6zr4yi0pukrq.lambda-url.ap-northeast-2.on.aws"
