@@ -17,6 +17,7 @@ import { getStageConfig } from '../logic/stage';
 import { AudioService } from '../logic/audio';
 import { ProgressService } from '../logic/progress';
 import { AD_UNIT_IDS } from '../logic/ads';
+import { getStageTiles } from '../api/getStageTiles';
 import { Tile } from './Tile';
 import { SlotBar } from './SlotBar';
 import { ItemBar } from './ItemBar';
@@ -48,6 +49,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const [isMuted, setIsMuted] = useState(AudioService.isMuted);
   const [volume, setVolume] = useState(AudioService.volume);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [tilesSource, setTilesSource] = useState<'server' | 'local'>('local');
   const toastOpacity = useRef(new Animated.Value(0)).current;
   const switchAnim = useRef(new Animated.Value(AudioService.isMuted ? 0 : 1)).current;
   const undoHistoryRef = useRef<UndoEntry[]>([]);
@@ -163,7 +165,19 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     const init = async () => {
       const progress = await ProgressService.loadProgress();
       setItemCounts(progress.itemCounts); setCoins(progress.coins);
-      const generated = generateBoard(config);
+
+      // 1) 서버 보드 우선 시도 → 실패 시 로컬 generateBoard 폴백
+      let generated: TileData[];
+      let source: 'server' | 'local' = 'local';
+      try {
+        generated = await getStageTiles(stageId, config.typeCount);
+        source = 'server';
+      } catch (err) {
+        if (__DEV__) console.warn('[stage-tiles] fallback to local:', (err as Error).message);
+        generated = generateBoard(config);
+      }
+      setTilesSource(source);
+
       setTiles(generated.map(t => ({ ...t, isSelectable: !isTileBlocked(t, generated) })));
       setSlots([]); setMaxSlot(MAX_SLOT); setElapsedTime(0);
       setIsMuted(AudioService.isMuted); setVolume(AudioService.volume);
@@ -174,7 +188,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     };
     init();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [stageId, switchAnim]);
+  }, [stageId, config, switchAnim]);
 
   const handleGameEnd = useCallback((res: 'win' | 'lose') => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -190,7 +204,17 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
         {/* Header */}
         <View style={[styles.header, { paddingTop: SAFE_TOP + 5 }]}>
             <View style={styles.headerSide}><Text style={styles.timerText}>⏱️ {formatTime(elapsedTime)}</Text></View>
-            <View style={styles.centerContainer}><Text style={styles.stageText}>{stageId}</Text></View>
+            <View style={styles.centerContainer}>
+              <Text
+                style={[
+                  styles.stageText,
+                  tilesSource === 'server' && styles.stageTextServed,
+                ]}
+              >
+                {stageId}
+                {tilesSource === 'server' ? '·' : ''}
+              </Text>
+            </View>
             <View style={[styles.headerSide, styles.headerRight]}>
               <TouchableOpacity activeOpacity={0.7} style={styles.coinBadgeContainer} onPress={() => setShowShop(true)}>
                 <View style={styles.coinBadge}>
@@ -307,6 +331,7 @@ const styles = StyleSheet.create({
   timerText: { fontSize: 18, fontFamily: 'Nunito-Black', color: '#333' },
   centerContainer: { flex: 1, alignItems: 'center' },
   stageText: { fontSize: 32, fontFamily: 'Fredoka-Bold', color: '#333' },
+  stageTextServed: { letterSpacing: 1.2 },
   coinBadgeContainer: { height: 44, justifyContent: 'center' },
   coinBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#E5A500', paddingBottom: 3, borderRadius: 15, marginRight: 8, paddingHorizontal: 10, height: 36 },
   coinIcon: { fontSize: 16, marginRight: 4 },
