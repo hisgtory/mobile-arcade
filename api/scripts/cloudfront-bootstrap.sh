@@ -23,7 +23,7 @@ set -euo pipefail
 # ============================================================
 # 설정 — 본인 환경 값으로 채우기
 # ============================================================
-CERT_ARN="${CERT_ARN:-}"      # 비어있으면 인자로 받음
+CERT_ARN="arn:aws:acm:ap-northeast-2:529040228357:certificate/443ad93a-d3df-4ed5-9000-38e0d177fd3a"
 LAMBDA_NAME="arcade-api"
 LAMBDA_REGION="ap-northeast-2"
 LAMBDA_HOST="w7z2kkou4qq7m7kzgxah6zr4yi0pukrq.lambda-url.ap-northeast-2.on.aws"
@@ -47,7 +47,7 @@ fi
 # 사전 검증
 # ============================================================
 echo "==> AWS 계정 확인"
-aws sts get-caller-identity --query 'Account' --output text
+aws sts get-caller-identity --profile hisgtory
 
 if ! command -v jq >/dev/null 2>&1; then
   echo "ERROR: jq 가 필요합니다. brew install jq 또는 apt install jq" >&2
@@ -55,25 +55,46 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 # ============================================================
-# Step 1: Origin Access Control 생성
+# Step 1: Origin Access Control (있으면 재사용, 없으면 생성)
 # ============================================================
 echo
-echo "==> Step 1: Origin Access Control(OAC) 생성"
-OAC_ID=$(aws cloudfront create-origin-access-control \
-  --origin-access-control-config '{
-    "Name": "arcade-api-oac",
-    "OriginAccessControlOriginType": "lambda",
-    "SigningBehavior": "always",
-    "SigningProtocol": "sigv4"
-  }' \
-  --query 'OriginAccessControl.Id' --output text)
-echo "    OAC ID: $OAC_ID"
+echo "==> Step 1: Origin Access Control(OAC) 확보"
+
+OAC_ID=$(aws cloudfront list-origin-access-controls \
+  --query "OriginAccessControlList.Items[?Name=='arcade-api-oac'].Id | [0]" \
+  --output text)
+
+if [[ -n "$OAC_ID" && "$OAC_ID" != "None" ]]; then
+  echo "    기존 OAC 재사용: $OAC_ID"
+else
+  OAC_ID=$(aws cloudfront create-origin-access-control \
+    --origin-access-control-config '{
+      "Name": "arcade-api-oac",
+      "OriginAccessControlOriginType": "lambda",
+      "SigningBehavior": "always",
+      "SigningProtocol": "sigv4"
+    }' \
+    --query 'OriginAccessControl.Id' --output text)
+  echo "    새 OAC 생성: $OAC_ID"
+fi
 
 # ============================================================
-# Step 2: Distribution 생성
+# Step 2: Distribution (있으면 재사용, 없으면 생성)
 # ============================================================
 echo
-echo "==> Step 2: CloudFront distribution 생성"
+echo "==> Step 2: CloudFront distribution 확보"
+
+EXISTING=$(aws cloudfront list-distributions \
+  --query "DistributionList.Items[?Aliases.Items && contains(Aliases.Items, '$DOMAIN')].{Id:Id,ARN:ARN,Domain:DomainName} | [0]" \
+  --output json 2>/dev/null || echo 'null')
+
+if [[ "$EXISTING" != "null" && "$EXISTING" != "" ]]; then
+  DIST_ID=$(echo "$EXISTING"     | jq -r '.Id')
+  DIST_ARN=$(echo "$EXISTING"    | jq -r '.ARN')
+  DIST_DOMAIN=$(echo "$EXISTING" | jq -r '.Domain')
+  echo "    기존 distribution 재사용: $DIST_ID"
+  echo "    Domain: $DIST_DOMAIN"
+else
 
 DIST_CONFIG=$(mktemp)
 trap 'rm -f "$DIST_CONFIG"' EXIT
@@ -131,9 +152,10 @@ DIST_ID=$(echo "$DIST_RAW"   | jq -r '.Distribution.Id')
 DIST_ARN=$(echo "$DIST_RAW"  | jq -r '.Distribution.ARN')
 DIST_DOMAIN=$(echo "$DIST_RAW" | jq -r '.Distribution.DomainName')
 
-echo "    Distribution ID:     $DIST_ID"
-echo "    Distribution ARN:    $DIST_ARN"
-echo "    Distribution Domain: $DIST_DOMAIN"
+echo "    새 distribution 생성: $DIST_ID"
+echo "    Domain: $DIST_DOMAIN"
+
+fi  # if distribution exists / not
 
 # ============================================================
 # Step 3: Lambda Function URL → AuthType=AWS_IAM
@@ -185,6 +207,13 @@ fi
 # ============================================================
 echo
 echo "==> Step 5: CloudFront OAC invoke 허용 정책 추가"
+
+# 기존 AllowCloudFrontOAC 있으면 제거 후 새로 추가 (DIST_ARN이 바뀌었을 수 있으므로)
+aws lambda remove-permission \
+  --function-name "$LAMBDA_NAME" \
+  --region "$LAMBDA_REGION" \
+  --statement-id AllowCloudFrontOAC 2>/dev/null && echo "    removed stale: AllowCloudFrontOAC" || true
+
 aws lambda add-permission \
   --function-name "$LAMBDA_NAME" \
   --region "$LAMBDA_REGION" \
