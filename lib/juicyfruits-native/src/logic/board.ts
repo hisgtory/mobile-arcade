@@ -46,31 +46,62 @@ function distributeTilesAcrossLayers(totalTiles: number, layerCount: number): nu
   return counts;
 }
 
+function getIntraLayerRatio(stage: number): number {
+  if (stage <= 10) return 0.8;
+  if (stage <= 30) return 0.5;
+  return 0.2;
+}
+
 export function generateBoard(config: StageConfig): TileData[] {
-  const { typeCount, cols, rows, layers, shape = 'rect', tileCount: configTileCount } = config;
+  const { typeCount, cols, rows, layers, shape = 'rect', stage, tileCount: configTileCount } = config;
   // setMultiplier 반영: stage.ts가 계산한 tileCount(=typeCount*3*setMultiplier)를 사용
   const setMultiplier = Math.max(1, Math.round(configTileCount / (typeCount * 3)));
   const tileCount = typeCount * 3 * setMultiplier;
 
   const layerCounts = distributeTilesAcrossLayers(tileCount, layers);
 
-  // Solvability 휴리스틱: 매칭 그룹(같은 타입 3개)을 한 레이어 안에 통째로 배치.
-  // → 어떤 타입이든 같은 레이어 안에서 자체 매칭 가능 → 데드락 위험 최소화
-  // 전제: layerCounts[i]는 모두 3의 배수 (distributeTilesAcrossLayers 보장)
   const matchGroups: number[] = [];
   for (let t = 0; t < typeCount; t++) {
     for (let s = 0; s < setMultiplier; s++) matchGroups.push(t);
   }
   shuffle(matchGroups);
 
-  const types: number[] = [];
+  // Stage 기반 난이도 곡선: 일부는 한 레이어에 통째 배치(쉬움), 나머지는 흩뜨림(어려움)
+  // intra 그룹은 상위 레이어부터 채워서 워밍업 → 후반 어려움 자연스러운 곡선
+  const intraRatio = getIntraLayerRatio(stage);
+  const intraCount = Math.round(matchGroups.length * intraRatio);
+
+  const layerTiles: number[][] = layerCounts.map(() => []);
+  const remaining = [...layerCounts];
+
   let groupIdx = 0;
-  for (let layer = 0; layer < layers; layer++) {
-    const groupsInLayer = Math.floor(layerCounts[layer] / 3);
-    for (let g = 0; g < groupsInLayer; g++) {
+  for (let layer = 0; layer < layers && groupIdx < intraCount; layer++) {
+    while (remaining[layer] >= 3 && groupIdx < intraCount) {
       const t = matchGroups[groupIdx++];
-      types.push(t, t, t);
+      layerTiles[layer].push(t, t, t);
+      remaining[layer] -= 3;
     }
+  }
+
+  const randomTiles: number[] = [];
+  for (let i = groupIdx; i < matchGroups.length; i++) {
+    const t = matchGroups[i];
+    randomTiles.push(t, t, t);
+  }
+  shuffle(randomTiles);
+
+  let randIdx = 0;
+  for (let layer = 0; layer < layers; layer++) {
+    while (remaining[layer] > 0 && randIdx < randomTiles.length) {
+      layerTiles[layer].push(randomTiles[randIdx++]);
+      remaining[layer]--;
+    }
+  }
+
+  const types: number[] = [];
+  for (let layer = 0; layer < layers; layer++) {
+    shuffle(layerTiles[layer]);
+    types.push(...layerTiles[layer]);
   }
 
   let typeIdx = 0;
