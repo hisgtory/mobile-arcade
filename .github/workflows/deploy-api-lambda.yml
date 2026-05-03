@@ -121,18 +121,25 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'Policy' --output text 2>/dev/null || echo '{}')
 
-          if echo "$POLICY" | grep -q FunctionURLAllowPublicAccess; then
-            echo "public-invoke statement already attached"
-          else
-            echo "attaching public-invoke statement"
-            aws lambda add-permission \
-              --function-name ${{ env.LAMBDA_NAME }} \
-              --region ${{ env.AWS_REGION }} \
-              --statement-id FunctionURLAllowPublicAccess \
-              --action lambda:InvokeFunctionUrl \
-              --principal '*' \
-              --function-url-auth-type NONE
-          fi
+          # Function URL with AuthType=NONE은 InvokeFunctionUrl + InvokeFunction
+          # 두 액션 모두 public 허용이 필요. 각각 별도 statement로 idempotent 추가.
+          add_perm_if_missing() {
+            local sid=$1 action=$2
+            if echo "$POLICY" | grep -q "\"$sid\""; then
+              echo "$sid already attached"
+            else
+              echo "attaching $sid ($action)"
+              aws lambda add-permission \
+                --function-name ${{ env.LAMBDA_NAME }} \
+                --region ${{ env.AWS_REGION }} \
+                --statement-id "$sid" \
+                --action "$action" \
+                --principal '*' \
+                --function-url-auth-type NONE
+            fi
+          }
+          add_perm_if_missing PublicInvokeFunctionUrl lambda:InvokeFunctionUrl
+          add_perm_if_missing PublicInvokeFunction    lambda:InvokeFunction
 
           echo "--- final resource policy ---"
           aws lambda get-policy \
