@@ -140,9 +140,17 @@ jobs:
             --region ${{ env.AWS_REGION }} \
             --query 'Policy' --output text | python3 -m json.tool
 
-      - name: Print Function URL
+      - name: Print Function URL config
         run: |
           aws lambda get-function-url-config \
             --function-name ${{ env.LAMBDA_NAME }} \
+            --region ${{ env.AWS_REGION }}
+
+      - name: Curl Function URL from runner
+        run: |
+          URL=$(aws lambda get-function-url-config \
+            --function-name ${{ env.LAMBDA_NAME }} \
             --region ${{ env.AWS_REGION }} \
-            --query FunctionUrl --output text
+            --query FunctionUrl --output text)
+          echo "Calling: ${URL}health"
+          curl -is --max-time 30 "${URL}health" || true
