@@ -165,6 +165,74 @@ pnpm -r --filter @arcade/lib-found3 test
 
 로컬에서 같은 명령을 실행해 PR 전에 검증할 수 있습니다.
 
+## Releases & Deployment
+
+### Juicy Fruits — Production API
+
+`juicyfruits/rn` 앱과 `lib/juicyfruits-native`는 라이브 백엔드를 사용합니다.
+
+| Component | Endpoint / Region |
+|---|---|
+| API Domain | `https://arcade-api.hisgtory.com` |
+| Backend | Rust + Axum on AWS Lambda (ARM64 Graviton, `ap-northeast-2`) |
+| Edge | CloudFront → Lambda@Edge SigV4 signer (`us-east-1`) |
+| Auth | Lambda Function URL `AuthType=AWS_IAM` (직접 호출 시 403) |
+| Storage | DynamoDB single-table (`juicy-fruits`) |
+
+푸시 트리거(`main` 브랜치, `api/` 변경분):
+- `.github/workflows/deploy-api-lambda.yml` — Rust 바이너리 빌드 + Lambda 배포 + CloudFront invalidation
+
+자세한 인증 layer 설계는 `knowledge/architecture-decisions.md` ADR-020 참고.
+
+### Juicy Fruits — App Build (EAS)
+
+앱 빌드는 `git tag` 또는 GitHub Release 발행으로 트리거됩니다.
+
+| Tag 패턴 | 빌드 |
+|---|---|
+| `juicy-fruits-android/{semver}` | Android |
+| `juicy-fruits-ios/{semver}` | iOS |
+| `juicy-fruits-all/{semver}` | 양 플랫폼 동시 |
+
+semver pre-release suffix(`-rc.1`, `-beta.1` 등)가 붙으면 EAS `preview` profile, 없으면 `production` profile로 빌드.
+
+```bash
+# Production 출시
+git tag juicy-fruits-android/1.0.0
+git push origin juicy-fruits-android/1.0.0
+
+# 또는 Release 발행 (gh CLI)
+gh release create juicy-fruits-android/1.0.0 \
+  --title "Android 1.0.0" --notes "release notes"
+
+# 내부 테스트 (preview)
+gh release create juicy-fruits-android/1.0.0-rc.1 --prerelease \
+  --title "Android 1.0.0 RC1" --notes "..."
+```
+
+워크플로우는 `app.json`의 `expo.version`이 tag suffix와 일치하는지 검증하므로 tag push 전에 버전을 먼저 올려야 합니다.
+
+수동 트리거: Actions 탭 → `EAS Build — Juicy Fruits` → Run workflow (platform/profile 직접 선택).
+
+### 사전 셋업 (한 번만)
+
+GitHub Repo Settings → Secrets and variables → Actions:
+
+| Secret | 용도 | 발급처 |
+|---|---|---|
+| `EXPO_TOKEN` | EAS 빌드 인증 | https://expo.dev/accounts/hisgtory/settings/access-tokens |
+| `AWS_DEPLOY_ROLE_ARN` | Lambda 배포 (OIDC) | AWS IAM (자세한 trust policy는 `deploy-api-lambda.yml` 주석 참고) |
+| `AWS_LAMBDA_RUNTIME_ROLE` | Lambda 런타임 role | AWS IAM |
+
+워크플로우 일람:
+
+| Workflow | 트리거 | 용도 |
+|---|---|---|
+| `ci.yml` | push/PR | 타입/빌드/린트/테스트 |
+| `deploy-api-lambda.yml` | `main` push (`api/**` 변경) | Rust API → Lambda |
+| `deploy-site.yml` | `main` push (`web/site/**`) | Privacy/Terms 정적 사이트 → Cloudflare Pages |
+| `eas-build-juicy-fruits.yml` | `juicy-fruits-*/*` tag push | EAS 빌드 (Android/iOS) |
+
 ## Team Structure
 
 | Area | Folder | Role |
