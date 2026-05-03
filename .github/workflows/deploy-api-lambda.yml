@@ -103,7 +103,6 @@ jobs:
             --timeout 30 \
             --enable-function-url \
             --env-var DDB_TABLE=juicy-fruits \
-            --env-var AWS_REGION=${{ env.AWS_REGION }} \
             --env-var RUST_LOG=arcade_api=info,tower_http=info
 
       - name: Print Function URL
