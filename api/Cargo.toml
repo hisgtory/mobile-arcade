@@ -19,6 +19,7 @@ aws-config = { version = "1", features = ["behavior-version-latest"] }
 aws-sdk-dynamodb = "1"
 flate2 = "1"
 base64 = "0.22"
+lambda_http = "1"
 
 [dev-dependencies]
 reqwest = { version = "0.12", features = ["json"] }

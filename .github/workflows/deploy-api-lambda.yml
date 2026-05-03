@@ -1,0 +1,108 @@
+name: Deploy API to Lambda
+
+# arcade-api Rust 바이너리를 ARM64 Graviton Lambda로 배포.
+# OIDC 인증 사용 → 장기 자격증명(액세스 키) GitHub에 저장 안 함.
+#
+# === 첫 배포 전 1회만 AWS에서 셋업해야 할 것 ===
+#
+# 1) GitHub OIDC provider 등록 (계정당 1회):
+#    aws iam create-open-id-connect-provider \
+#      --url https://token.actions.githubusercontent.com \
+#      --client-id-list sts.amazonaws.com \
+#      --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
+#
+# 2) "배포 role" — GHA가 assume할 IAM role.
+#    Trust policy:
+#    {
+#      "Version": "2012-10-17",
+#      "Statement": [{
+#        "Effect": "Allow",
+#        "Principal": { "Federated": "arn:aws:iam::ACCT:oidc-provider/token.actions.githubusercontent.com" },
+#        "Action": "sts:AssumeRoleWithWebIdentity",
+#        "Condition": {
+#          "StringEquals": { "token.actions.githubusercontent.com:aud": "sts.amazonaws.com" },
+#          "StringLike": { "token.actions.githubusercontent.com:sub": "repo:hisgtory/mobile-arcade:*" }
+#        }
+#      }]
+#    }
+#    Permissions: lambda:CreateFunction, lambda:UpdateFunctionCode, lambda:UpdateFunctionConfiguration,
+#                 lambda:CreateFunctionUrlConfig, lambda:GetFunction, lambda:GetFunctionUrlConfig,
+#                 lambda:AddPermission, iam:PassRole(runtime role only)
+#
+# 3) "런타임 role" — Lambda 함수가 assume할 role. trust principal: lambda.amazonaws.com.
+#    Permissions: DynamoDB R/W on table `juicy-fruits`(이전에 만든 정책 그대로 재사용).
+#
+# 4) GitHub Repo Settings → Secrets and variables → Actions:
+#    - AWS_DEPLOY_ROLE_ARN     (배포 role ARN)
+#    - AWS_LAMBDA_RUNTIME_ROLE (런타임 role ARN)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/Cargo.toml'
+      - 'api/Cargo.lock'
+      - 'api/src/**'
+      - '.github/workflows/deploy-api-lambda.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api-lambda
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # OIDC 토큰 발급
+  contents: read
+
+jobs:
+  deploy:
+    name: cargo-lambda deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      AWS_REGION: ap-northeast-2
+      LAMBDA_NAME: arcade-api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: api
+
+      - name: Install cargo-lambda
+        uses: cargo-lambda/cargo-lambda@v1
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build (ARM64 Graviton)
+        working-directory: api
+        run: cargo lambda build --release --arm64
+
+      - name: Deploy
+        working-directory: api
+        run: |
+          cargo lambda deploy ${{ env.LAMBDA_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --iam-role ${{ secrets.AWS_LAMBDA_RUNTIME_ROLE }} \
+            --memory 1024 \
+            --timeout 30 \
+            --enable-function-url \
+            --env-var DDB_TABLE=juicy-fruits \
+            --env-var AWS_REGION=${{ env.AWS_REGION }} \
+            --env-var RUST_LOG=arcade_api=info,tower_http=info
+
+      - name: Print Function URL
+        run: |
+          aws lambda get-function-url-config \
+            --function-name ${{ env.LAMBDA_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --query FunctionUrl --output text

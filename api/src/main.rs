@@ -20,12 +20,18 @@ use crate::state::AppState;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_env_filter(
-            EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| EnvFilter::new("arcade_api=info,tower_http=info")),
-        )
-        .init();
+    let is_lambda = std::env::var("AWS_LAMBDA_FUNCTION_NAME").is_ok();
+
+    // Lambda는 CloudWatch에 라인 단위로 잘리니 타깃·ANSI off가 좋음.
+    let fmt = tracing_subscriber::fmt().with_env_filter(
+        EnvFilter::try_from_default_env()
+            .unwrap_or_else(|_| EnvFilter::new("arcade_api=info,tower_http=info")),
+    );
+    if is_lambda {
+        fmt.with_ansi(false).without_time().with_target(false).init();
+    } else {
+        fmt.init();
+    }
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -40,6 +46,15 @@ async fn main() -> anyhow::Result<()> {
         .layer(TraceLayer::new_for_http())
         .layer(cors);
 
+    if is_lambda {
+        // Lambda runtime: API Gateway / Function URL 이벤트를 axum Router로 forward.
+        lambda_http::run(app)
+            .await
+            .map_err(|e| anyhow::anyhow!("lambda runtime error: {}", e))?;
+        return Ok(());
+    }
+
+    // 로컬 / 컨테이너 모드: TCP 서버로 listen.
     let port: u16 = std::env::var("PORT")
         .ok()
         .and_then(|v| v.parse().ok())

@@ -1,11 +1,8 @@
-name: Deploy API
+name: Deploy API (Cloudflare Containers — fallback)
 
+# 메인 배포는 deploy-api-lambda.yml. 이 워크플로우는 Cloudflare 측 fallback용.
+# push 트리거 비활성화 — 필요할 때만 GHA UI에서 Run workflow.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'api/**'
-      - '.github/workflows/deploy-api.yml'
   workflow_dispatch:
 
 # 동시 실행 막기 — 같은 컨테이너 이미지 빌드/배포가 겹치지 않도록
