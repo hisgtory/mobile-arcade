@@ -175,6 +175,44 @@ impl VariantRepo {
         })
     }
 
+    /// 분석 이벤트 저장. 일별 파티션 + ULID-prefix SK.
+    /// PK = `event-{YYYYMMDD}` (UTC), SK = `{ulid}#{user_id}`.
+    /// `payload_json`은 미리 직렬화된 컴팩트 JSON 문자열이어야 함.
+    pub async fn put_event(
+        &self,
+        user_id: &str,
+        event: &str,
+        payload_json: &str,
+        client_ts: Option<u64>,
+    ) -> Result<(), RepoError> {
+        let now_ms = epoch_ms();
+        let pk = event_day_pk(now_ms);
+        let sk = format!("{}#{}", new_ulid(), user_id);
+        let ttl_sec = now_ms / 1000 + 90 * 86_400;
+
+        let mut req = self
+            .client
+            .put_item()
+            .table_name(&self.table)
+            .item("pk", AttributeValue::S(pk))
+            .item("sk", AttributeValue::S(sk))
+            .item("event", AttributeValue::S(event.to_string()))
+            .item("user_id", AttributeValue::S(user_id.to_string()))
+            .item("payload", AttributeValue::S(payload_json.to_string()))
+            .item("created_at", AttributeValue::N(now_ms.to_string()))
+            .item("ttl", AttributeValue::N(ttl_sec.to_string()))
+            .item("schema_v", AttributeValue::N(SCHEMA_VERSION.to_string()));
+
+        if let Some(cts) = client_ts {
+            req = req.item("client_ts", AttributeValue::N(cts.to_string()));
+        }
+
+        req.send()
+            .await
+            .map_err(|e| RepoError::Upstream(e.to_string()))?;
+        Ok(())
+    }
+
     /// 감사용 + 리더보드용 클리어 로그.
     /// SK 포맷 `clear-{duration:06}-{ulid}` → PK 내 lex 정렬 = 빠른 시간 순.
     pub async fn put_clear_log(
@@ -434,6 +472,27 @@ fn rank_sk(stage: u32, user_id: &str) -> String {
     format!("{:04}-{}", stage, user_id)
 }
 
+/// epoch_ms → `event-{YYYYMMDD}` (UTC). Howard Hinnant date algorithm — std-only.
+fn event_day_pk(epoch_ms: u64) -> String {
+    let (y, m, d) = ymd_from_epoch_ms(epoch_ms);
+    format!("event-{:04}{:02}{:02}", y, m, d)
+}
+
+fn ymd_from_epoch_ms(ms: u64) -> (i32, u32, u32) {
+    let days = (ms / 86_400_000) as i64;
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = (z - era * 146_097) as u64;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy as i64 - (153 * mp as i64 + 2) / 5 + 1) as u32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
+    let y_adj = if m <= 2 { y + 1 } else { y };
+    (y_adj as i32, m, d)
+}
+
 #[derive(Debug, Clone)]
 pub struct StageClearEntry {
     pub user_id: String,
@@ -574,6 +633,28 @@ mod tests {
     #[test]
     fn ulid_len_26() {
         assert_eq!(new_ulid().len(), 26);
+    }
+
+    #[test]
+    fn event_day_pk_known_dates() {
+        // 1970-01-01T00:00:00Z
+        assert_eq!(event_day_pk(0), "event-19700101");
+        // 1970-01-02T00:00:00Z
+        assert_eq!(event_day_pk(86_400_000), "event-19700102");
+        // 2024-02-29T00:00:00Z = 19782 days × 86400000 (leap year sanity)
+        assert_eq!(event_day_pk(19782 * 86_400_000), "event-20240229");
+        // 2026-05-03T00:00:00Z
+        assert_eq!(event_day_pk(20576 * 86_400_000), "event-20260503");
+    }
+
+    #[test]
+    fn event_day_pk_today_format() {
+        // 14자(`event-`) + 8자(YYYYMMDD) = 14
+        let now = epoch_ms();
+        let pk = event_day_pk(now);
+        assert!(pk.starts_with("event-"));
+        assert_eq!(pk.len(), 14);
+        assert!(pk[6..].chars().all(|c| c.is_ascii_digit()));
     }
 
     #[test]

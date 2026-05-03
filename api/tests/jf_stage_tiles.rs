@@ -271,6 +271,102 @@ async fn integration() {
     .unwrap();
     let body: serde_json::Value = res.json().await.unwrap();
     assert!(body["user"].is_null());
+
+    // -------- /v1/jf/event --------
+
+    // 20. happy path: 빈 payload (app_launch) → 202 + 빈 본문
+    let res = post_event(
+        &setup.api_url,
+        &json!({ "userId": "u1", "event": "app_launch", "payload": {} }),
+    )
+    .await;
+    assert_eq!(res.status(), 202, "app_launch should be 202");
+    let bytes = res.bytes().await.unwrap();
+    assert!(bytes.is_empty(), "202 must have empty body");
+
+    // 21. stage_clear 풀 payload + 두 번째 호출 → 둘 다 202, 서로 다른 SK
+    let res = post_event(
+        &setup.api_url,
+        &json!({
+            "userId": "u1",
+            "event": "stage_clear",
+            "payload": { "stageId": 7, "time": 12, "tilesLeft": 0, "tilesSource": "server" },
+            "timestamp": 1730000000000u64
+        }),
+    )
+    .await;
+    assert_eq!(res.status(), 202);
+
+    let res = post_event(
+        &setup.api_url,
+        &json!({
+            "userId": "u1",
+            "event": "stage_clear",
+            "payload": { "stageId": 8, "time": 9, "tilesLeft": 0, "tilesSource": "local" }
+        }),
+    )
+    .await;
+    assert_eq!(res.status(), 202);
+
+    // 22. 잘못된 event 명 (대소문자) → 400 event_invalid
+    let res = post_event(
+        &setup.api_url,
+        &json!({ "userId": "u1", "event": "BadEvent", "payload": {} }),
+    )
+    .await;
+    assert_eq!(res.status(), 400);
+    let err: serde_json::Value = res.json().await.unwrap();
+    assert_eq!(err["code"], "event_invalid");
+
+    // 23. 빈 userId → 400 user_id_invalid
+    let res = post_event(
+        &setup.api_url,
+        &json!({ "userId": "", "event": "app_launch", "payload": {} }),
+    )
+    .await;
+    assert_eq!(res.status(), 400);
+    assert_eq!(
+        res.json::<serde_json::Value>().await.unwrap()["code"],
+        "user_id_invalid"
+    );
+
+    // 24. payload가 객체가 아님 → 400 bad_request
+    let res = post_event(
+        &setup.api_url,
+        &json!({ "userId": "u1", "event": "x", "payload": [1, 2, 3] }),
+    )
+    .await;
+    assert_eq!(res.status(), 400);
+
+    // 25. 미래 timestamp 24h 초과 → 400 bad_request
+    let far_future = chrono_now_ms() + 48 * 3600 * 1000;
+    let res = post_event(
+        &setup.api_url,
+        &json!({
+            "userId": "u1",
+            "event": "x",
+            "payload": {},
+            "timestamp": far_future
+        }),
+    )
+    .await;
+    assert_eq!(res.status(), 400);
+}
+
+fn chrono_now_ms() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u64
+}
+
+async fn post_event(base: &str, body: &serde_json::Value) -> reqwest::Response {
+    reqwest::Client::new()
+        .post(format!("{}/v1/jf/event", base))
+        .json(body)
+        .send()
+        .await
+        .expect("request send")
 }
 
 async fn post_clear(base: &str, body: &serde_json::Value) -> reqwest::Response {

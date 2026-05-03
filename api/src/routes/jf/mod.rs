@@ -3,6 +3,7 @@ use axum::Router;
 
 use crate::state::AppState;
 
+mod event;
 mod leaderboard;
 mod stage_clear;
 mod stage_leaderboard;
@@ -17,4 +18,5 @@ pub fn router() -> Router<AppState> {
             get(stage_leaderboard::handle),
         )
         .route("/leaderboard", get(leaderboard::handle))
+        .route("/event", post(event::handle))
 }

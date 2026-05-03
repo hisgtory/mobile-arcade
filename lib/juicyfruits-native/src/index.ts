@@ -19,5 +19,7 @@ export type {
   UserPosition,
   GetLeaderboardOptions,
 } from './api/getLeaderboard';
+export { logEvent, LogEventError } from './api/logEvent';
+export type { LogEventInput } from './api/logEvent';
 export { TILE_ASSETS } from './assets';
 export * from './types';
