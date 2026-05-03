@@ -76,7 +76,9 @@ jobs:
           workspaces: api
 
       - name: Install cargo-lambda
-        uses: cargo-lambda/cargo-lambda@v1
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-lambda
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
