@@ -63,12 +63,12 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const initialTilesRef = useRef<TileData[]>([]);
   const [isRestarting, setIsRestarting] = useState(false);
 
-  // Interstitial Ad for Restart transition
+  // Interstitial Ad for Restart
   const { isLoaded: isAdLoaded, isClosed: isAdClosed, show: showAd, load: loadAd } = useInterstitialAd(AD_UNIT_IDS.INTERSTITIAL, {
     requestNonPersonalizedAdsOnly: true,
   });
 
-  // --- Strict Layout ---
+  // --- Strict Layout Calculation ---
   const SAFE_TOP = Math.max(insets.top, 10);
   const HEADER_H = 65; 
   const SLOT_BAR_H = 100;
@@ -77,27 +77,45 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const boardAvailH = SCREEN_HEIGHT - SAFE_TOP - HEADER_H - SLOT_BAR_H - BOTTOM_AREA_H - 20;
   const boardAvailW = SCREEN_WIDTH - 40; 
 
-  const gridEffectiveCols = config.cols + (config.layers - 1) * 0.5;
-  const gridEffectiveRows = config.rows + (config.layers - 1) * 0.5;
+  /**
+   * [중요] 그리드 실제 크기 계산 수정
+   * board.ts 로직에 따르면:
+   * 1. 각 레이어는 layerCols = max(2, cols - layer) 칸을 사용함.
+   * 2. 각 레이어는 offset = layer * 0.5 만큼 우측/하단으로 밀림.
+   * 3. 따라서 실제 차지하는 최대 칸수(unit)는 Math.max( (layerCols - 1) + offset ) + 1(타일너비) 임.
+   */
+  const calculateEffectiveSize = (baseSize: number, layerCount: number) => {
+    let maxUnit = 0;
+    for (let l = 0; l < layerCount; l++) {
+        const layerCols = Math.max(2, baseSize - l);
+        const offset = l * 0.5;
+        const currentMax = (layerCols - 1) + offset + 1; // 1 is tile size itself
+        if (currentMax > maxUnit) maxUnit = currentMax;
+    }
+    return maxUnit;
+  };
+
+  const gridEffectiveCols = calculateEffectiveSize(config.cols, config.layers);
+  const gridEffectiveRows = calculateEffectiveSize(config.rows, config.layers);
   
-  const baseTileSize = Math.floor(Math.min(boardAvailW / gridEffectiveCols, boardAvailH / gridEffectiveRows));
-  const tileSize = Math.floor(baseTileSize * 1.32);
+  // 실제 차지하는 영역에 딱 맞게 tileSize 계산 (이제 1.4배 같은 억지 배수가 필요 없음)
+  const tileSize = Math.floor(Math.min(boardAvailW / gridEffectiveCols, boardAvailH / gridEffectiveRows));
   
   const gap = Math.floor(tileSize * BASE_TILE_GAP_RATIO);
   const gridWidth = gridEffectiveCols * (tileSize + gap) - gap;
   const gridHeight = gridEffectiveRows * (tileSize + gap) - gap;
 
-  // Load ad on mount
+  // Load ad
   useEffect(() => {
     loadAd();
   }, [loadAd]);
 
-  // Handle ad close for restart
+  // Handle ad close
   useEffect(() => {
     if (isAdClosed && isRestarting) {
       onRestart?.();
       setIsRestarting(false);
-      loadAd(); // Preload next
+      loadAd();
     }
   }, [isAdClosed, isRestarting, onRestart, loadAd]);
 
@@ -107,7 +125,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     if (Platform.OS === 'ios') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     
     undoHistoryRef.current.push({ slotItem: { id: tile.id, type: tile.type }, tileData: { ...tile } });
-    const nextTiles = tiles.filter(t => t.id !== tile.id);
+    const nextTiles = tiles.filter(t => t && t.id !== tile.id);
     const updatedTiles = nextTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, nextTiles) }));
     const result = addToSlotAndMatch(slots, tile, maxSlot);
     
@@ -143,7 +161,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     if (itemCounts.magnet <= 0 || phase !== GamePhase.PLAYING || tiles.length === 0) return;
     let targetType: number | null = null;
     const typeCountsOnBoard: Record<number, TileData[]> = {};
-    tiles.forEach(t => { if (!typeCountsOnBoard[t.type]) typeCountsOnBoard[t.type] = []; typeCountsOnBoard[t.type].push(t); });
+    tiles.forEach(t => { if (t && !typeCountsOnBoard[t.type]) typeCountsOnBoard[t.type] = []; t && typeCountsOnBoard[t.type].push(t); });
     for (const slotItem of slots) {
       if (typeCountsOnBoard[slotItem.type] && typeCountsOnBoard[slotItem.type].length >= (3 - slots.filter(s => s.type === slotItem.type).length)) {
         targetType = slotItem.type;
@@ -157,7 +175,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     const neededFromBoard = 3 - slots.filter(s => s.type === targetType).length;
     const targetTilesFromBoard = typeCountsOnBoard[targetType].slice(0, neededFromBoard);
     const removedIds = targetTilesFromBoard.map(t => t.id);
-    const nextTiles = tiles.filter(t => !removedIds.includes(t.id));
+    const nextTiles = tiles.filter(t => t && !removedIds.includes(t.id));
     const updatedTiles = nextTiles.map(t => ({ ...t, isSelectable: !isTileBlocked(t, nextTiles) }));
     const nextSlots = slots.filter(s => s.type !== targetType);
     Vibration.vibrate(150);
@@ -218,7 +236,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
     };
     init();
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [stageId]); // Removed config and switchAnim to prevent infinite loop
+  }, [stageId]);
 
   const handleGameEnd = useCallback((res: 'win' | 'lose') => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -275,7 +293,7 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
         
         <View style={styles.boardContainer}>
           <View style={{ width: gridWidth, height: gridHeight, position: 'relative' }}>
-            {[...tiles].sort((a,b)=>a.layer-b.layer).map(tile => (
+            {[...tiles].filter(t => t).sort((a,b)=>a.layer-b.layer).map(tile => (
               <Tile key={tile.id} tile={tile} size={tileSize} gap={gap} boardPad={0} onPress={handleTilePress} />
             ))}
           </View>
