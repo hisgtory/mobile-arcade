@@ -17,7 +17,7 @@ import { getStageConfig } from '../logic/stage';
 import { AudioService } from '../logic/audio';
 import { ProgressService } from '../logic/progress';
 import { AD_UNIT_IDS, InterstitialService } from '../logic/ads';
-import { getStageTiles } from '../api/getStageTiles';
+import { getStageTilesCached, prefetchStageTiles } from '../api/stageTilesCache';
 import { Tile } from './Tile';
 import { SlotBar } from './SlotBar';
 import { ItemBar } from './ItemBar';
@@ -203,12 +203,16 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
       let generated: TileData[];
       let source: 'server' | 'local' = 'local';
       try {
-        generated = await getStageTiles(stageId, config.typeCount);
+        generated = await getStageTilesCached(stageId, config.typeCount);
         source = 'server';
       } catch (err) {
         generated = generateBoard(config);
       }
       setTilesSource(source);
+
+      // 다음 스테이지 백그라운드 프리페치 — 게임 플레이 동안 미리 받아둠
+      const nextConfig = getStageConfig(stageId + 1);
+      prefetchStageTiles(stageId + 1, nextConfig.typeCount);
       initialTilesRef.current = generated;
 
       setTiles(generated.map(t => ({ ...t, isSelectable: !isTileBlocked(t, generated) })));

@@ -10,6 +10,7 @@ export { InitializationService } from './logic/init';
 export { getUserId } from './logic/userId';
 export { getStageConfig, getMaxStage } from './logic/stage';
 export { getStageTiles, StageTilesError } from './api/getStageTiles';
+export { getStageTilesCached, prefetchStageTiles } from './api/stageTilesCache';
 export { reportClear, ReportClearError } from './api/reportClear';
 export type { ClearRanking, ReportClearOptions } from './api/reportClear';
 export { getLeaderboard, LeaderboardError } from './api/getLeaderboard';
