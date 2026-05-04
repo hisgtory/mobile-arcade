@@ -21,6 +21,7 @@ export default function ResultScreen({ route, navigation }: Props) {
   const [isRewarded, setIsRewarded] = useState(false);
   const [displayReward, setDisplayReward] = useState(0);
   const [pendingNavigation, setPendingNavigation] = useState<{ type: 'next' | 'retry' } | null>(null);
+  const rafIdRef = useRef<number | null>(null);
 
   // Rewarded Ad Hook (for 2X bonus)
   const { isLoaded: isRewardedLoaded, isEarnedReward, show: showRewarded, load: loadRewarded } = useRewardedAd(AD_UNIT_IDS.REWARDED, { requestNonPersonalizedAdsOnly: true });
@@ -30,24 +31,47 @@ export default function ResultScreen({ route, navigation }: Props) {
     requestNonPersonalizedAdsOnly: true,
   });
 
-  const runCountAnimation = useCallback((start: number, end: number, speed: number) => {
-    let current = start;
-    const step = () => {
-      if (current < end) {
-        current += 1;
-        setDisplayReward(current);
-        setTimeout(() => requestAnimationFrame(step), speed);
+  // 카운트업 애니메이션 — duration 고정. delta 크기와 무관 (작은 숫자 천천히, 큰 숫자 빠르게).
+  const REWARD_ANIM_DURATION_MS = 2000;
+  const runCountAnimation = useCallback((start: number, end: number) => {
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+    const delta = end - start;
+    if (delta <= 0) {
+      setDisplayReward(end);
+      return;
+    }
+    const startTime = Date.now();
+    const tick = () => {
+      const t = Math.min(1, (Date.now() - startTime) / REWARD_ANIM_DURATION_MS);
+      setDisplayReward(Math.round(start + delta * t));
+      if (t < 1) {
+        rafIdRef.current = requestAnimationFrame(tick);
+      } else {
+        rafIdRef.current = null;
       }
     };
-    requestAnimationFrame(step);
+    rafIdRef.current = requestAnimationFrame(tick);
   }, []);
 
-  // Initial Reward Animation and Ad Loading
-  useEffect(() => { 
-    if (isWin && totalRewardCoins > 0) runCountAnimation(0, totalRewardCoins, 100); 
-    if (isWin && !isRewarded) loadRewarded();
-    loadInterstitial(); // Always pre-load interstitial for transition
-  }, [isWin, totalRewardCoins, runCountAnimation, isRewarded, loadRewarded, loadInterstitial]);
+  // 언마운트 시 진행 중인 RAF 정리
+  useEffect(() => () => {
+    if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+  }, []);
+
+  // 최초 리워드 카운트업 — isWin/totalRewardCoins 가 정해지면 1회만 실행
+  useEffect(() => {
+    if (isWin && totalRewardCoins > 0) runCountAnimation(0, totalRewardCoins);
+  }, [isWin, totalRewardCoins, runCountAnimation]);
+
+  // 광고 프리로드 — 함수 reference 변경에 의한 재실행을 막기 위해 isWin 만 deps 로
+  useEffect(() => {
+    if (isWin) loadRewarded();
+    loadInterstitial();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isWin]);
 
   // Handle 2X Reward Logic
   useEffect(() => {
@@ -56,7 +80,7 @@ export default function ResultScreen({ route, navigation }: Props) {
         setIsRewarded(true);
         await ProgressService.updateCoins(totalRewardCoins);
         AnalyticsService.logEvent('ad_reward', { stageId, rewardCoins: totalRewardCoins });
-        runCountAnimation(totalRewardCoins, totalRewardCoins * 2, 80);
+        runCountAnimation(totalRewardCoins, totalRewardCoins * 2);
         Vibration.vibrate(100);
       };
       handleDouble();
