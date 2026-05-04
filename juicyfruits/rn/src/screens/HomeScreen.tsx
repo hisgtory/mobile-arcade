@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, Image, Platf
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { BannerAd, BannerAdSize, useInterstitialAd } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { RootStackParamList } from '../App';
 import {
   TILE_ASSETS,
@@ -43,27 +43,9 @@ export default function HomeScreen({ navigation }: Props) {
   const [userRank, setUserRank] = useState<UserPosition | null>(null);
   const switchAnim = useRef(new Animated.Value(AudioService.isMuted ? 0 : 1)).current;
 
-  // Interstitial Ad Hook
-  const { isLoaded, isClosed, show, load } = useInterstitialAd(AD_UNIT_IDS.INTERSTITIAL, {
-    requestNonPersonalizedAdsOnly: true,
-  });
-
   // Get config for current stage to determine which fruits to show
   const stageConfig = getStageConfig(currentStage);
   const currentStageFruits = FRUIT_TYPES.slice(0, stageConfig?.typeCount || 3);
-
-  // Initial load and reload on close
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  // Navigate to game after ad is closed
-  useEffect(() => {
-    if (isClosed) {
-      navigation.navigate('Game', { stageId: currentStage });
-      load(); // Load next ad
-    }
-  }, [isClosed, navigation, currentStage, load]);
 
   useFocusEffect(
     useCallback(() => {
@@ -122,11 +104,7 @@ export default function HomeScreen({ navigation }: Props) {
   };
 
   const handlePlay = () => {
-    if (isLoaded) {
-      show();
-    } else {
-      navigation.navigate('Game', { stageId: currentStage });
-    }
+    navigation.navigate('Game', { stageId: currentStage });
   };
 
   return (

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, Text, Modal, TouchableOpacity, Dimensions, ImageBackground, Animated, Vibration, Platform, Image, ActivityIndicator, Pressable, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BannerAd, BannerAdSize, useInterstitialAd } from 'react-native-google-mobile-ads';
+import { BannerAd, BannerAdSize } from 'react-native-google-mobile-ads';
 import { 
   TileData, 
   SlotItem, 
@@ -16,7 +16,7 @@ import { addToSlotAndMatch, undoLastSlotItem } from '../logic/matcher';
 import { getStageConfig } from '../logic/stage';
 import { AudioService } from '../logic/audio';
 import { ProgressService } from '../logic/progress';
-import { AD_UNIT_IDS } from '../logic/ads';
+import { AD_UNIT_IDS, InterstitialService } from '../logic/ads';
 import { getStageTiles } from '../api/getStageTiles';
 import { Tile } from './Tile';
 import { SlotBar } from './SlotBar';
@@ -61,12 +61,6 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const undoHistoryRef = useRef<UndoEntry[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const initialTilesRef = useRef<TileData[]>([]);
-  const [isRestarting, setIsRestarting] = useState(false);
-
-  // Interstitial Ad for Restart
-  const { isLoaded: isAdLoaded, isClosed: isAdClosed, show: showAd, load: loadAd } = useInterstitialAd(AD_UNIT_IDS.INTERSTITIAL, {
-    requestNonPersonalizedAdsOnly: true,
-  });
 
   // --- Strict Layout Calculation ---
   const SAFE_TOP = Math.max(insets.top, 10);
@@ -105,19 +99,10 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
   const gridWidth = gridEffectiveCols * (tileSize + gap) - gap;
   const gridHeight = gridEffectiveRows * (tileSize + gap) - gap;
 
-  // Load ad
+  // 다음 광고 기회를 위해 방어적으로 prepare (이미 로드/로딩이면 no-op)
   useEffect(() => {
-    loadAd();
-  }, [loadAd]);
-
-  // Handle ad close
-  useEffect(() => {
-    if (isAdClosed && isRestarting) {
-      onRestart?.();
-      setIsRestarting(false);
-      loadAd();
-    }
-  }, [isAdClosed, isRestarting, onRestart, loadAd]);
+    InterstitialService.prepare();
+  }, []);
 
   const handleTilePress = useCallback((tile: TileData) => {
     if (phase !== GamePhase.PLAYING) return;
@@ -344,12 +329,11 @@ export const GameBoard: React.FC<GameBoardProps> = ({ stageId, onGameEnd, onExit
               <View style={styles.buttonFixedWrapper}>
                 <Pressable 
                   style={({ pressed }) => [styles.duoBtnSecondary, pressed && styles.duoBtnPressed]} 
-                  onPress={() => { 
+                  onPress={() => {
                     AnalyticsService.logEvent('game_restart', { stageId });
-                    setShowSettings(false); 
-                    if (isAdLoaded) {
-                      setIsRestarting(true);
-                      showAd();
+                    setShowSettings(false);
+                    if (InterstitialService.isReady()) {
+                      InterstitialService.show(() => onRestart?.());
                     } else {
                       onRestart?.();
                     }

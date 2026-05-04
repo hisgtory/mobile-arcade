@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import mobileAds from 'react-native-google-mobile-ads';
 import { useFonts, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
 import { Nunito_400Regular, Nunito_700Bold, Nunito_900Black } from '@expo-google-fonts/nunito';
-import { AudioService, InitializationService } from '@arcade/lib-juicyfruits-native';
+import { AudioService, InitializationService, InterstitialService, RewardedService } from '@arcade/lib-juicyfruits-native';
 import HomeScreen from './screens/HomeScreen';
 import GameScreen from './screens/GameScreen';
 import ResultScreen from './screens/ResultScreen';
@@ -53,7 +53,11 @@ function App() {
   useEffect(() => {
     // 앱 초기화 서비스 실행 (익명 ID 생성 및 설정 로드)
     InitializationService.initialize().then(() => {
-      mobileAds().initialize();
+      mobileAds().initialize().then(() => {
+        // 광고 백그라운드 프리로드 — 사용자가 게임 시작 전에 미리 준비
+        InterstitialService.prepare();
+        RewardedService.prepare();
+      });
       if (Platform.OS === 'android') {
         NavigationBar.setVisibilityAsync('hidden');
         NavigationBar.setBehaviorAsync('sticky-immersive');

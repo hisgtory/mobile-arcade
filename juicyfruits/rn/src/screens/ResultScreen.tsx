@@ -2,13 +2,13 @@ import React, { useMemo, useCallback, useState, useEffect, useRef } from 'react'
 import { StyleSheet, View, Text, TouchableOpacity, ImageBackground, BackHandler, Vibration, ActivityIndicator, Animated, Platform, Pressable } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
-import { useRewardedAd, useInterstitialAd } from 'react-native-google-mobile-ads';
 import { RootStackParamList } from '../App';
-import { 
-  TILE_ASSETS, 
-  AD_UNIT_IDS, 
+import {
+  TILE_ASSETS,
   ProgressService,
-  AnalyticsService 
+  AnalyticsService,
+  InterstitialService,
+  RewardedService,
 } from '@arcade/lib-juicyfruits-native';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Result'>;
@@ -20,16 +20,11 @@ export default function ResultScreen({ route, navigation }: Props) {
   const totalRewardCoins = rewardCoins + (ranking?.bonusCoins ?? 0);
   const [isRewarded, setIsRewarded] = useState(false);
   const [displayReward, setDisplayReward] = useState(0);
-  const [pendingNavigation, setPendingNavigation] = useState<{ type: 'next' | 'retry' } | null>(null);
+  const [isRewardedLoaded, setIsRewardedLoaded] = useState(RewardedService.isReady());
   const rafIdRef = useRef<number | null>(null);
 
-  // Rewarded Ad Hook (for 2X bonus)
-  const { isLoaded: isRewardedLoaded, isEarnedReward, show: showRewarded, load: loadRewarded } = useRewardedAd(AD_UNIT_IDS.REWARDED, { requestNonPersonalizedAdsOnly: true });
-
-  // Interstitial Ad Hook (for Next/Retry transition)
-  const { isLoaded: isInterstitialLoaded, isClosed: isInterstitialClosed, show: showInterstitial, load: loadInterstitial } = useInterstitialAd(AD_UNIT_IDS.INTERSTITIAL, {
-    requestNonPersonalizedAdsOnly: true,
-  });
+  // 보상형 광고 ready 상태 구독 — 더블업 버튼 enable/disable 동기화
+  useEffect(() => RewardedService.subscribe(() => setIsRewardedLoaded(RewardedService.isReady())), []);
 
   // 카운트업 애니메이션 — duration 고정. delta 크기와 무관 (작은 숫자 천천히, 큰 숫자 빠르게).
   const REWARD_ANIM_DURATION_MS = 2000;
@@ -66,35 +61,11 @@ export default function ResultScreen({ route, navigation }: Props) {
     if (isWin && totalRewardCoins > 0) runCountAnimation(0, totalRewardCoins);
   }, [isWin, totalRewardCoins, runCountAnimation]);
 
-  // 광고 프리로드 — 함수 reference 변경에 의한 재실행을 막기 위해 isWin 만 deps 로
+  // 광고 프리로드 — 다음 노출 기회를 위해 방어적으로 한 번 더
   useEffect(() => {
-    if (isWin) loadRewarded();
-    loadInterstitial();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    InterstitialService.prepare();
+    if (isWin) RewardedService.prepare();
   }, [isWin]);
-
-  // Handle 2X Reward Logic
-  useEffect(() => {
-    if (isEarnedReward && !isRewarded) {
-      const handleDouble = async () => {
-        setIsRewarded(true);
-        await ProgressService.updateCoins(totalRewardCoins);
-        AnalyticsService.logEvent('ad_reward', { stageId, rewardCoins: totalRewardCoins });
-        runCountAnimation(totalRewardCoins, totalRewardCoins * 2);
-        Vibration.vibrate(100);
-      };
-      handleDouble();
-    }
-  }, [isEarnedReward, totalRewardCoins, isRewarded, runCountAnimation, stageId]);
-
-  // Handle Interstitial Close Logic
-  useEffect(() => {
-    if (isInterstitialClosed && pendingNavigation) {
-      const nextStage = pendingNavigation.type === 'next' ? stageId + 1 : stageId;
-      navigation.replace('Game', { stageId: nextStage });
-      setPendingNavigation(null);
-    }
-  }, [isInterstitialClosed, pendingNavigation, navigation, stageId]);
 
   useFocusEffect(useCallback(() => {
     const onBackPress = () => true;
@@ -102,19 +73,32 @@ export default function ResultScreen({ route, navigation }: Props) {
     return () => subscription.remove();
   }, []));
 
+  const handleWatchDoubleAd = () => {
+    if (!RewardedService.isReady()) return;
+    RewardedService.show({
+      onEarned: async () => {
+        setIsRewarded(true);
+        await ProgressService.updateCoins(totalRewardCoins);
+        AnalyticsService.logEvent('ad_reward', { stageId, rewardCoins: totalRewardCoins });
+        runCountAnimation(totalRewardCoins, totalRewardCoins * 2);
+        Vibration.vibrate(100);
+      },
+    });
+  };
+
   const handleTransition = (type: 'next' | 'retry') => {
     if (!isWin && type === 'retry') {
       AnalyticsService.logEvent('game_restart', { stageId });
     }
 
-    // 광고는 1/3 확률로만 노출 — 매판 광고 피로도 완화
-    const shouldShowAd = isInterstitialLoaded && Math.random() < 1 / 3;
-    if (shouldShowAd) {
-      setPendingNavigation({ type });
-      showInterstitial();
+    const nextStage = type === 'next' ? stageId + 1 : stageId;
+    const goNext = () => navigation.replace('Game', { stageId: nextStage });
+
+    // 광고는 1/2 확률로 노출. 로드 안 됐거나 운 안 좋으면 즉시 다음 스테이지로.
+    if (Math.random() < 1 / 2 && InterstitialService.isReady()) {
+      InterstitialService.show(goNext);
     } else {
-      const nextStage = type === 'next' ? stageId + 1 : stageId;
-      navigation.replace('Game', { stageId: nextStage });
+      goNext();
     }
   };
 
@@ -163,7 +147,7 @@ export default function ResultScreen({ route, navigation }: Props) {
                     {!isRewarded && (
                       <Pressable 
                         style={({ pressed }) => [styles.doubleBtn, !isRewardedLoaded && styles.doubleBtnDisabled, isRewardedLoaded && pressed && styles.duoBtnPressed]} 
-                        onPress={() => isRewardedLoaded && showRewarded()} 
+                        onPress={handleWatchDoubleAd}
                         disabled={!isRewardedLoaded}
                       >
                         <View style={[styles.doubleBtnInner, !isRewardedLoaded && styles.doubleBtnInnerDisabled]}>

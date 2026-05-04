@@ -4,7 +4,7 @@ export { SlotBar } from './components/SlotBar';
 export { ItemBar } from './components/ItemBar';
 export { AudioService } from './logic/audio';
 export { ProgressService } from './logic/progress';
-export { AD_UNIT_IDS, interstitial, rewarded } from './logic/ads';
+export { AD_UNIT_IDS, InterstitialService, RewardedService } from './logic/ads';
 export { AnalyticsService } from './logic/analytics';
 export { InitializationService } from './logic/init';
 export { getUserId } from './logic/userId';
