@@ -21,8 +21,6 @@ type GameEndStats = {
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Game'>;
 
-const FIRST_CLEAR_BONUS = 500;
-
 export default function GameScreen({ route, navigation }: Props) {
   const { stageId } = route.params;
 
@@ -55,7 +53,7 @@ export default function GameScreen({ route, navigation }: Props) {
                 userId,
                 tiles: stats.tilesSource === 'local' ? stats.tiles : undefined,
               });
-              const bonus = clear.clearOrdinal === 1 ? FIRST_CLEAR_BONUS : 0;
+              const bonus = clear.clearOrdinal === 1 ? ProgressService.rollRewardCoins() : 0;
               if (bonus > 0) {
                 await ProgressService.updateCoins(bonus);
               }

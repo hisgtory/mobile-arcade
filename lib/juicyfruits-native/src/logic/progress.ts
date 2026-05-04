@@ -3,7 +3,25 @@ import { GameProgress, ItemCounts, DEFAULT_ITEM_COUNTS } from '../types';
 
 const STORAGE_KEY = '@juicyfruits_progress';
 
+/**
+ * [순차 검증형 보상 로직]
+ * - 시작: 5골드
+ * - 각 단계 성공 확률: 73.6% (0.736)
+ * - 15단계를 모두 통과하여 20골드에 도달할 확률: 0.736^15 ≒ 0.01 (1/100)
+ */
+const rollRewardCoins = (): number => {
+  let coins = 5;
+  const passProbability = 0.736;
+  while (coins < 20) {
+    if (Math.random() < passProbability) coins++;
+    else break;
+  }
+  return coins;
+};
+
 export const ProgressService = {
+  rollRewardCoins,
+
   loadProgress: async (): Promise<GameProgress> => {
     try {
       const data = await AsyncStorage.getItem(STORAGE_KEY);
@@ -37,23 +55,8 @@ export const ProgressService = {
       const prevBest = current.bestTimes[stageId];
       const nextBest = prevBest ? Math.min(prevBest, timeUsed) : timeUsed;
       
-      /**
-       * [순차 검증형 보상 로직]
-       * - 시작: 5골드
-       * - 각 단계 성공 확률: 73.6% (0.736)
-       * - 15단계를 모두 통과하여 20골드에 도달할 확률: 0.736^15 ≒ 0.01 (1/100)
-       */
-      let rewardCoins = 5;
-      const passProbability = 0.736;
-      
-      while (rewardCoins < 20) {
-        if (Math.random() < passProbability) {
-          rewardCoins++;
-        } else {
-          break; // 검증 실패 시 현재 값에서 멈춤
-        }
-      }
-      
+      const rewardCoins = rollRewardCoins();
+
       const newProgress: GameProgress = {
         ...current,
         highestStage: nextStage,

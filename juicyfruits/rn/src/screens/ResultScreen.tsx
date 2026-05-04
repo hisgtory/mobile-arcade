@@ -107,7 +107,9 @@ export default function ResultScreen({ route, navigation }: Props) {
       AnalyticsService.logEvent('game_restart', { stageId });
     }
 
-    if (isInterstitialLoaded) {
+    // 광고는 1/3 확률로만 노출 — 매판 광고 피로도 완화
+    const shouldShowAd = isInterstitialLoaded && Math.random() < 1 / 3;
+    if (shouldShowAd) {
       setPendingNavigation({ type });
       showInterstitial();
     } else {
@@ -152,6 +154,11 @@ export default function ResultScreen({ route, navigation }: Props) {
                      <Text style={styles.coinIcon}>🪙</Text>
                      <Text style={styles.rewardValue}>{displayReward}</Text>
                   </View>
+                  {isGlobalFirst && (ranking?.bonusCoins ?? 0) > 0 && (
+                    <Text style={styles.firstClearBonusText}>
+                      + {ranking?.bonusCoins} FIRST CLEAR BONUS
+                    </Text>
+                  )}
                   <View style={styles.buttonFixedWrapper}>
                     {!isRewarded && (
                       <Pressable 
@@ -212,6 +219,7 @@ const styles = StyleSheet.create({
   coinReward: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
   coinIcon: { fontSize: 26, marginRight: 10 },
   rewardValue: { fontSize: 36, fontFamily: 'Fredoka-Bold', color: '#FFD700', minWidth: 60, textAlign: 'center' },
+  firstClearBonusText: { fontSize: 18, fontFamily: 'Fredoka-Bold', color: '#FFB400', marginTop: 2, marginBottom: 8, letterSpacing: 0.3 },
   buttonFixedWrapper: { width: '100%', height: 60, justifyContent: 'center' },
   buttonFixedWrapperHalf: { flex: 1, height: 66, justifyContent: 'center' },
   doubleBtn: { width: '100%', height: 54, backgroundColor: '#D7A000', borderRadius: 18, paddingBottom: 5 },
