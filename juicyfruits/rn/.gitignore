@@ -12,3 +12,11 @@ ios/build/
 android/build/
 android/app/build/
 *.tsbuildinfo
+
+.env.local
+
+# Sentry — 인증 토큰 포함, 절대 커밋 금지
+sentry.properties
+android/sentry.properties
+ios/sentry.properties
+.mcp.json

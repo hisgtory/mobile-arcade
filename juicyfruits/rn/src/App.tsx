@@ -106,4 +106,4 @@ function App() {
 
 const SentryWrappedApp = Sentry.wrap(App);
 registerRootComponent(SentryWrappedApp);
-export default SentryWrappedApp;
+export default Sentry.wrap(SentryWrappedApp);
