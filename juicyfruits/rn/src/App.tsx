@@ -7,6 +7,7 @@ import { registerRootComponent } from 'expo';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Sentry from '@sentry/react-native';
 import mobileAds from 'react-native-google-mobile-ads';
 import { useFonts, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
 import { Nunito_400Regular, Nunito_700Bold, Nunito_900Black } from '@expo-google-fonts/nunito';
@@ -14,6 +15,12 @@ import { AudioService, InitializationService, InterstitialService, RewardedServi
 import HomeScreen from './screens/HomeScreen';
 import GameScreen from './screens/GameScreen';
 import ResultScreen from './screens/ResultScreen';
+
+Sentry.init({
+  dsn: 'https://08153af7b755411a25524e7725aff689@o4504756592836608.ingest.us.sentry.io/4511333234442240',
+  debug: __DEV__,
+  tracesSampleRate: __DEV__ ? 1.0 : 0.1,
+});
 
 SplashScreen.preventAutoHideAsync();
 
@@ -97,5 +104,6 @@ function App() {
   );
 }
 
-registerRootComponent(App);
-export default App;
+const SentryWrappedApp = Sentry.wrap(App);
+registerRootComponent(SentryWrappedApp);
+export default SentryWrappedApp;

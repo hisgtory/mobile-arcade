@@ -49,6 +49,13 @@
         {
           "microphonePermission": false
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "sgkm-73",
+          "project": "juicy-fruits"
+        }
       ]
     ],
     "extra": {
