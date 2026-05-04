@@ -43,6 +43,12 @@
           "androidAppId": "ca-app-pub-6129946475801358~3237973821",
           "iosAppId": "ca-app-pub-6129946475801358~9228667108"
         }
+      ],
+      [
+        "expo-av",
+        {
+          "microphonePermission": false
+        }
       ]
     ],
     "extra": {
