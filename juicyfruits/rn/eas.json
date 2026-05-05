@@ -8,19 +8,25 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://arcade-api.hisgtory.com"
+        "EXPO_PUBLIC_API_BASE": "https://arcade-api.hisgtory.com",
+        "SENTRY_ORG": "sgkm-73",
+        "SENTRY_PROJECT": "juicy-fruits"
       }
     },
     "preview": {
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://arcade-api.hisgtory.com"
+        "EXPO_PUBLIC_API_BASE": "https://arcade-api.hisgtory.com",
+        "SENTRY_ORG": "sgkm-73",
+        "SENTRY_PROJECT": "juicy-fruits"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_BASE": "https://arcade-api.hisgtory.com"
+        "EXPO_PUBLIC_API_BASE": "https://arcade-api.hisgtory.com",
+        "SENTRY_ORG": "sgkm-73",
+        "SENTRY_PROJECT": "juicy-fruits"
       }
     }
   },
